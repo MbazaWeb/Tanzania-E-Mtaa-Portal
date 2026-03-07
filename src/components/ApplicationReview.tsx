@@ -30,15 +30,9 @@ import { formatCurrency } from '@/src/lib/currency';
 import { TANZANIA_ADDRESS_DATA } from '@/src/lib/addressData';
 import { HARDCODED_SERVICES } from '@/src/constants/services';
 
-// Helper to get service by ID from hardcoded services
+// Helper to get service by ID from hardcoded services (flat array)
 const getServiceById = (serviceId: string) => {
-  const allServices = [
-    ...HARDCODED_SERVICES.resident,
-    ...HARDCODED_SERVICES.business,
-    ...HARDCODED_SERVICES.property,
-    ...HARDCODED_SERVICES.health
-  ];
-  return allServices.find(s => s.id === serviceId);
+  return HARDCODED_SERVICES.find(s => s.id === serviceId) || null;
 };
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocumentPDF } from './DocumentPDF';

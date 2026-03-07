@@ -325,7 +325,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                       })()
                     )}
 
-                    {app.status === 'pending_payment' ? (
+                    {(app.status === 'submitted' || app.status === 'pending_payment') && getPaymentAmount(app) > 0 ? (
                       <button 
                         onClick={() => onPay(app)}
                         className="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200"
@@ -418,7 +418,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                   })()
                 )}
 
-                {app.status === 'pending_payment' ? (
+                {(app.status === 'submitted' || app.status === 'pending_payment') && getPaymentAmount(app) > 0 ? (
                   <button 
                     onClick={() => onPay(app)}
                     className="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all"
@@ -625,8 +625,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                   return null;
                 })()}
 
-                {/* Payment Button */}
-                {selectedApp.status === 'pending_payment' && (
+                {/* Payment Button - show for submitted or pending_payment status */}
+                {(selectedApp.status === 'submitted' || selectedApp.status === 'pending_payment') && getPaymentAmount(selectedApp) > 0 && (
                   <button 
                     onClick={() => { onPay(selectedApp); setSelectedApp(null); }}
                     className="w-full bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2"
@@ -661,8 +661,10 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                   </div>
                 )}
 
-                {/* Close button for other statuses */}
-                {selectedApp.status !== 'pending_payment' && selectedApp.status !== 'issued' && (
+                {/* Close button for other statuses (not when showing payment or issued buttons) */}
+                {!(selectedApp.status === 'pending_payment' || 
+                   selectedApp.status === 'issued' || 
+                   (selectedApp.status === 'submitted' && getPaymentAmount(selectedApp) > 0)) && (
                   <button 
                     onClick={() => setSelectedApp(null)}
                     className="w-full bg-stone-200 text-stone-700 px-6 py-3 rounded-xl font-bold hover:bg-stone-300 transition-all"
