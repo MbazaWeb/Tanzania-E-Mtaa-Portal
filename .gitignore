@@ -46,3 +46,4 @@ coverage/
 .cache/
 dist-ssr/
 *.local
+.vercel
