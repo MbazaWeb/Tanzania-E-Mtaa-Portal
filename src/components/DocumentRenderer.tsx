@@ -17,8 +17,8 @@ try {
   console.warn('Font registration failed, using fallback fonts');
 }
 
-// Use local public asset for Tanzania coat of arms
-const TANZANIA_LOGO_URL = "/tz-coat-of-arms.png";
+// Use production URL for Tanzania coat of arms (CORS-friendly from same origin)
+const TANZANIA_LOGO_URL = "https://e-serikali-mtaa.vercel.app/tz-coat-of-arms.png";
 
 // Styles matching the official Tanzania government document format
 const styles = StyleSheet.create({
