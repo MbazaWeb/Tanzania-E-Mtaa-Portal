@@ -210,16 +210,22 @@ export default function App() {
       return;
     }
 
+    // Store payment data inside form_data to avoid needing new columns
+    const updatedFormData = {
+      ...(payingApplication.form_data || {}),
+      payment_data: paymentInfo
+    };
+
     const { error } = await supabase
       .from('applications')
       .update({ 
-        status: 'issued', 
-        issued_at: new Date().toISOString(),
-        payment_data: paymentInfo
+        status: 'issued',
+        form_data: updatedFormData
       })
       .eq('id', payingApplication.id);
     
     if (error) {
+      console.error('Payment update error:', error);
       showToast(lang === 'sw' ? 'Hitilafu imetokea wakati wa kusasisha malipo.' : 'An error occurred while updating payment.', 'error');
       return;
     }

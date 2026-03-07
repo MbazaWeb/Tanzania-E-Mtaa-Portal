@@ -340,10 +340,10 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                             <ReceiptPDF 
                               application={app} 
                               paymentData={{
-                                transaction_id: (app as any).payment_data?.transaction_id || `TXN-${app.id.slice(0, 8).toUpperCase()}`,
+                                transaction_id: app.form_data?.payment_data?.transaction_id || `TXN-${app.id.slice(0, 8).toUpperCase()}`,
                                 amount: getPaymentAmount(app),
-                                payment_method: (app as any).payment_data?.payment_method || 'M-Pesa',
-                                paid_at: (app as any).payment_data?.paid_at || app.issued_at || new Date().toISOString()
+                                payment_method: app.form_data?.payment_data?.payment_method || 'M-Pesa',
+                                paid_at: app.form_data?.payment_data?.paid_at || new Date().toISOString()
                               }}
                               lang={lang}
                             />
@@ -452,10 +452,10 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                         <ReceiptPDF 
                           application={app} 
                           paymentData={{
-                            transaction_id: (app as any).payment_data?.transaction_id || `TXN-${app.id.slice(0, 8).toUpperCase()}`,
+                            transaction_id: app.form_data?.payment_data?.transaction_id || `TXN-${app.id.slice(0, 8).toUpperCase()}`,
                             amount: getPaymentAmount(app),
-                            payment_method: (app as any).payment_data?.payment_method || 'M-Pesa',
-                            paid_at: (app as any).payment_data?.paid_at || app.issued_at || new Date().toISOString()
+                            payment_method: app.form_data?.payment_data?.payment_method || 'M-Pesa',
+                            paid_at: app.form_data?.payment_data?.paid_at || new Date().toISOString()
                           }}
                           lang={lang}
                         />
@@ -691,10 +691,10 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                         <ReceiptPDF 
                           application={selectedApp} 
                           paymentData={{
-                            transaction_id: (selectedApp as any).payment_data?.transaction_id || `TXN-${selectedApp.id.slice(0, 8).toUpperCase()}`,
+                            transaction_id: selectedApp.form_data?.payment_data?.transaction_id || `TXN-${selectedApp.id.slice(0, 8).toUpperCase()}`,
                             amount: getPaymentAmount(selectedApp),
-                            payment_method: (selectedApp as any).payment_data?.payment_method || 'M-Pesa',
-                            paid_at: (selectedApp as any).payment_data?.paid_at || selectedApp.issued_at || new Date().toISOString()
+                            payment_method: selectedApp.form_data?.payment_data?.payment_method || 'M-Pesa',
+                            paid_at: selectedApp.form_data?.payment_data?.paid_at || new Date().toISOString()
                           }}
                           lang={lang}
                         />
