@@ -184,7 +184,6 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
     if (!selectedApp) return;
 
     const serviceName = (selectedApp as any).services?.name || '';
-    const serviceFee = (selectedApp as any).services?.fee || 0;
     const buyerAccepted = (selectedApp as any).buyer_accepted;
     const tenantAccepted = (selectedApp as any).tenant_accepted;
 
@@ -196,13 +195,8 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       return;
     }
 
-    // For free services (fee = 0), skip payment step and go directly to paid status
-    if (serviceFee === 0) {
-      await updateStatus(selectedApp.id, 'paid');
-      showToast(lang === 'sw' ? 'Huduma ya bure - imethibitishwa!' : 'Free service - approved!', 'success');
-    } else {
-      await updateStatus(selectedApp.id, 'pending_payment');
-    }
+    // Always go to pending_payment - citizen confirms even for free services
+    await updateStatus(selectedApp.id, 'pending_payment');
   };
 
   const handleReject = async () => {

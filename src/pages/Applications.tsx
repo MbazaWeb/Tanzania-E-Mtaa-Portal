@@ -203,12 +203,12 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                       })()
                     )}
 
-                    {app.status === 'pending_payment' && (app as any).services?.fee > 0 ? (
+                    {app.status === 'pending_payment' ? (
                       <button 
                         onClick={() => onPay(app)}
                         className="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200"
                       >
-                        {t.payNow} ({formatCurrency((app as any).services?.fee, currency)})
+                        {(app as any).services?.fee > 0 ? `${t.payNow} (${formatCurrency((app as any).services?.fee, currency)})` : (lang === 'sw' ? 'Thibitisha (Bure)' : 'Confirm (Free)')}
                       </button>
                     ) : app.status === 'issued' ? (
                       <div className="flex items-center justify-end gap-3">
@@ -296,12 +296,12 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                   })()
                 )}
 
-                {app.status === 'pending_payment' && (app as any).services?.fee > 0 ? (
+                {app.status === 'pending_payment' ? (
                   <button 
                     onClick={() => onPay(app)}
                     className="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all"
                   >
-                    {t.payNow} ({formatCurrency((app as any).services?.fee, currency)})
+                    {(app as any).services?.fee > 0 ? `${t.payNow} (${formatCurrency((app as any).services?.fee, currency)})` : (lang === 'sw' ? 'Thibitisha (Bure)' : 'Confirm (Free)')}
                   </button>
                 ) : app.status === 'issued' ? (
                   <div className="flex items-center gap-4 w-full justify-between">
@@ -506,13 +506,13 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                 })()}
 
                 {/* Payment Button */}
-                {selectedApp.status === 'pending_payment' && (selectedApp as any).services?.fee > 0 && (
+                {selectedApp.status === 'pending_payment' && (
                   <button 
                     onClick={() => { onPay(selectedApp); setSelectedApp(null); }}
                     className="w-full bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2"
                   >
                     <CreditCard size={18} />
-                    {t.payNow} ({formatCurrency((selectedApp as any).services?.fee, currency)})
+                    {(selectedApp as any).services?.fee > 0 ? `${t.payNow} (${formatCurrency((selectedApp as any).services?.fee, currency)})` : (lang === 'sw' ? 'Thibitisha (Bure)' : 'Confirm (Free)')}
                   </button>
                 )}
 
