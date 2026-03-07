@@ -72,7 +72,7 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -87,6 +87,7 @@ export const PaymentGateway: React.FC<PaymentGatewayProps> = ({
           </div>
           <button 
             onClick={onCancel}
+            aria-label={lang === 'sw' ? 'Funga' : 'Close'}
             className="p-2 hover:bg-stone-200 rounded-full transition-colors"
           >
             <X className="h-5 w-5 text-stone-500" />

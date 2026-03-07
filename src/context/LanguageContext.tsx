@@ -19,7 +19,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const handleSetLang = (newLang: Language) => {
     setLang(newLang);
-    setCurrency(newLang === 'sw' ? 'TZS' : 'USD');
+    // Always use TZS for Tanzanian government services
+    // Currency can still be changed separately via setCurrency if needed
   };
 
   return (

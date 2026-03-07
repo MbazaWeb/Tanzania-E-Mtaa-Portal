@@ -58,15 +58,54 @@ export default function App() {
 
   const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+  // Redirect to appropriate dashboard based on user role
+  useEffect(() => {
+    if (user && user.role) {
+      console.log('User role detected:', user.role, 'Current view:', view);
+      if (user.role === 'admin' && view !== 'admin_dashboard') {
+        console.log('Redirecting to admin_dashboard');
+        setView('admin_dashboard');
+      } else if (user.role === 'staff' && view !== 'staff_dashboard') {
+        console.log('Redirecting to staff_dashboard');
+        setView('staff_dashboard');
+      } else if ((user.role === 'citizen' || user.role === 'viewer' || user.role === 'approver') && view === 'admin_dashboard') {
+        console.log('Redirecting to citizen dashboard');
+        setView('dashboard');
+      }
+    }
+  }, [user?.role]);
+
+  // Force update when user changes
+  useEffect(() => {
+    if (user?.role === 'admin' && view === 'dashboard') {
+      console.log('Force: Admin user on default dashboard, switching to admin_dashboard');
+      setView('admin_dashboard');
+    } else if (user?.role === 'staff' && view === 'dashboard') {
+      console.log('Force: Staff user on default dashboard, switching to staff_dashboard');
+      setView('staff_dashboard');
+    }
+  }, [user?.id]);
+
   const submitApplication = async (formData: any) => {
-    if (!user || !selectedService) return;
+    if (!user || !selectedService) {
+      console.error('Missing user or selectedService', { user, selectedService });
+      return;
+    }
+
+    console.log('Submitting application:', { 
+      user_id: user.id, 
+      service_id: selectedService.id,
+      service_name: selectedService.name 
+    });
 
     const applicationNumber = `EMT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
+    console.log('Supabase URL check:', { supabaseUrl, isConfigured, isDemoUser: user.id.startsWith('demo-') });
 
     if (!isConfigured || user.id.startsWith('demo-')) {
+      console.log('Using demo mode for application');
       const newApp = {
         id: 'demo-app-' + Math.random().toString(36).substring(7),
         user_id: user.id,
@@ -91,20 +130,29 @@ export default function App() {
       return;
     }
 
+    console.log('Submitting to Supabase...', {
+      user_id: user.id,
+      service_id: selectedService.id,
+      service_name: selectedService.name || selectedService.name_en,
+      application_number: applicationNumber
+    });
+
     const { error } = await supabase.from('applications').insert({
       user_id: user.id,
       service_id: selectedService.id,
+      service_name: selectedService.name || selectedService.name_en,
       application_number: applicationNumber,
       form_data: formData,
       status: 'submitted',
-      region: user.region,
-      district: user.district,
-      ward: user.ward,
-      street: user.street
+      region: user.region || null,
+      district: user.district || null,
+      ward: user.ward || null,
+      street: user.street || null
     });
 
     if (error) {
-      showToast(lang === 'sw' ? 'Hitilafu imetokea wakati wa kutuma maombi.' : 'An error occurred while submitting the application.', 'error');
+      console.error('Application submission error:', error);
+      showToast(lang === 'sw' ? `Hitilafu: ${error.message}` : `Error: ${error.message}`, 'error');
       return;
     }
 
@@ -122,19 +170,19 @@ export default function App() {
     if (!isConfigured || user?.id.startsWith('demo-')) {
       const existing = JSON.parse(localStorage.getItem('demo_applications') || '[]');
       const updated = existing.map((app: any) => 
-        app.id === payingApplication.id ? { ...app, status: 'paid' } : app
+        app.id === payingApplication.id ? { ...app, status: 'issued', issued_at: new Date().toISOString() } : app
       );
       localStorage.setItem('demo_applications', JSON.stringify(updated));
       
       setPayingApplication(null);
       fetchApplications();
-      showToast(lang === 'sw' ? 'Malipo yamepokelewa! Maombi yako sasa yanafanyiwa kazi.' : 'Payment received! Your application is now being processed.', 'success');
+      showToast(lang === 'sw' ? 'Malipo yamepokelewa! Hati yako imetolewa.' : 'Payment received! Your document has been issued.', 'success');
       return;
     }
 
     const { error } = await supabase
       .from('applications')
-      .update({ status: 'paid' })
+      .update({ status: 'issued', issued_at: new Date().toISOString() })
       .eq('id', payingApplication.id);
     
     if (error) {
@@ -144,7 +192,7 @@ export default function App() {
     
     setPayingApplication(null);
     fetchApplications();
-    showToast(lang === 'sw' ? 'Malipo yamepokelewa! Maombi yako sasa yanafanyiwa kazi.' : 'Payment received! Your application is now being processed.', 'success');
+    showToast(lang === 'sw' ? 'Malipo yamepokelewa! Hati yako imetolewa.' : 'Payment received! Your document has been issued.', 'success');
   };
 
   if (authLoading) {

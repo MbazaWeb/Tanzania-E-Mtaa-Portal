@@ -87,7 +87,7 @@ export function Dashboard({ applications, setView }: DashboardProps) {
               </div>
             )}
           </div>
-          <Building2 className="absolute right-[-20px] bottom-[-20px] h-32 sm:h-48 w-32 sm:w-48 text-white/10 rotate-12" />
+          <Building2 className="absolute -right-5 -bottom-5 h-32 sm:h-48 w-32 sm:w-48 text-white/10 rotate-12" />
         </div>
       )}
 

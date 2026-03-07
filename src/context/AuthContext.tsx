@@ -24,9 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .rpc('get_user_profile', { user_id: userId });
       
       if (error) {
+        console.error('RPC error:', error);
         throw error;
-      } else if (data) {
+      } else if (data && Array.isArray(data) && data.length > 0) {
+        console.log('User profile fetched:', data[0]);
+        setUser(data[0] as UserProfile);
+      } else if (data && !Array.isArray(data)) {
+        // In case RPC returns a single object instead of array
+        console.log('User profile fetched (single object):', data);
         setUser(data as UserProfile);
+      } else {
+        console.log('No user profile found');
+        setUser(null);
       }
     } catch (err: any) {
       console.error('Exception in fetchUserProfile:', err);

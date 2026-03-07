@@ -177,7 +177,12 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
   };
 
   const onFormSubmit = (data: any) => {
+    console.log('Form submitted with data:', data);
     onSubmit(data, attachments, applicantType, applicantType !== 'self' ? representativeName : undefined);
+  };
+
+  const onFormError = (errors: any) => {
+    console.error('Form validation errors:', errors);
   };
 
   const handleUseProfileToggle = () => {
@@ -185,7 +190,7 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onFormSubmit, onFormError)} className="space-y-6">
       {/* Applicant Type Selection */}
       <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 space-y-4">
         <h3 className="text-sm font-bold text-stone-700 flex items-center gap-2">
@@ -327,6 +332,7 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
           <button
             type="button"
             onClick={handleUseProfileToggle}
+            aria-label={`${lang === 'sw' ? 'Tumia taarifa za wasifu' : 'Use profile data'}: ${useProfileData ? (lang === 'sw' ? 'Imewashwa' : 'On') : (lang === 'sw' ? 'Imezimwa' : 'Off')}`}
             className={cn(
               "relative w-14 h-7 rounded-full transition-all",
               useProfileData ? "bg-blue-600" : "bg-stone-300"
@@ -376,7 +382,8 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                           onChange={onChange}
                           value={value || ''}
                           placeholder={field.placeholder}
-                          className="p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none min-h-[100px] transition-all"
+                          aria-label={field.label}
+                          className="p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none min-h-25 transition-all"
                         />
                       );
                     case 'select':
@@ -384,6 +391,7 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                         <select
                           onChange={onChange}
                           value={value || ''}
+                          aria-label={field.label}
                           className="p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white transition-all"
                         >
                           <option value="">{lang === 'sw' ? 'Chagua...' : 'Select...'} {field.label}</option>
@@ -400,6 +408,7 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                           type="checkbox"
                           checked={value || false}
                           onChange={(e) => onChange(e.target.checked)}
+                          aria-label={field.label}
                           className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
                         />
                       );
@@ -409,6 +418,7 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                           type="time"
                           onChange={onChange}
                           value={value || ''}
+                          aria-label={field.label}
                           className="p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                         />
                       );
@@ -418,6 +428,7 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                           type="datetime-local"
                           onChange={onChange}
                           value={value || ''}
+                          aria-label={field.label}
                           className="p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                         />
                       );
@@ -471,7 +482,14 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
           <FileText className="h-4 w-4 text-emerald-600" />
           {lang === 'sw' ? 'Viambatisho / Nyaraka' : 'Attachments / Documents'}
         </label>
-        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
+        <input 
+          ref={fileInputRef} 
+          type="file" 
+          multiple 
+          className="hidden" 
+          onChange={handleFileChange}
+          aria-label={lang === 'sw' ? 'Chagua faili' : 'Choose files'}
+        />
         <button 
           type="button" 
           onClick={() => fileInputRef.current?.click()}
@@ -486,7 +504,12 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
             {attachments.map((a) => (
               <div key={a} className="flex items-center justify-between px-4 py-2 rounded-xl bg-stone-50 border border-stone-100 text-sm">
                 <span className="truncate flex-1 font-medium text-stone-700">{a}</span>
-                <button type="button" onClick={() => removeAttachment(a)} className="text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors">
+                <button 
+                  type="button" 
+                  onClick={() => removeAttachment(a)} 
+                  aria-label={lang === 'sw' ? `Ondoa ${a}` : `Remove ${a}`}
+                  className="text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>

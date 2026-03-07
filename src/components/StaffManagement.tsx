@@ -19,7 +19,12 @@ import {
   Trash2,
   DatabaseZap,
   Globe,
-  UserPlus
+  UserPlus,
+  Edit2,
+  User,
+  Calendar,
+  BadgeCheck,
+  XCircle
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { Language, useTranslation } from '@/src/lib/i18n';
@@ -42,6 +47,19 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [officeLevel, setOfficeLevel] = useState<'region' | 'district'>('region');
+  
+  // Staff details modal state
+  const [selectedStaff, setSelectedStaff] = useState<UserProfile | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [editingRole, setEditingRole] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    role: '' as 'viewer' | 'approver' | 'admin' | 'staff',
+    region: '',
+    district: '',
+    officeLevel: 'region' as 'region' | 'district'
+  });
+  const [updating, setUpdating] = useState(false);
   
   const [newStaff, setNewStaff] = useState({
     email: '',
@@ -109,13 +127,30 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
 
   const fetchStaff = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .in('role', ['staff', 'admin', 'viewer', 'approver']);
-    
-    if (data) setStaff(data);
-    setLoading(false);
+    try {
+      console.log('StaffManagement: Fetching staff from Supabase...');
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .in('role', ['staff', 'admin', 'viewer', 'approver']);
+      
+      if (error) {
+        console.error('Error fetching staff:', error);
+        showToast(t('staff.fetchError') || 'Error fetching staff', 'error');
+        setStaff([]);
+        return;
+      }
+
+      console.log('Staff fetched from Supabase:', data?.length || 0);
+      setStaff(data || []);
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      showToast(t('staff.fetchError') || 'Error fetching staff', 'error');
+      setStaff([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validateForm = () => {
@@ -204,7 +239,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
       // Generate a temporary password
       const tempPassword = Math.random().toString(36).slice(-8) + 'Tz1!';
 
-      // Create Auth User
+      // Create Auth User with auto-confirm option
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newStaff.email,
         password: tempPassword,
@@ -212,11 +247,25 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
           data: {
             role: newStaff.role,
             office_id: officeId
-          }
+          },
+          // Note: For auto-confirm to work, you need to disable email confirmation
+          // in Supabase Dashboard: Authentication > Email Templates > Confirm signup
+          emailRedirectTo: undefined
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // If email already registered in auth but not in users table
+        if (authError.message.includes('already registered')) {
+          showToast(lang === 'sw' 
+            ? 'Barua pepe hii tayari imesajiliwa. Mtumishi anaweza kuingia na nywila yake.' 
+            : 'This email is already registered. Staff can login with their password.', 'info');
+          setShowAddModal(false);
+          resetForm();
+          return;
+        }
+        throw authError;
+      }
 
       if (authData.user) {
         // Generate first name from email (temporary)
@@ -240,10 +289,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
 
         if (profileError) throw profileError;
 
-        // In a real app, you would send an email with the temporary password
+        // Show success with temporary password
+        // Note: If email confirmation is enabled, staff must click the confirmation link first
         showToast(lang === 'sw' 
-          ? `Mtumishi amesajiliwa kikamilifu! Nywila ya muda: ${tempPassword}` 
-          : `Staff created successfully! Temporary password: ${tempPassword}`, 'success');
+          ? `Mtumishi amesajiliwa! Wajibu: ${newStaff.role}. Nywila ya muda: ${tempPassword}. Kama uthibitisho wa barua pepe umewezeshwa, wanahitaji kuthibitisha kwanza.` 
+          : `Staff created with role: ${newStaff.role}. Temp password: ${tempPassword}. If email confirmation is enabled, they must confirm first.`, 'success');
         
         setShowAddModal(false);
         resetForm();
@@ -292,9 +342,79 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
       if (error) throw error;
       
       showToast(lang === 'sw' ? 'Mtumishi amefutwa' : 'Staff deleted', 'success');
+      setShowDetailsModal(false);
+      setSelectedStaff(null);
       fetchStaff();
     } catch (err: any) {
       showToast(err.message, 'error');
+    }
+  };
+
+  const handleStaffClick = (staffMember: UserProfile) => {
+    setSelectedStaff(staffMember);
+    setEditFormData({
+      role: staffMember.role as 'viewer' | 'approver' | 'admin' | 'staff',
+      region: staffMember.assigned_region || '',
+      district: staffMember.assigned_district || '',
+      officeLevel: staffMember.assigned_district ? 'district' : 'region'
+    });
+    setEditingRole(false);
+    setEditingLocation(false);
+    setShowDetailsModal(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedStaff) return;
+    
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ role: editFormData.role })
+        .eq('id', selectedStaff.id);
+      
+      if (error) throw error;
+      
+      showToast(lang === 'sw' ? 'Wajibu umesasishwa' : 'Role updated successfully', 'success');
+      setEditingRole(false);
+      setSelectedStaff({ ...selectedStaff, role: editFormData.role });
+      fetchStaff();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleUpdateLocation = async () => {
+    if (!selectedStaff) return;
+    
+    setUpdating(true);
+    try {
+      const updateData: any = {
+        assigned_region: editFormData.region,
+        assigned_district: editFormData.officeLevel === 'district' ? editFormData.district : null
+      };
+      
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', selectedStaff.id);
+      
+      if (error) throw error;
+      
+      showToast(lang === 'sw' ? 'Eneo limesasishwa' : 'Location updated successfully', 'success');
+      setEditingLocation(false);
+      setSelectedStaff({ 
+        ...selectedStaff, 
+        assigned_region: editFormData.region,
+        assigned_district: editFormData.officeLevel === 'district' ? editFormData.district : undefined
+      });
+      fetchStaff();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -365,7 +485,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                   </td>
                 </tr>
               ) : filteredStaff.map(s => (
-                <tr key={s.id} className="hover:bg-stone-50 transition-colors">
+                <tr 
+                  key={s.id} 
+                  onClick={() => handleStaffClick(s)}
+                  className="hover:bg-stone-50 transition-colors cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 font-bold">
@@ -405,7 +529,12 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 
-                      onClick={() => handleDeleteStaff(s.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteStaff(s.id);
+                      }}
+                      title={lang === 'sw' ? 'Futa mtumishi' : 'Delete staff'}
+                      aria-label={lang === 'sw' ? 'Futa mtumishi' : 'Delete staff'}
                       className="p-2 text-stone-400 hover:text-red-500 transition-colors"
                     >
                       <Trash2 size={18} />
@@ -428,7 +557,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
       {/* Add Staff Modal - Simplified with just email */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -437,7 +566,12 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
             >
               <div className="px-8 py-6 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
                 <h3 className="text-xl font-heading font-extrabold text-stone-900">{lang === 'sw' ? 'Sajili Mtumishi Mpya' : 'Register New Staff'}</h3>
-                <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
+                <button 
+                  onClick={() => setShowAddModal(false)}
+                  title={lang === 'sw' ? 'Funga modal' : 'Close modal'}
+                  aria-label={lang === 'sw' ? 'Funga modal' : 'Close modal'}
+                  className="p-2 hover:bg-stone-200 rounded-full transition-colors"
+                >
                   <X className="h-5 w-5 text-stone-500" />
                 </button>
               </div>
@@ -469,11 +603,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
 
                   {/* Region Selection */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+                    <label htmlFor="staff-region-select" className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
                       <Globe size={14} /> {lang === 'sw' ? 'Mkoa' : 'Region'} <span className="text-red-500">*</span>
                     </label>
                     <select 
+                      id="staff-region-select"
                       required
+                      title={lang === 'sw' ? 'Chagua mkoa' : 'Select region'}
+                      aria-label={lang === 'sw' ? 'Chagua mkoa' : 'Select region'}
                       className={cn(
                         "w-full h-12 px-4 rounded-xl border focus:border-primary outline-none transition-all bg-white",
                         errors.region ? "border-red-300 bg-red-50" : "border-stone-200"
@@ -540,11 +677,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                   {/* District Selection (if district level) */}
                   {selectedRegion && officeLevel === 'district' && (
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+                      <label htmlFor="staff-district-select" className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
                         <MapPin size={14} /> {lang === 'sw' ? 'Wilaya' : 'District'} <span className="text-red-500">*</span>
                       </label>
                       <select 
+                        id="staff-district-select"
                         required
+                        title={lang === 'sw' ? 'Chagua wilaya' : 'Select district'}
+                        aria-label={lang === 'sw' ? 'Chagua wilaya' : 'Select district'}
                         className={cn(
                           "w-full h-12 px-4 rounded-xl border focus:border-primary outline-none transition-all bg-white",
                           errors.district ? "border-red-300 bg-red-50" : "border-stone-200"
@@ -570,11 +710,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
 
                   {/* Role Selection */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+                    <label htmlFor="staff-role-select" className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
                       <Shield size={14} /> {lang === 'sw' ? 'Wajibu' : 'Role'}
                     </label>
                     <select 
+                      id="staff-role-select"
                       required
+                      title={lang === 'sw' ? 'Chagua wajibu' : 'Select role'}
+                      aria-label={lang === 'sw' ? 'Chagua wajibu' : 'Select role'}
                       className="w-full h-12 px-4 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white"
                       value={newStaff.role}
                       onChange={(e) => setNewStaff({...newStaff, role: e.target.value as any})}
@@ -623,6 +766,323 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Staff Details Modal */}
+      <AnimatePresence>
+        {showDetailsModal && selectedStaff && (
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-stone-100 flex items-center justify-between bg-linear-to-r from-emerald-50 to-blue-50">
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full bg-linear-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                    {selectedStaff.first_name?.[0] || 'S'}{selectedStaff.last_name?.[0] || 'M'}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-heading font-extrabold text-stone-900">
+                      {selectedStaff.first_name} {selectedStaff.last_name}
+                    </h3>
+                    <p className="text-sm text-stone-500">{selectedStaff.email}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    setSelectedStaff(null);
+                    setEditingRole(false);
+                    setEditingLocation(false);
+                  }}
+                  title={lang === 'sw' ? 'Funga' : 'Close'}
+                  aria-label={lang === 'sw' ? 'Funga modal' : 'Close modal'}
+                  className="p-2 hover:bg-white/80 rounded-full transition-colors"
+                >
+                  <X className="h-5 w-5 text-stone-500" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8 space-y-6">
+                {/* Staff Info Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Phone */}
+                  <div className="p-4 bg-stone-50 rounded-2xl">
+                    <div className="flex items-center gap-2 text-stone-400 mb-1">
+                      <Phone size={14} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {lang === 'sw' ? 'Simu' : 'Phone'}
+                      </span>
+                    </div>
+                    <p className="font-bold text-stone-800">
+                      {selectedStaff.phone || (lang === 'sw' ? 'Haijasajiliwa' : 'Not provided')}
+                    </p>
+                  </div>
+
+                  {/* Gender */}
+                  <div className="p-4 bg-stone-50 rounded-2xl">
+                    <div className="flex items-center gap-2 text-stone-400 mb-1">
+                      <User size={14} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {lang === 'sw' ? 'Jinsia' : 'Gender'}
+                      </span>
+                    </div>
+                    <p className="font-bold text-stone-800">
+                      {selectedStaff.gender === 'M' ? (lang === 'sw' ? 'Me' : 'Male') :
+                       selectedStaff.gender === 'F' ? (lang === 'sw' ? 'Ke' : 'Female') :
+                       (lang === 'sw' ? 'Haijulikani' : 'Unknown')}
+                    </p>
+                  </div>
+
+                  {/* Nationality */}
+                  <div className="p-4 bg-stone-50 rounded-2xl">
+                    <div className="flex items-center gap-2 text-stone-400 mb-1">
+                      <Globe size={14} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {lang === 'sw' ? 'Uraia' : 'Nationality'}
+                      </span>
+                    </div>
+                    <p className="font-bold text-stone-800">
+                      {selectedStaff.nationality || 'Tanzania'}
+                    </p>
+                  </div>
+
+                  {/* Verification Status */}
+                  <div className="p-4 bg-stone-50 rounded-2xl">
+                    <div className="flex items-center gap-2 text-stone-400 mb-1">
+                      <BadgeCheck size={14} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {lang === 'sw' ? 'Uhakiki' : 'Verification'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedStaff.is_verified ? (
+                        <>
+                          <CheckCircle2 size={16} className="text-emerald-500" />
+                          <span className="font-bold text-emerald-600">
+                            {lang === 'sw' ? 'Imethibitishwa' : 'Verified'}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle size={16} className="text-amber-500" />
+                          <span className="font-bold text-amber-600">
+                            {lang === 'sw' ? 'Haijahaikitiwa' : 'Pending'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role Section */}
+                <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-purple-600">
+                      <Shield size={16} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {lang === 'sw' ? 'Wajibu' : 'Role'}
+                      </span>
+                    </div>
+                    {!editingRole && (
+                      <button
+                        onClick={() => setEditingRole(true)}
+                        title={lang === 'sw' ? 'Hariri wajibu' : 'Edit role'}
+                        aria-label={lang === 'sw' ? 'Hariri wajibu' : 'Edit role'}
+                        className="p-1.5 hover:bg-purple-100 rounded-lg text-purple-500 transition-colors"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {editingRole ? (
+                    <div className="space-y-3">
+                      <select
+                        title={lang === 'sw' ? 'Chagua wajibu' : 'Select role'}
+                        aria-label={lang === 'sw' ? 'Chagua wajibu' : 'Select role'}
+                        value={editFormData.role}
+                        onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as any })}
+                        className="w-full h-12 px-4 rounded-xl border border-purple-200 focus:border-purple-500 outline-none transition-all bg-white"
+                      >
+                        <option value="viewer">{lang === 'sw' ? 'Mtazamaji (Viewer)' : 'Viewer'}</option>
+                        <option value="staff">{lang === 'sw' ? 'Mtumishi (Staff)' : 'Staff Member'}</option>
+                        <option value="approver">{lang === 'sw' ? 'Muidhinishaji (Approver)' : 'Approver'}</option>
+                        <option value="admin">{lang === 'sw' ? 'Msimamizi (Admin)' : 'Administrator'}</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingRole(false)}
+                          className="flex-1 h-10 bg-stone-100 text-stone-600 rounded-xl font-bold hover:bg-stone-200 transition-all text-sm"
+                        >
+                          {lang === 'sw' ? 'Ghairi' : 'Cancel'}
+                        </button>
+                        <button
+                          onClick={handleUpdateRole}
+                          disabled={updating}
+                          className="flex-1 h-10 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all text-sm flex items-center justify-center gap-2"
+                        >
+                          {updating ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                          {lang === 'sw' ? 'Hifadhi' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className={cn(
+                      "px-3 py-1.5 rounded-lg text-sm font-bold",
+                      selectedStaff.role === 'admin' ? "bg-purple-200 text-purple-700" : 
+                      selectedStaff.role === 'approver' ? "bg-emerald-200 text-emerald-700" :
+                      selectedStaff.role === 'viewer' ? "bg-blue-200 text-blue-700" :
+                      "bg-stone-200 text-stone-700"
+                    )}>
+                      {selectedStaff.role === 'admin' ? (lang === 'sw' ? 'Msimamizi' : 'Administrator') :
+                       selectedStaff.role === 'approver' ? (lang === 'sw' ? 'Muidhinishaji' : 'Approver') :
+                       selectedStaff.role === 'viewer' ? (lang === 'sw' ? 'Mtazamaji' : 'Viewer') :
+                       (lang === 'sw' ? 'Mtumishi' : 'Staff Member')}
+                    </span>
+                  )}
+                </div>
+
+                {/* Location Section */}
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-emerald-600">
+                      <Building2 size={16} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {lang === 'sw' ? 'Ofisi / Eneo' : 'Office / Location'}
+                      </span>
+                    </div>
+                    {!editingLocation && (
+                      <button
+                        onClick={() => setEditingLocation(true)}
+                        title={lang === 'sw' ? 'Hariri eneo' : 'Edit location'}
+                        aria-label={lang === 'sw' ? 'Hariri eneo' : 'Edit location'}
+                        className="p-1.5 hover:bg-emerald-100 rounded-lg text-emerald-500 transition-colors"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {editingLocation ? (
+                    <div className="space-y-4">
+                      <select
+                        title={lang === 'sw' ? 'Chagua mkoa' : 'Select region'}
+                        aria-label={lang === 'sw' ? 'Chagua mkoa' : 'Select region'}
+                        value={editFormData.region}
+                        onChange={(e) => setEditFormData({ ...editFormData, region: e.target.value, district: '' })}
+                        className="w-full h-12 px-4 rounded-xl border border-emerald-200 focus:border-emerald-500 outline-none transition-all bg-white"
+                      >
+                        <option value="">{lang === 'sw' ? '-- Chagua Mkoa --' : '-- Select Region --'}</option>
+                        {regions.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                      
+                      {editFormData.region && (
+                        <>
+                          <div className="flex gap-4 p-3 bg-white rounded-xl">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input 
+                                type="radio" 
+                                name="editOfficeLevel" 
+                                value="region"
+                                checked={editFormData.officeLevel === 'region'}
+                                onChange={() => setEditFormData({ ...editFormData, officeLevel: 'region', district: '' })}
+                                className="w-4 h-4 text-emerald-600"
+                              />
+                              <span className="text-sm font-medium text-stone-700">
+                                {lang === 'sw' ? 'Mkoa' : 'Regional'}
+                              </span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input 
+                                type="radio" 
+                                name="editOfficeLevel" 
+                                value="district"
+                                checked={editFormData.officeLevel === 'district'}
+                                onChange={() => setEditFormData({ ...editFormData, officeLevel: 'district' })}
+                                className="w-4 h-4 text-emerald-600"
+                              />
+                              <span className="text-sm font-medium text-stone-700">
+                                {lang === 'sw' ? 'Wilaya' : 'District'}
+                              </span>
+                            </label>
+                          </div>
+                          
+                          {editFormData.officeLevel === 'district' && (
+                            <select
+                              title={lang === 'sw' ? 'Chagua wilaya' : 'Select district'}
+                              aria-label={lang === 'sw' ? 'Chagua wilaya' : 'Select district'}
+                              value={editFormData.district}
+                              onChange={(e) => setEditFormData({ ...editFormData, district: e.target.value })}
+                              className="w-full h-12 px-4 rounded-xl border border-emerald-200 focus:border-emerald-500 outline-none transition-all bg-white"
+                            >
+                              <option value="">{lang === 'sw' ? '-- Chagua Wilaya --' : '-- Select District --'}</option>
+                              {getDistrictsForRegion(editFormData.region).map(d => (
+                                <option key={d} value={d}>{d}</option>
+                              ))}
+                            </select>
+                          )}
+                        </>
+                      )}
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingLocation(false)}
+                          className="flex-1 h-10 bg-stone-100 text-stone-600 rounded-xl font-bold hover:bg-stone-200 transition-all text-sm"
+                        >
+                          {lang === 'sw' ? 'Ghairi' : 'Cancel'}
+                        </button>
+                        <button
+                          onClick={handleUpdateLocation}
+                          disabled={updating || !editFormData.region}
+                          className="flex-1 h-10 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {updating ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                          {lang === 'sw' ? 'Hifadhi' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-emerald-800">
+                      <MapPin size={16} />
+                      <span className="font-bold">
+                        {selectedStaff.assigned_region || (lang === 'sw' ? 'Hakuna eneo' : 'No location')}
+                        {selectedStaff.assigned_district ? ` / ${selectedStaff.assigned_district}` : 
+                         selectedStaff.assigned_region ? ` (${lang === 'sw' ? 'Mkoa' : 'Regional'})` : ''}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-stone-100">
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      setSelectedStaff(null);
+                    }}
+                    className="flex-1 h-12 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-all"
+                  >
+                    {lang === 'sw' ? 'Funga' : 'Close'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteStaff(selectedStaff.id)}
+                    className="h-12 px-6 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all flex items-center gap-2"
+                  >
+                    <Trash2 size={18} />
+                    {lang === 'sw' ? 'Futa' : 'Delete'}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

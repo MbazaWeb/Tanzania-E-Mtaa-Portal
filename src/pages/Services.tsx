@@ -24,6 +24,12 @@ export function Services({ onSelectService }: ServicesProps) {
   const { lang, currency } = useLanguage();
   const { user } = useAuth();
 
+  console.log('Services rendering:', { 
+    servicesCount: HARDCODED_SERVICES.length, 
+    services: HARDCODED_SERVICES.map(s => s.name),
+    userVerified: user?.is_verified 
+  });
+
   const getServiceIcon = (name: string) => {
     if (name.includes('Mkazi')) return FileCheck2;
     if (name.includes('Utambulisho')) return Users2;
@@ -99,7 +105,7 @@ export function Services({ onSelectService }: ServicesProps) {
                   {user?.is_verified ? (
                     <>
                       {lang === 'sw' ? 'Omba Sasa' : 'Apply Now'}
-                      <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px] group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight size={16} className="sm:w-4.5 sm:h-4.5 group-hover:translate-x-1 transition-transform" />
                     </>
                   ) : (
                     <>

@@ -22,6 +22,22 @@ import { supabase, UserProfile } from '@/src/lib/supabase';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useToast } from '@/src/context/ToastContext';
 import { TANZANIA_ADDRESS_DATA } from '@/src/lib/addressData';
+import { cn } from '@/src/lib/utils';
+
+interface PendingProfileChange {
+  id: string;
+  user_id: string;
+  field_name: string;
+  old_value: string | null;
+  new_value: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  users?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
 
 export function StaffCitizenManagement() {
   const { lang, t } = useLanguage();
@@ -32,6 +48,9 @@ export function StaffCitizenManagement() {
   const [filter, setFilter] = useState<'all' | 'verified' | 'unverified'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'citizens' | 'profile-changes'>('citizens');
+  const [pendingChanges, setPendingChanges] = useState<PendingProfileChange[]>([]);
+  const [loadingChanges, setLoadingChanges] = useState(false);
 
   const [newCitizen, setNewCitizen] = useState({
     firstName: "",
@@ -49,60 +68,127 @@ export function StaffCitizenManagement() {
 
   useEffect(() => {
     fetchCitizens();
+    fetchPendingProfileChanges();
   }, []);
+
+  const fetchPendingProfileChanges = async () => {
+    setLoadingChanges(true);
+    try {
+      const { data, error } = await supabase
+        .from('profile_change_requests')
+        .select(`
+          *,
+          users:user_id (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching profile changes:', error);
+        setPendingChanges([]);
+        return;
+      }
+
+      setPendingChanges(data || []);
+    } catch (error) {
+      console.error('Exception fetching profile changes:', error);
+      setPendingChanges([]);
+    } finally {
+      setLoadingChanges(false);
+    }
+  };
+
+  const handleApproveChange = async (change: PendingProfileChange) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ [change.field_name]: change.new_value })
+        .eq('id', change.user_id);
+
+      if (updateError) throw updateError;
+
+      const { error: statusError } = await supabase
+        .from('profile_change_requests')
+        .update({ 
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', change.id);
+
+      if (statusError) throw statusError;
+
+      setPendingChanges(prev => prev.filter(c => c.id !== change.id));
+      showToast(lang === 'sw' ? 'Mabadiliko yameidhinishwa' : 'Change approved successfully', 'success');
+      fetchCitizens();
+    } catch (error: any) {
+      console.error('Error approving change:', error);
+      showToast(error.message || (lang === 'sw' ? 'Hitilafu kuidhinisha' : 'Error approving change'), 'error');
+    }
+  };
+
+  const handleRejectChange = async (change: PendingProfileChange) => {
+    try {
+      const { error } = await supabase
+        .from('profile_change_requests')
+        .update({ 
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', change.id);
+
+      if (error) throw error;
+
+      setPendingChanges(prev => prev.filter(c => c.id !== change.id));
+      showToast(lang === 'sw' ? 'Mabadiliko yamekataliwa' : 'Change rejected', 'info');
+    } catch (error: any) {
+      console.error('Error rejecting change:', error);
+      showToast(error.message || (lang === 'sw' ? 'Hitilafu kukataa' : 'Error rejecting change'), 'error');
+    }
+  };
+
+  const getFieldLabel = (field: string): string => {
+    const labels: Record<string, { en: string; sw: string }> = {
+      first_name: { en: 'First Name', sw: 'Jina la Kwanza' },
+      middle_name: { en: 'Middle Name', sw: 'Jina la Kati' },
+      last_name: { en: 'Last Name', sw: 'Jina la Mwisho' },
+      nida_number: { en: 'NIDA Number', sw: 'Namba ya NIDA' },
+      nationality: { en: 'Nationality', sw: 'Uraia' },
+      gender: { en: 'Gender', sw: 'Jinsia' },
+      phone: { en: 'Phone', sw: 'Simu' },
+      region: { en: 'Region', sw: 'Mkoa' },
+      district: { en: 'District', sw: 'Wilaya' },
+      ward: { en: 'Ward', sw: 'Kata' },
+      street: { en: 'Street', sw: 'Mtaa' }
+    };
+    return labels[field]?.[lang] || field;
+  };
 
   const fetchCitizens = async () => {
     setLoading(true);
     try {
-      // Demo Mode Fallback
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
-
-      if (!isConfigured) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const demoCitizens: UserProfile[] = JSON.parse(localStorage.getItem('demo_citizens') || '[]');
-        const baseCitizens: UserProfile[] = [
-          {
-            id: '1',
-            first_name: 'Juma',
-            middle_name: 'A',
-            last_name: 'Msuya',
-            email: 'juma@example.com',
-            phone: '0712345678',
-            role: 'citizen',
-            is_verified: true,
-            region: 'Dar es Salaam',
-            district: 'Ilala',
-            nida_number: '19900101-12345-00001-12'
-          },
-          {
-            id: '2',
-            first_name: 'Asha',
-            middle_name: 'K',
-            last_name: 'Bakari',
-            email: 'asha@example.com',
-            phone: '0787654321',
-            role: 'citizen',
-            is_verified: false,
-            region: 'Arusha',
-            district: 'Arusha MJ',
-            nida_number: '19920515-54321-00002-23'
-          }
-        ];
-        setCitizens([...baseCitizens, ...demoCitizens]);
-        return;
-      }
-
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('role', 'citizen')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching citizens:', error);
+        showToast(lang === 'sw' ? 'Hitilafu kupata wananchi' : 'Error fetching citizens', 'error');
+        setCitizens([]);
+        return;
+      }
+      
       setCitizens(data || []);
     } catch (error) {
       console.error('Error fetching citizens:', error);
+      setCitizens([]);
     } finally {
       setLoading(false);
     }
@@ -110,19 +196,6 @@ export function StaffCitizenManagement() {
 
   const handleVerify = async (citizenId: string) => {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
-
-      if (!isConfigured) {
-        const demoCitizens = JSON.parse(localStorage.getItem('demo_citizens') || '[]');
-        const updated = demoCitizens.map((c: any) => 
-          c.id === citizenId ? { ...c, is_verified: true } : c
-        );
-        localStorage.setItem('demo_citizens', JSON.stringify(updated));
-        setCitizens(prev => prev.map(c => c.id === citizenId ? { ...c, is_verified: true } : c));
-        return;
-      }
-
       const { error } = await supabase
         .from('users')
         .update({ is_verified: true })
@@ -140,17 +213,6 @@ export function StaffCitizenManagement() {
     if (!confirm(lang === 'sw' ? 'Je, una uhakika unataka kukataa uhakiki huu?' : 'Are you sure you want to decline this verification?')) return;
     
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
-
-      if (!isConfigured) {
-        const demoCitizens = JSON.parse(localStorage.getItem('demo_citizens') || '[]');
-        const updated = demoCitizens.filter((c: any) => c.id !== citizenId);
-        localStorage.setItem('demo_citizens', JSON.stringify(updated));
-        setCitizens(prev => prev.filter(c => c.id !== citizenId));
-        return;
-      }
-
       const { error } = await supabase
         .from('users')
         .delete()
@@ -268,7 +330,107 @@ export function StaffCitizenManagement() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] border border-stone-100 shadow-xl overflow-hidden">
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-stone-200">
+        <button
+          onClick={() => setActiveTab('citizens')}
+          className={cn(
+            "px-6 py-3 font-bold text-sm border-b-2 transition-all",
+            activeTab === 'citizens' 
+              ? "border-emerald-600 text-emerald-600" 
+              : "border-transparent text-stone-500 hover:text-stone-700"
+          )}
+        >
+          <Users size={16} className="inline mr-2" />
+          {lang === 'sw' ? 'Wananchi' : 'Citizens'} ({filteredCitizens.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('profile-changes')}
+          className={cn(
+            "px-6 py-3 font-bold text-sm border-b-2 transition-all relative",
+            activeTab === 'profile-changes' 
+              ? "border-emerald-600 text-emerald-600" 
+              : "border-transparent text-stone-500 hover:text-stone-700"
+          )}
+        >
+          <CheckCircle2 size={16} className="inline mr-2" />
+          {lang === 'sw' ? 'Mabadiliko ya Wasifu' : 'Profile Changes'}
+          {pendingChanges.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {pendingChanges.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'profile-changes' ? (
+        <div className="bg-white rounded-4xl border border-stone-100 shadow-xl overflow-hidden">
+          {loadingChanges ? (
+            <div className="p-20 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="animate-spin text-emerald-600" size={40} />
+              <p className="text-stone-500 font-bold">{lang === 'sw' ? 'Inapakia...' : 'Loading changes...'}</p>
+            </div>
+          ) : pendingChanges.length === 0 ? (
+            <div className="p-20 text-center">
+              <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="text-stone-300" size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-stone-900">{lang === 'sw' ? 'Hakuna Mabadiliko Yanayosubiri' : 'No Pending Changes'}</h3>
+              <p className="text-stone-500 font-medium">{lang === 'sw' ? 'Mabadiliko yote ya wasifu yameshughulikiwa' : 'All profile changes have been processed'}</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-stone-100">
+              {pendingChanges.map((change) => (
+                <div key={change.id} className="p-6 hover:bg-stone-50 transition-colors">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                        <CheckCircle2 size={20} className="text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-stone-900">
+                          {change.users?.first_name} {change.users?.last_name}
+                        </p>
+                        <p className="text-xs text-stone-500">{change.users?.email}</p>
+                        <div className="mt-2 bg-stone-50 rounded-lg p-3">
+                          <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">
+                            {getFieldLabel(change.field_name)}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-stone-500 line-through">{change.old_value || '-'}</span>
+                            <span className="text-stone-400">→</span>
+                            <span className="font-bold text-emerald-600">{change.new_value}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-stone-400 mt-2">
+                          {new Date(change.created_at).toLocaleString(lang === 'sw' ? 'sw-TZ' : 'en-US')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApproveChange(change)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all"
+                      >
+                        <Check size={16} />
+                        {lang === 'sw' ? 'Idhinisha' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => handleRejectChange(change)}
+                        className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-xl font-bold hover:bg-stone-200 transition-all"
+                      >
+                        <X size={16} />
+                        {lang === 'sw' ? 'Kataa' : 'Reject'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      <div className="bg-white rounded-4xl border border-stone-100 shadow-xl overflow-hidden">
         {loading ? (
           <div className="p-20 flex flex-col items-center justify-center gap-4">
             <Loader2 className="animate-spin text-emerald-600" size={40} />
@@ -359,7 +521,11 @@ export function StaffCitizenManagement() {
                             </button>
                           </>
                         )}
-                        <button className="p-2 hover:bg-stone-100 rounded-lg transition-colors text-stone-400">
+                        <button 
+                          className="p-2 hover:bg-stone-100 rounded-lg transition-colors text-stone-400"
+                          title={lang === 'sw' ? 'Chaguo zaidi' : 'More options'}
+                          aria-label={lang === 'sw' ? 'Chaguo zaidi' : 'More options'}
+                        >
                           <MoreVertical size={18} />
                         </button>
                       </div>
@@ -371,11 +537,12 @@ export function StaffCitizenManagement() {
           </div>
         )}
       </div>
+      )}
 
       {/* Add Citizen Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -404,6 +571,8 @@ export function StaffCitizenManagement() {
                 <button 
                   onClick={() => setShowAddModal(false)}
                   className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+                  title={lang === 'sw' ? 'Funga' : 'Close'}
+                  aria-label={lang === 'sw' ? 'Funga' : 'Close'}
                 >
                   <X size={20} />
                 </button>
@@ -419,6 +588,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.firstName}
                       onChange={(e) => setNewCitizen({...newCitizen, firstName: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Jina la Kwanza' : 'First Name'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -428,6 +598,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.middleName}
                       onChange={(e) => setNewCitizen({...newCitizen, middleName: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Jina la Kati' : 'Middle Name'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -438,6 +609,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.lastName}
                       onChange={(e) => setNewCitizen({...newCitizen, lastName: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Jina la Mwisho' : 'Last Name'}
                     />
                   </div>
                 </div>
@@ -451,6 +623,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.email}
                       onChange={(e) => setNewCitizen({...newCitizen, email: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Barua Pepe' : 'Email'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -461,6 +634,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.phone}
                       onChange={(e) => setNewCitizen({...newCitizen, phone: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Namba ya Simu' : 'Phone Number'}
                     />
                   </div>
                 </div>
@@ -505,6 +679,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.region}
                       onChange={(e) => setNewCitizen({...newCitizen, region: e.target.value, district: "", ward: ""})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Mkoa' : 'Region'}
                     >
                       <option value="">Select Region</option>
                       {TANZANIA_ADDRESS_DATA.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
@@ -518,6 +693,7 @@ export function StaffCitizenManagement() {
                       onChange={(e) => setNewCitizen({...newCitizen, district: e.target.value, ward: ""})}
                       disabled={!newCitizen.region}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium disabled:opacity-50"
+                      aria-label={lang === 'sw' ? 'Wilaya' : 'District'}
                     >
                       <option value="">Select District</option>
                       {TANZANIA_ADDRESS_DATA.find(r => r.name === newCitizen.region)?.districts.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
@@ -534,6 +710,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.ward}
                       onChange={(e) => setNewCitizen({...newCitizen, ward: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Kata' : 'Ward'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -544,6 +721,7 @@ export function StaffCitizenManagement() {
                       value={newCitizen.street}
                       onChange={(e) => setNewCitizen({...newCitizen, street: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                      aria-label={lang === 'sw' ? 'Mtaa' : 'Street'}
                     />
                   </div>
                 </div>
@@ -564,8 +742,4 @@ export function StaffCitizenManagement() {
       </AnimatePresence>
     </motion.div>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }

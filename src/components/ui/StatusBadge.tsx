@@ -12,6 +12,7 @@ export function StatusBadge({ status, lang = 'sw' }: StatusBadgeProps) {
     paid: "bg-amber-50 text-amber-600 border-amber-100",
     verified: "bg-indigo-50 text-indigo-600 border-amber-100",
     approved: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    pending_payment: "bg-orange-50 text-orange-600 border-orange-100",
     issued: "bg-emerald-600 text-white border-emerald-600",
     rejected: "bg-red-50 text-red-600 border-red-100",
   };
@@ -21,6 +22,7 @@ export function StatusBadge({ status, lang = 'sw' }: StatusBadgeProps) {
     paid: "Imelipiwa",
     verified: "Imethibitishwa",
     approved: "Imeidhinishwa",
+    pending_payment: "Inasubiri Malipo",
     issued: "Imetolewa",
     rejected: "Imekataliwa",
   };
@@ -30,6 +32,7 @@ export function StatusBadge({ status, lang = 'sw' }: StatusBadgeProps) {
     paid: "Paid",
     verified: "Verified",
     approved: "Approved",
+    pending_payment: "Pending Payment",
     issued: "Issued",
     rejected: "Rejected",
   };

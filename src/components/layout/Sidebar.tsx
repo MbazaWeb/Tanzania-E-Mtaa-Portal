@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Plus, 
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
+import { supabase } from '@/src/lib/supabase';
 import { SidebarItem } from '@/src/components/ui/SidebarItem';
 
 interface SidebarProps {
@@ -25,8 +26,52 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentView, setView }: SidebarProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { lang, t } = useLanguage();
+  const [actualRole, setActualRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Direct database check for actual role using RPC (bypasses RLS)
+  useEffect(() => {
+    if (!session || !session.user.id) {
+      setActualRole(null);
+      setLoading(false);
+      return;
+    }
+
+    const fetchActualRole = async () => {
+      try {
+        const { data, error } = await supabase
+          .rpc('get_user_profile', { user_id: session.user.id });
+
+        if (data && data.length > 0) {
+          console.log('RPC role fetch:', data[0].role);
+          setActualRole(data[0].role);
+        } else {
+          console.log('No user profile found, using auth context role');
+          setActualRole(user?.role || null);
+        }
+      } catch (err) {
+        console.error('Error fetching role from DB:', err);
+        setActualRole(user?.role || null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActualRole();
+  }, [session?.user.id, user?.role]);
+
+  // Use database role if available, otherwise fall back to context
+  const displayRole = actualRole || user?.role;
+
+  if (loading) {
+    return (
+      <aside className="w-64 bg-white border-r border-stone-200 hidden lg:flex flex-col p-4 gap-2">
+        <div className="text-sm text-stone-500">Loading...</div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="w-64 bg-white border-r border-stone-200 hidden lg:flex flex-col p-4 gap-2">
@@ -35,13 +80,13 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
         label={t.dashboard} 
         active={currentView === 'dashboard' || currentView === 'admin_dashboard' || currentView === 'staff_dashboard'} 
         onClick={() => {
-          if (user?.role === 'admin') setView('admin_dashboard');
-          else if (user?.role === 'staff') setView('staff_dashboard');
+          if (displayRole === 'admin') setView('admin_dashboard');
+          else if (displayRole === 'staff') setView('staff_dashboard');
           else setView('dashboard');
         }} 
       />
 
-      {user?.role === 'citizen' && (
+      {displayRole === 'citizen' && (
         <>
           <SidebarItem 
             icon={<Plus size={20} />} 
@@ -58,7 +103,7 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
         </>
       )}
 
-      {user?.role === 'admin' && (
+      {displayRole === 'admin' && (
         <>
           <SidebarItem 
             icon={<Shield size={20} />} 
@@ -99,7 +144,7 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
         </>
       )}
 
-      {user?.role === 'staff' && (
+      {displayRole === 'staff' && (
         <>
           <SidebarItem 
             icon={<Users size={20} />} 

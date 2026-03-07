@@ -90,24 +90,34 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       return;
     }
 
+    console.log('ApplicationReview: fetching applications for user:', user?.id, 'role:', user?.role);
+    
     let query = supabase
       .from('applications')
-      .select('*, services(*), users(*)')
+      .select('*')
       .order('created_at', { ascending: false });
 
-    // Staff sees only applications in their location
+    // Staff sees only applications in their location (if assigned)
     if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
       if (user.assigned_district) {
+        console.log('Filtering by district:', user.assigned_district);
         query = query.eq('district', user.assigned_district);
       } else if (user.assigned_region) {
+        console.log('Filtering by region:', user.assigned_region);
         query = query.eq('region', user.assigned_region);
+      } else {
+        console.log('Staff has no assigned location - showing all applications');
       }
     }
 
     const { data, error } = await query;
 
+    console.log('ApplicationReview fetch result:', { data, error, count: data?.length });
+
     if (!error && data) {
       setApplications(data);
+    } else if (error) {
+      console.error('Error fetching applications:', error);
     }
     setLoading(false);
   };
@@ -122,6 +132,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       status,
       feedback: feedback || null,
       ...(status === 'approved' && { approved_by: user?.id, approved_at: new Date().toISOString() }),
+      ...(status === 'pending_payment' && { approved_by: user?.id, approved_at: new Date().toISOString() }),
       ...(status === 'rejected' && { rejected_by: user?.id, rejected_at: new Date().toISOString() }),
       ...(status === 'returned' && { returned_by: user?.id, returned_at: new Date().toISOString() }),
       ...(status === 'issued' && { issued_by: user?.id, issued_at: new Date().toISOString() }),
@@ -139,6 +150,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       if (selectedApp?.id === id) {
         setSelectedApp(prev => prev ? { ...prev, ...updateData } : null);
       }
+      if (status === 'pending_payment') {
+        showToast(lang === 'sw' ? 'Maombi yameidhinishwa! Inasubiri malipo.' : 'Application approved! Awaiting payment.', 'success');
+      }
+      if (status === 'returned') {
+        showToast(lang === 'sw' ? 'Maombi yamerudishwa kwa mabadiliko.' : 'Application returned for changes.', 'success');
+      }
       setProcessing(false);
       return;
     }
@@ -152,6 +169,9 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       setApplications(prev => prev.map(app => app.id === id ? { ...app, ...updateData } : app));
       if (selectedApp?.id === id) {
         setSelectedApp(prev => prev ? { ...prev, ...updateData } : null);
+      }
+      if (status === 'pending_payment') {
+        showToast(lang === 'sw' ? 'Maombi yameidhinishwa! Inasubiri malipo.' : 'Application approved! Awaiting payment.', 'success');
       }
       if (status === 'returned') {
         showToast(lang === 'sw' ? 'Maombi yamerudishwa kwa mabadiliko.' : 'Application returned for changes.', 'success');
@@ -175,7 +195,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       return;
     }
 
-    await updateStatus(selectedApp.id, 'approved');
+    await updateStatus(selectedApp.id, 'pending_payment');
   };
 
   const handleReject = async () => {
@@ -265,6 +285,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
             <select 
               className="h-11 px-4 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white font-semibold text-sm"
               value={filter}
+              aria-label={lang === 'sw' ? 'Chuja kwa hali' : 'Filter by status'}
               onChange={(e) => {
                 setFilter(e.target.value as any);
                 setCurrentPage(1);
@@ -282,6 +303,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
             <select 
               className="h-11 px-4 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white font-semibold text-sm"
               value={regionFilter}
+              aria-label={lang === 'sw' ? 'Chuja kwa mkoa' : 'Filter by region'}
               onChange={(e) => {
                 setRegionFilter(e.target.value);
                 setDistrictFilter('all');
@@ -298,6 +320,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
               <select 
                 className="h-11 px-4 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white font-semibold text-sm"
                 value={districtFilter}
+                aria-label={lang === 'sw' ? 'Chuja kwa wilaya' : 'Filter by district'}
                 onChange={(e) => {
                   setDistrictFilter(e.target.value);
                   setCurrentPage(1);
@@ -313,6 +336,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
             <select 
               className="h-11 px-4 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white font-semibold text-sm"
               value={serviceFilter}
+              aria-label={lang === 'sw' ? 'Chuja kwa huduma' : 'Filter by service'}
               onChange={(e) => {
                 setServiceFilter(e.target.value);
                 setCurrentPage(1);
@@ -411,6 +435,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                 <button 
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(prev => prev - 1)}
+                  aria-label={lang === 'sw' ? 'Ukurasa uliopita' : 'Previous page'}
                   className="h-8 w-8 rounded-lg border border-stone-200 flex items-center justify-center hover:bg-white disabled:opacity-50 transition-all"
                 >
                   <ChevronRight className="h-4 w-4 rotate-180" />
@@ -432,6 +457,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                 <button 
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(prev => prev + 1)}
+                  aria-label={lang === 'sw' ? 'Ukurasa unaofuata' : 'Next page'}
                   className="h-8 w-8 rounded-lg border border-stone-200 flex items-center justify-center hover:bg-white disabled:opacity-50 transition-all"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -459,6 +485,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                     </span>
                     <button 
                       onClick={() => setSelectedApp(null)}
+                      aria-label={lang === 'sw' ? 'Funga' : 'Close'}
                       className="p-1 hover:bg-stone-200 rounded-full transition-colors"
                     >
                       <XCircle className="h-5 w-5 text-stone-400" />
@@ -752,12 +779,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       {/* Preview Modal */}
       <AnimatePresence>
         {showPreview && selectedApp && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[32px] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col"
+              className="bg-white rounded-4xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
                 <div className="flex items-center gap-3">
@@ -775,6 +802,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                 </div>
                 <button 
                   onClick={() => setShowPreview(false)}
+                  aria-label={lang === 'sw' ? 'Funga upelelezi' : 'Close preview'}
                   className="h-10 w-10 rounded-full hover:bg-stone-200 flex items-center justify-center transition-colors"
                 >
                   <XCircle size={24} className="text-stone-400" />
@@ -784,7 +812,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
               <div className="flex-1 overflow-y-auto p-8 bg-stone-100/50">
                 <div className="bg-white shadow-lg mx-auto max-w-[210mm] min-h-[297mm] p-[20mm] relative border border-stone-200">
                   {/* Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] rotate-[-45deg]">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] -rotate-45">
                     <h1 className="text-[120px] font-black tracking-tighter">E-MTAA</h1>
                   </div>
 
@@ -897,12 +925,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       {/* PDF Preview Modal */}
       <AnimatePresence>
         {showPDFPreview && selectedApp && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[32px] w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col"
+              className="bg-white rounded-4xl w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
                 <div className="flex items-center gap-3">
@@ -920,6 +948,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                 </div>
                 <button 
                   onClick={() => setShowPDFPreview(false)}
+                  aria-label={lang === 'sw' ? 'Funga PDF' : 'Close PDF preview'}
                   className="h-10 w-10 rounded-full hover:bg-stone-200 flex items-center justify-center transition-colors"
                 >
                   <XCircle size={24} className="text-stone-400" />
@@ -939,12 +968,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       {/* Full Application Details Modal */}
       <AnimatePresence>
         {showFullDetails && selectedApp && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-120 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="bg-white rounded-[32px] w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col"
+              className="bg-white rounded-4xl w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col"
             >
               <div className="p-8 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
                 <div className="flex items-center gap-4">
@@ -962,6 +991,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                 </div>
                 <button 
                   onClick={() => setShowFullDetails(false)}
+                  aria-label={lang === 'sw' ? 'Funga maelezo' : 'Close details'}
                   className="h-12 w-12 rounded-full hover:bg-stone-200 flex items-center justify-center transition-colors"
                 >
                   <XCircle size={32} className="text-stone-400" />
@@ -1019,7 +1049,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                       if (key === 'attachments' || key === 'applicant_type' || key === 'representative_name') return null;
                       return (
                         <div key={key} className="flex flex-col gap-1 border-b border-stone-50 pb-2">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{key.replace(/_/g, ' ')}</span>
                           <span className="text-base font-bold text-stone-800">{String(value)}</span>
                         </div>
                       );
@@ -1143,12 +1173,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       {/* Attachment Preview Modal */}
       <AnimatePresence>
         {previewFile && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="fixed inset-0 z-130 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-[32px] w-full max-w-4xl h-[80vh] overflow-hidden shadow-2xl flex flex-col"
+              className="bg-white rounded-4xl w-full max-w-4xl h-[80vh] overflow-hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-stone-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1157,6 +1187,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                 </div>
                 <button 
                   onClick={() => setPreviewFile(null)}
+                  aria-label={lang === 'sw' ? 'Funga faili' : 'Close file preview'}
                   className="h-10 w-10 rounded-full hover:bg-stone-100 flex items-center justify-center transition-colors"
                 >
                   <XCircle size={24} className="text-stone-400" />

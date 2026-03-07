@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard } from 'lucide-react';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
@@ -25,6 +25,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [previewApp, setPreviewApp] = useState<Application | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
 
   const handleAccept = async (app: Application) => {
     if (!user) return;
@@ -76,7 +77,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
 
   const statuses = [
     { value: 'all', label: lang === 'sw' ? 'Zote' : 'All' },
-    { value: 'submitted', label: lang === 'sw' ? 'Imetunwa' : 'Submitted' },
+    { value: 'submitted', label: lang === 'sw' ? 'Imetumwa' : 'Submitted' },
+    { value: 'pending_payment', label: lang === 'sw' ? 'Inasubiri Malipo' : 'Pending Payment' },
     { value: 'paid', label: lang === 'sw' ? 'Imelipiwa' : 'Paid' },
     { value: 'processing', label: lang === 'sw' ? 'Inashughulikiwa' : 'Processing' },
     { value: 'issued', label: lang === 'sw' ? 'Imetolewa' : 'Issued' },
@@ -113,6 +115,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
             <select 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label={lang === 'sw' ? 'Chuja kwa hali' : 'Filter by status'}
               className="pl-10 pr-8 h-11 bg-white border border-stone-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 transition-all appearance-none"
             >
               {statuses.map(s => (
@@ -148,7 +151,11 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
             </thead>
             <tbody className="divide-y divide-stone-100">
               {filteredAndSortedApplications.map(app => (
-                <tr key={app.id} className="hover:bg-stone-50 transition-colors">
+                <tr 
+                  key={app.id} 
+                  className="hover:bg-stone-50 transition-colors cursor-pointer"
+                  onClick={() => setSelectedApp(app)}
+                >
                   <td className="px-6 py-4">
                     <p className="font-semibold text-stone-800">{lang === 'sw' ? (app as any).services?.name : (app as any).services?.name_en || (app as any).services?.name}</p>
                   </td>
@@ -158,7 +165,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     <div className="flex flex-col gap-1">
                       <StatusBadge status={app.status} lang={lang} />
                       {app.status === 'returned' && app.feedback && (
-                        <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 max-w-[200px]">
+                        <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 max-w-50">
                           <p className="text-[10px] font-bold text-amber-800 uppercase mb-1">
                             {lang === 'sw' ? 'Marekebisho:' : 'Changes Needed:'}
                           </p>
@@ -191,7 +198,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                       })()
                     )}
 
-                    {app.status === 'submitted' && (app as any).services?.fee > 0 ? (
+                    {app.status === 'pending_payment' && (app as any).services?.fee > 0 ? (
                       <button 
                         onClick={() => onPay(app)}
                         className="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200"
@@ -231,7 +238,11 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-stone-100">
           {filteredAndSortedApplications.map(app => (
-            <div key={app.id} className="p-4 space-y-4">
+            <div 
+              key={app.id} 
+              className="p-4 space-y-4 cursor-pointer hover:bg-stone-50 transition-colors"
+              onClick={() => setSelectedApp(app)}
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-bold text-stone-900">{lang === 'sw' ? (app as any).services?.name : (app as any).services?.name_en || (app as any).services?.name}</p>
@@ -240,7 +251,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge status={app.status} lang={lang} />
                   {app.status === 'returned' && app.feedback && (
-                    <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 text-right max-w-[180px]">
+                    <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 text-right max-w-45">
                       <p className="text-[9px] font-bold text-amber-800 uppercase">
                         {lang === 'sw' ? 'Marekebisho:' : 'Changes Needed:'}
                       </p>
@@ -280,7 +291,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                   })()
                 )}
 
-                {app.status === 'submitted' && (app as any).services?.fee > 0 ? (
+                {app.status === 'pending_payment' && (app as any).services?.fee > 0 ? (
                   <button 
                     onClick={() => onPay(app)}
                     className="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all"
@@ -332,6 +343,213 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
           onClose={() => setPreviewApp(null)} 
         />
       )}
+
+      {/* Application Details Modal */}
+      <AnimatePresence>
+        {selectedApp && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedApp(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="bg-linear-to-r from-emerald-600 to-emerald-700 text-white p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {lang === 'sw' ? (selectedApp as any).services?.name : (selectedApp as any).services?.name_en || (selectedApp as any).services?.name}
+                    </h2>
+                    <p className="text-emerald-100 font-mono mt-1 text-sm">{selectedApp.application_number}</p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedApp(null)}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                    aria-label={lang === 'sw' ? 'Funga' : 'Close'}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="mt-4">
+                  <StatusBadge status={selectedApp.status} lang={lang} />
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                {/* Application Info */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-stone-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-stone-500 text-xs mb-1">
+                      <Calendar size={14} />
+                      {lang === 'sw' ? 'Tarehe ya Kuwasilisha' : 'Submission Date'}
+                    </div>
+                    <p className="font-semibold text-stone-800">{new Date(selectedApp.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="bg-stone-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-stone-500 text-xs mb-1">
+                      <CreditCard size={14} />
+                      {lang === 'sw' ? 'Ada ya Huduma' : 'Service Fee'}
+                    </div>
+                    <p className="font-semibold text-stone-800">
+                      {(selectedApp as any).services?.fee > 0 
+                        ? formatCurrency((selectedApp as any).services?.fee, currency) 
+                        : (lang === 'sw' ? 'Bure' : 'Free')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feedback for returned applications */}
+                {selectedApp.status === 'returned' && selectedApp.feedback && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                    <p className="text-sm font-bold text-amber-800 mb-1">
+                      {lang === 'sw' ? 'Marekebisho Yanayohitajika:' : 'Changes Required:'}
+                    </p>
+                    <p className="text-amber-700">{selectedApp.feedback}</p>
+                  </div>
+                )}
+
+                {/* Form Data Details */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                    <FileText size={16} className="text-emerald-600" />
+                    {lang === 'sw' ? 'Taarifa za Maombi' : 'Application Details'}
+                  </h3>
+                  <div className="bg-stone-50 rounded-xl p-4 space-y-3">
+                    {Object.entries(selectedApp.form_data || {}).map(([key, value]) => {
+                      // Skip internal/technical fields
+                      if (key.startsWith('_') || key === 'timestamp') return null;
+                      
+                      // Format key for display
+                      const displayKey = key
+                        .replace(/_/g, ' ')
+                        .replace(/([A-Z])/g, ' $1')
+                        .replace(/^./, str => str.toUpperCase());
+                      
+                      return (
+                        <div key={key} className="flex justify-between items-start py-2 border-b border-stone-100 last:border-0">
+                          <span className="text-sm text-stone-500 capitalize">{displayKey}</span>
+                          <span className="text-sm font-medium text-stone-800 text-right max-w-xs truncate">
+                            {typeof value === 'object' ? JSON.stringify(value) : String(value || '-')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Timestamps */}
+                {(selectedApp.approved_at || selectedApp.paid_at || selectedApp.issued_at) && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                      <Clock size={16} className="text-emerald-600" />
+                      {lang === 'sw' ? 'Hatua za Maendeleo' : 'Progress Timeline'}
+                    </h3>
+                    <div className="bg-stone-50 rounded-xl p-4 space-y-2">
+                      {selectedApp.approved_at && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-stone-500">{lang === 'sw' ? 'Imeidhinishwa:' : 'Approved:'}</span>
+                          <span className="font-medium text-stone-800">{new Date(selectedApp.approved_at).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedApp.paid_at && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-stone-500">{lang === 'sw' ? 'Imelipwa:' : 'Paid:'}</span>
+                          <span className="font-medium text-stone-800">{new Date(selectedApp.paid_at).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedApp.issued_at && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-stone-500">{lang === 'sw' ? 'Imetolewa:' : 'Issued:'}</span>
+                          <span className="font-medium text-stone-800">{new Date(selectedApp.issued_at).toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer / Actions */}
+              <div className="border-t border-stone-100 p-4 bg-stone-50">
+                {/* Accept Button for Buyer/Tenant */}
+                {user && (() => {
+                  const isBuyer = (selectedApp as any).services?.name.includes('Mauziano') && selectedApp.form_data.buyer_nida === user.nida_number;
+                  const isTenant = (selectedApp as any).services?.name.includes('PANGISHA') && selectedApp.form_data.tenant_nida === user.nida_number;
+                  const alreadyAccepted = isBuyer ? selectedApp.buyer_accepted : isTenant ? selectedApp.tenant_accepted : false;
+
+                  if ((isBuyer || isTenant) && !alreadyAccepted && selectedApp.status !== 'rejected') {
+                    return (
+                      <button 
+                        onClick={() => { handleAccept(selectedApp); setSelectedApp(null); }}
+                        disabled={processingId === selectedApp.id}
+                        className="w-full bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2 mb-3"
+                      >
+                        {processingId === selectedApp.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                        {lang === 'sw' ? 'Kubali Mkataba' : 'Accept Agreement'}
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Payment Button */}
+                {selectedApp.status === 'pending_payment' && (selectedApp as any).services?.fee > 0 && (
+                  <button 
+                    onClick={() => { onPay(selectedApp); setSelectedApp(null); }}
+                    className="w-full bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2"
+                  >
+                    <CreditCard size={18} />
+                    {t.payNow} ({formatCurrency((selectedApp as any).services?.fee, currency)})
+                  </button>
+                )}
+
+                {/* Preview & Download for Issued */}
+                {selectedApp.status === 'issued' && (
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => { setPreviewApp(selectedApp); setSelectedApp(null); }}
+                      className="flex-1 bg-stone-200 text-stone-700 px-6 py-3 rounded-xl font-bold hover:bg-stone-300 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Eye size={18} />
+                      {lang === 'sw' ? 'Hakiki Hati' : 'Preview Document'}
+                    </button>
+                    <PDFDownloadLink 
+                      document={<DocumentRenderer application={selectedApp} service={(selectedApp as any).services} />} 
+                      fileName={`Certificate_${selectedApp.application_number}.pdf`}
+                      className="flex-1 bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                    >
+                      {({ loading }) => (
+                        <>
+                          <FileText size={18} />
+                          {loading ? '...' : (lang === 'sw' ? 'Pakua PDF' : 'Download PDF')}
+                        </>
+                      )}
+                    </PDFDownloadLink>
+                  </div>
+                )}
+
+                {/* Close button for other statuses */}
+                {selectedApp.status !== 'pending_payment' && selectedApp.status !== 'issued' && (
+                  <button 
+                    onClick={() => setSelectedApp(null)}
+                    className="w-full bg-stone-200 text-stone-700 px-6 py-3 rounded-xl font-bold hover:bg-stone-300 transition-all"
+                  >
+                    {lang === 'sw' ? 'Funga' : 'Close'}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

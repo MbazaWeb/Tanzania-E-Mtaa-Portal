@@ -120,47 +120,85 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Demo Mode Fallback - Check if Supabase is configured or if the URL is a placeholder
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
-
-      if (!isConfigured) {
-        console.warn('Supabase not configured or invalid URL, using demo login');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simple demo logic: any email works, but 'admin@e-mtaa.go.tz' gives admin role
-        const demoId = email === 'admin@e-mtaa.go.tz' ? 'demo-admin-id' : 
-                       email === 'staff@e-mtaa.go.tz' ? 'demo-staff-id' : 
-                       email === 'mwananchi@e-mtaa.go.tz' ? 'demo-mwananchi-id' : 'demo-user-id';
-        localStorage.setItem('demo_session', demoId);
-        await fetchUserProfile(demoId);
-        onClose();
-        return;
-      }
-
+      // Use Supabase for authentication
+      console.log('Login attempt with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        console.error('Supabase auth error:', error.message, error.status);
         if (error.message.includes('Email not confirmed')) {
           throw new Error(lang === 'sw' ? 'Barua pepe yako bado haijathibitishwa. Tafadhali kagua barua pepe yako.' : 'Your email is not confirmed yet. Please check your inbox.');
         }
         throw error;
       }
 
+      console.log('Login successful, user ID:', data.user?.id);
+
       if (data.user) {
-        // Force profile fetch to ensure state is updated
+        const adminEmails = ['mbazzacodes@gmail.com'];
+        const userEmail = data.user.email?.toLowerCase() || '';
+        const isAdminEmail = adminEmails.includes(userEmail);
+        
+        console.log('User email:', userEmail, 'Is admin email:', isAdminEmail);
+
+        // Try to fetch existing profile
+        const { data: profileData, error: profileError } = await supabase
+          .rpc('get_user_profile', { user_id: data.user.id });
+
+        console.log('Profile fetch result:', profileData?.length || 0, 'rows');
+
+        // If no profile exists, create one
+        if (!profileData || profileData.length === 0) {
+          // Only for new profiles, set role based on admin email list
+          const newUserRole = isAdminEmail ? 'admin' : 'citizen';
+          console.log('Creating new profile with role:', newUserRole);
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: userEmail,
+              first_name: data.user.user_metadata?.first_name || 'User',
+              last_name: data.user.user_metadata?.last_name || '',
+              middle_name: data.user.user_metadata?.middle_name || '',
+              phone: data.user.user_metadata?.phone || '',
+              role: newUserRole,
+              is_verified: false,
+              nationality: 'Tanzanian',
+              country_of_citizenship: 'Tanzania'
+            });
+
+          if (insertError && !insertError.message.includes('duplicate')) {
+            console.error('Error creating profile:', insertError);
+          }
+        } else if (profileData && profileData.length > 0) {
+          // Profile exists - ONLY update role if it's an admin email AND current role is not admin
+          const existingRole = profileData[0].role;
+          console.log('Existing role:', existingRole);
+          
+          // Only force admin role for admin emails, never downgrade existing roles
+          if (isAdminEmail && existingRole !== 'admin') {
+            console.log('Admin email detected, upgrading role to admin');
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({ role: 'admin' })
+              .eq('id', data.user.id);
+            
+            if (updateError) {
+              console.error('Error updating role:', updateError);
+            }
+          }
+          // Do NOT change role for non-admin emails - preserve staff/viewer/approver roles
+        }
+
+        // Fetch profile again after creation/update
         await fetchUserProfile(data.user.id);
       }
       
       onClose();
     } catch (err: any) {
+      console.error('Login error caught:', err);
       if (err.message === 'Failed to fetch' || err.name === 'TypeError' || err.message?.includes('NetworkError')) {
-        showToast(lang === 'sw' ? 'Hitilafu ya muunganisho. Unahamishiwa kwenye mfumo wa majaribio (Demo Mode).' : 'Connection error. Switching to Demo Mode.', 'warning');
-        const demoId = email === 'admin@e-mtaa.go.tz' ? 'demo-admin-id' : 
-                       email === 'staff@e-mtaa.go.tz' ? 'demo-staff-id' : 'demo-user-id';
-        localStorage.setItem('demo_session', demoId);
-        await fetchUserProfile(demoId);
-        onClose();
+        showToast(lang === 'sw' ? 'Hitilafu ya muunganisho kwa Supabase. Tafadhali hakika kuwa umeimarisha mfumo.' : 'Connection error to Supabase. Please ensure the system is properly configured.', 'error');
       } else {
         showToast(err.message, 'error');
       }
@@ -254,48 +292,6 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
     setLoading(true);
 
     try {
-      // Demo Mode Fallback
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
-
-      if (!isConfigured) {
-        console.warn('Supabase not configured or invalid URL, using demo signup');
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const demoId = 'demo-new-user-' + Math.random().toString(36).substring(7);
-        
-        // Create demo profile
-        const newProfile: UserProfile = {
-          id: demoId,
-          first_name: regForm.firstName.toUpperCase(),
-          middle_name: regForm.middleName.toUpperCase(),
-          last_name: regForm.lastName.toUpperCase(),
-          email: regForm.email,
-          phone: regForm.phone,
-          nida_number: regForm.nidaNumber,
-          sex: regForm.sex,
-          nationality: regForm.nationality,
-          region: regForm.region,
-          district: regForm.district,
-          ward: regForm.ward,
-          street: regForm.street,
-          role: 'citizen',
-          is_verified: false, // Self-signup starts as unverified
-          created_at: new Date().toISOString()
-        };
-
-        // Save to demo database
-        const existing = JSON.parse(localStorage.getItem('demo_citizens') || '[]');
-        localStorage.setItem('demo_citizens', JSON.stringify([newProfile, ...existing]));
-        
-        localStorage.setItem('demo_session', demoId);
-        await fetchUserProfile(demoId);
-        
-        showToast(lang === 'sw' ? 'Usajili wa majaribio umekamilika! Tafadhali subiri uhakiki.' : 'Demo signup successful! Please wait for verification.', 'success');
-        onClose();
-        return;
-      }
-
       // Check if email already exists in our users table
       const { data: existingEmail } = await supabase
         .from('users')
@@ -369,7 +365,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-0 sm:p-6">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -400,6 +396,8 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
           <button 
             onClick={onClose}
             className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+            title="Close"
+            aria-label="Close dialog"
           >
             <X size={20} />
           </button>
@@ -457,6 +455,8 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                            title={showPassword ? 'Hide password' : 'Show password'}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                           >
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                           </button>
@@ -493,6 +493,8 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           setForgotPasswordStep(1);
                         }}
                         className="p-2 hover:bg-stone-100 rounded-full text-stone-400"
+                        title="Back"
+                        aria-label="Back to login"
                       >
                         <ArrowLeft size={20} />
                       </button>
@@ -526,6 +528,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             onChange={(e) => setForgotPasswordForm({...forgotPasswordForm, nidaNumber: e.target.value})}
                             className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
                             placeholder="NIDA Number"
+                            aria-label="NIDA Number"
                           />
                         </div>
 
@@ -538,6 +541,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             onChange={(e) => setForgotPasswordForm({...forgotPasswordForm, firstName: e.target.value})}
                             className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
                             placeholder="First Name"
+                            aria-label="First Name"
                           />
                         </div>
 
@@ -550,6 +554,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             onChange={(e) => setForgotPasswordForm({...forgotPasswordForm, phone: e.target.value})}
                             className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
                             placeholder="Phone Number"
+                            aria-label="Phone Number"
                           />
                         </div>
 
@@ -633,8 +638,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                 </div>
                 <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-emerald-600 transition-all duration-500"
-                    style={{ width: `${(regStep / 3) * 100}%` }}
+                    className={`h-full bg-emerald-600 transition-all duration-500 ${regStep === 1 ? 'w-1/3' : regStep === 2 ? 'w-2/3' : 'w-full'}`}
                   ></div>
                 </div>
               </div>
@@ -665,6 +669,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             }
                           }}
                           className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                          aria-label="Nationality"
                         >
                           <option value="Mtanzania">{lang === 'sw' ? 'Mtanzania' : 'Tanzanian'}</option>
                           <option value="Mwingine">{lang === 'sw' ? 'Mgeni / Mkaazi' : 'Foreigner / Resident'}</option>
@@ -678,6 +683,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             value={regForm.countryOfCitizenship}
                             onChange={(e) => updateRegForm('countryOfCitizenship', e.target.value)}
                             className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                            aria-label="Country of Citizenship"
                           >
                             <option value="">{lang === 'sw' ? 'Chagua Nchi' : 'Select Country'}</option>
                             {COUNTRIES.map(c => (
@@ -699,6 +705,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                               onChange={(e) => updateRegForm('nidaNumber', formatNIDA(e.target.value))}
                               className="flex-1 h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
                               placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
+                              aria-label="NIDA Number"
                             />
                             <button 
                               type="button"
@@ -721,7 +728,8 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           value={regForm.passportNumber}
                           onChange={(e) => updateRegForm('passportNumber', e.target.value)}
                           className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
-                          placeholder="AB123456"
+                          placeholder={lang === 'sw' ? 'Ingiza Namba ya Pasipoti' : 'Enter Passport Number'}
+                          aria-label="Passport Number"
                         />
                       </div>
                     )}
@@ -735,6 +743,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           onChange={(e) => updateRegForm('firstName', e.target.value)}
                           readOnly={nidaVerified}
                           className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium disabled:opacity-70"
+                          aria-label="First Name"
                         />
                       </div>
                       <div className="space-y-2">
@@ -745,6 +754,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           onChange={(e) => updateRegForm('middleName', e.target.value)}
                           readOnly={nidaVerified}
                           className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium disabled:opacity-70"
+                          aria-label="Middle Name"
                         />
                       </div>
                       <div className="space-y-2">
@@ -755,6 +765,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           onChange={(e) => updateRegForm('lastName', e.target.value)}
                           readOnly={nidaVerified}
                           className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium disabled:opacity-70"
+                          aria-label="Last Name"
                         />
                       </div>
                     </div>
@@ -809,6 +820,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             }
                           }}
                           className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                          aria-label="Country"
                         >
                           {COUNTRIES.map(c => (
                             <option key={c} value={c}>{c}</option>
@@ -828,6 +840,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                                 updateRegForm('ward', '');
                               }}
                               className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                              aria-label="Region"
                             >
                               <option value="">{lang === 'sw' ? 'Chagua Mkoa' : 'Select Region'}</option>
                               {TANZANIA_ADDRESS_DATA.map(r => (
@@ -846,6 +859,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                               }}
                               disabled={!regForm.region}
                               className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium disabled:opacity-50"
+                              aria-label="District"
                             >
                               <option value="">{lang === 'sw' ? 'Chagua Wilaya' : 'Select District'}</option>
                               {TANZANIA_ADDRESS_DATA.find(r => r.name === regForm.region)?.districts.map(d => (
@@ -861,6 +875,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                               onChange={(e) => updateRegForm('ward', e.target.value)}
                               disabled={!regForm.district}
                               className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium disabled:opacity-50"
+                              aria-label="Ward"
                             >
                               <option value="">{lang === 'sw' ? 'Chagua Kata' : 'Select Ward'}</option>
                               {TANZANIA_ADDRESS_DATA.find(r => r.name === regForm.region)
@@ -880,6 +895,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                               onChange={(e) => updateRegForm('street', e.target.value)}
                               className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
                               placeholder={lang === 'sw' ? 'Ingiza Mtaa' : 'Enter Street'}
+                              aria-label="Street"
                             />
                           </div>
                         </div>
@@ -889,8 +905,9 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           <textarea 
                             value={regForm.street}
                             onChange={(e) => updateRegForm('street', e.target.value)}
-                            className="w-full p-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium min-h-[100px]"
+                            className="w-full p-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium min-h-24"
                             placeholder={lang === 'sw' ? 'Ingiza anwani yako kamili' : 'Enter your full address'}
+                            aria-label="Address"
                           />
                         </div>
                       )}
@@ -914,7 +931,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                       </button>
                       <button 
                         onClick={() => setRegStep(3)}
-                        className="flex-[2] h-16 bg-stone-900 text-white rounded-2xl font-bold text-lg hover:bg-stone-800 transition-all flex items-center justify-center gap-2"
+                        className="flex-2 h-16 bg-stone-900 text-white rounded-2xl font-bold text-lg hover:bg-stone-800 transition-all flex items-center justify-center gap-2"
                       >
                         {lang === 'sw' ? 'Endelea' : 'Continue'} <ArrowRight size={20} />
                       </button>
@@ -941,6 +958,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             value={regForm.phone}
                             onChange={(val) => updateRegForm('phone', val)}
                             className="w-full h-14 pl-12 pr-4 bg-stone-50 border border-stone-200 rounded-2xl focus-within:ring-2 focus-within:ring-emerald-500 transition-all font-medium"
+                            aria-label="Phone Number"
                           />
                         </div>
                       </div>
@@ -956,6 +974,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                             className="w-full h-14 pl-12 pr-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
                             placeholder="juma@example.com"
                             required
+                            aria-label="Email Address"
                           />
                         </div>
                       </div>
@@ -972,6 +991,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                               className="w-full h-14 pl-12 pr-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
                               placeholder="••••••••"
                               required
+                              aria-label="Password"
                             />
                           </div>
                         </div>
@@ -986,6 +1006,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                               className="w-full h-14 pl-12 pr-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
                               placeholder="••••••••"
                               required
+                              aria-label="Confirm Password"
                             />
                           </div>
                         </div>
@@ -1011,7 +1032,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
                           </button>
                           <button 
                             disabled={loading}
-                            className="flex-[2] h-16 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 disabled:opacity-50 group"
+                            className="flex-2 h-16 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-3 disabled:opacity-50 group"
                             type="submit"
                           >
                             {loading ? <Loader2 className="animate-spin" /> : (

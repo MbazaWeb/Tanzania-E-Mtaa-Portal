@@ -62,7 +62,7 @@ export interface Application {
   user_id: string;
   service_id: string;
   form_data: any;
-  status: 'submitted' | 'paid' | 'verified' | 'pending_review' | 'approved' | 'issued' | 'rejected' | 'returned';
+  status: 'submitted' | 'paid' | 'verified' | 'pending_review' | 'approved' | 'pending_payment' | 'issued' | 'rejected' | 'returned';
   application_number: string;
   assigned_staff_id?: string;
   buyer_accepted?: boolean;

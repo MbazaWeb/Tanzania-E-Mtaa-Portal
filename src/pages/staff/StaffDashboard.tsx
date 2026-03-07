@@ -71,6 +71,7 @@ export function StaffDashboard() {
         return;
       }
 
+      console.log('Staff dashboard: fetching stats...');
       let statsQuery = supabase.from('applications').select('status', { count: 'exact' });
       
       if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
@@ -81,7 +82,9 @@ export function StaffDashboard() {
         }
       }
 
-      const { data: allApps } = await statsQuery;
+      const { data: allApps, error: statsError } = await statsQuery;
+      
+      console.log('Staff stats result:', { allApps, statsError });
       
       if (allApps) {
         setStats({
@@ -93,24 +96,34 @@ export function StaffDashboard() {
         });
       }
 
-      // Fetch recent applications
+      // Fetch recent applications (without service join to avoid empty results)
+      console.log('Staff dashboard: fetching applications...');
       let query = supabase
         .from('applications')
-        .select('*, services(*), users(*)')
+        .select('*')
         .order('created_at', { ascending: false });
 
+      // Only filter by location if assigned - otherwise, staff can see all (small mtaa)
       if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
         if (user.assigned_district) {
+          console.log('Filtering applications by district:', user.assigned_district);
           query = query.eq('district', user.assigned_district);
         } else if (user.assigned_region) {
+          console.log('Filtering applications by region:', user.assigned_region);
           query = query.eq('region', user.assigned_region);
+        } else {
+          console.log('Staff has no assigned location - showing all applications');
         }
       }
 
       const { data, error } = await query.limit(10);
 
+      console.log('Staff applications result:', { data, error, count: data?.length });
+
       if (!error && data) {
         setApplications(data);
+      } else if (error) {
+        console.error('Error fetching applications:', error);
       }
     } catch (error) {
       console.error('Error fetching staff dashboard data:', error);
@@ -171,7 +184,7 @@ export function StaffDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-[32px] border border-stone-100 shadow-xl overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-4xl border border-stone-100 shadow-xl overflow-hidden">
           <div className="px-8 py-6 border-b border-stone-100 flex items-center justify-between">
             <h3 className="text-xl font-bold text-stone-900">{lang === 'sw' ? 'Maombi ya Karibuni' : 'Recent Applications'}</h3>
             <button className="text-sm font-bold text-emerald-600 hover:underline">{lang === 'sw' ? 'Tazama Yote' : 'View All'}</button>
@@ -204,7 +217,7 @@ export function StaffDashboard() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-stone-900 rounded-[32px] p-8 text-white relative overflow-hidden shadow-xl">
+          <div className="bg-stone-900 rounded-4xl p-8 text-white relative overflow-hidden shadow-xl">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
               <UserCheck size={20} className="text-emerald-400" />
               {lang === 'sw' ? 'Njia za Mkato' : 'Quick Access'}
@@ -229,7 +242,7 @@ export function StaffDashboard() {
                 </div>
               </button>
             </div>
-            <Building2 className="absolute right-[-30px] bottom-[-30px] h-48 w-48 text-white/5 rotate-12" />
+            <Building2 className="absolute -right-7.5 -bottom-7.5 h-48 w-48 text-white/5 rotate-12" />
           </div>
         </div>
       </div>
