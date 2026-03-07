@@ -238,16 +238,24 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   service,
   qrCodeDataUrl
 }) => {
-  const formData = application.form_data || {};
+  // Debug logging
+  console.log('DocumentRenderer - application:', application);
+  console.log('DocumentRenderer - service:', service);
+  
+  const formData = application?.form_data || {};
   // Support both 'user' and 'users' property names
-  const user = (application as any).users || application.user || {};
+  const user = (application as any)?.users || application?.user || {};
   const template = service?.document_template || {};
   const documentType = template.document_type || service?.name || '';
 
-  const issueDate = application.issued_at ? new Date(application.issued_at) : new Date();
-  const qrUrl = qrCodeDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`https://e-serikali-mtaa.vercel.app/verify/${application.application_number}`)}`;
+  console.log('DocumentRenderer - documentType:', documentType);
+  console.log('DocumentRenderer - user:', user);
+  console.log('DocumentRenderer - formData:', formData);
 
-  const fullName = `${user.first_name || ''} ${user.middle_name || ''} ${user.last_name || ''}`.replace(/\s+/g, ' ').trim();
+  const issueDate = application?.issued_at ? new Date(application.issued_at) : new Date();
+  const qrUrl = qrCodeDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`https://e-serikali-mtaa.vercel.app/verify/${application?.application_number || 'unknown'}`)}`;
+
+  const fullName = `${user.first_name || ''} ${user.middle_name || ''} ${user.last_name || ''}`.replace(/\s+/g, ' ').trim() || 'Mwananchi';
   const gender = user.gender || user.sex || formData.gender || '';
   const genderSwahili = gender === 'Male' || gender === 'M' || gender === 'me' ? 'ME' : gender === 'Female' || gender === 'F' || gender === 'ke' ? 'KE' : gender.toUpperCase();
 
