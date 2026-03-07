@@ -187,7 +187,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
               console.error('Error updating role:', updateError);
             }
           }
-          // Do NOT change role for non-admin emails - preserve staff/viewer/approver roles
+          // Do NOT change role for non-admin emails - preserve staff roles
         }
 
         // Fetch profile again after creation/update

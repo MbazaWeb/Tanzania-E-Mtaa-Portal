@@ -68,7 +68,7 @@ export default function App() {
       } else if (user.role === 'staff' && view !== 'staff_dashboard') {
         console.log('Redirecting to staff_dashboard');
         setView('staff_dashboard');
-      } else if ((user.role === 'citizen' || user.role === 'viewer' || user.role === 'approver') && view === 'admin_dashboard') {
+      } else if (user.role === 'citizen' && view === 'admin_dashboard') {
         console.log('Redirecting to citizen dashboard');
         setView('dashboard');
       }

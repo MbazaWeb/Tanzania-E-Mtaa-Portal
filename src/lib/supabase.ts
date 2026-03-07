@@ -5,7 +5,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type UserRole = 'citizen' | 'staff' | 'admin' | 'viewer' | 'approver';
+export type UserRole = 'citizen' | 'staff' | 'admin';
 
 export interface VirtualOffice {
   id: string;

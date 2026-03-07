@@ -47,7 +47,7 @@ export function StaffDashboard() {
         
         // Filter by location if staff has assigned region/district
         const filteredApps = demoApps.filter((app: any) => {
-          if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
+          if (['staff', 'admin'].includes(user?.role || '')) {
             if (user.assigned_district && app.district !== user.assigned_district) return false;
             if (user.assigned_region && app.region !== user.assigned_region) return false;
           }
@@ -74,7 +74,7 @@ export function StaffDashboard() {
       console.log('Staff dashboard: fetching stats...');
       let statsQuery = supabase.from('applications').select('status', { count: 'exact' });
       
-      if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
+      if (['staff', 'admin'].includes(user?.role || '')) {
         if (user.assigned_district) {
           statsQuery = statsQuery.eq('district', user.assigned_district);
         } else if (user.assigned_region) {
@@ -104,7 +104,7 @@ export function StaffDashboard() {
         .order('created_at', { ascending: false });
 
       // Only filter by location if assigned - otherwise, staff can see all (small mtaa)
-      if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
+      if (['staff', 'admin'].includes(user?.role || '')) {
         if (user.assigned_district) {
           console.log('Filtering applications by district:', user.assigned_district);
           query = query.eq('district', user.assigned_district);

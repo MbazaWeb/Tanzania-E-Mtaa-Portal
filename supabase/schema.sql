@@ -3,11 +3,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 2. Create Custom Types
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('citizen', 'staff', 'admin', 'viewer', 'approver');
+    CREATE TYPE user_role AS ENUM ('citizen', 'staff', 'admin');
 EXCEPTION
     WHEN duplicate_object THEN 
-        ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'viewer';
-        ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'approver';
+        NULL;
 END $$;
 
 DO $$ BEGIN

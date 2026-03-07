@@ -73,7 +73,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       
       // Filter by staff location if applicable
       let filtered = demoApps;
-      if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
+      if (['staff', 'admin'].includes(user?.role || '')) {
         if (user.assigned_district) {
           filtered = demoApps.filter((app: any) => app.district === user.assigned_district);
         } else if (user.assigned_region) {
@@ -98,7 +98,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       .order('created_at', { ascending: false });
 
     // Staff sees only applications in their location (if assigned)
-    if (['staff', 'approver', 'viewer'].includes(user?.role || '')) {
+    if (['staff', 'admin'].includes(user?.role || '')) {
       if (user.assigned_district) {
         console.log('Filtering by district:', user.assigned_district);
         query = query.eq('district', user.assigned_district);
@@ -600,7 +600,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                   </div>
 
                   {/* Actions */}
-                  {['admin', 'staff', 'approver'].includes(user?.role || '') && (
+                  {['admin', 'staff'].includes(user?.role || '') && (
                     <div className="space-y-3 pt-4 border-t border-stone-100">
                       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{lang === 'sw' ? 'Hatua za Uhakiki' : 'Verification Actions'}</p>
                       
@@ -746,17 +746,6 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                             {lang === 'sw' ? 'Toa Hati (Issue)' : 'Issue Document'}
                           </button>
                         )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {user?.role === 'viewer' && (
-                    <div className="pt-4 border-t border-stone-100">
-                      <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 flex items-center gap-3 text-stone-500">
-                        <Shield size={18} />
-                        <p className="text-xs font-bold">
-                          {lang === 'sw' ? 'Akaunti yako ni ya "Mtazamaji" tu. Huna ruhusa ya kufanya mabadiliko.' : 'Your account is "Viewer" only. You do not have permission to make changes.'}
-                        </p>
                       </div>
                     </div>
                   )}
@@ -1120,7 +1109,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
 
               <div className="p-8 border-t border-stone-100 bg-stone-50 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  {['admin', 'staff', 'approver'].includes(user?.role || '') && ['submitted', 'paid', 'verified', 'pending_review'].includes(selectedApp.status) && (
+                  {['admin', 'staff'].includes(user?.role || '') && ['submitted', 'paid', 'verified', 'pending_review'].includes(selectedApp.status) && (
                     <>
                       <button 
                         disabled={processing || 

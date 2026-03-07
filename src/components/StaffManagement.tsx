@@ -54,7 +54,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
   const [editingRole, setEditingRole] = useState(false);
   const [editingLocation, setEditingLocation] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    role: '' as 'viewer' | 'approver' | 'admin' | 'staff',
+    role: '' as 'staff' | 'admin',
     region: '',
     district: '',
     officeLevel: 'region' as 'region' | 'district'
@@ -63,7 +63,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
   
   const [newStaff, setNewStaff] = useState({
     email: '',
-    role: 'viewer' as 'viewer' | 'approver' | 'admin' | 'staff'
+    role: 'staff' as 'staff' | 'admin'
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -133,7 +133,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .in('role', ['staff', 'admin', 'viewer', 'approver']);
+        .in('role', ['staff', 'admin']);
       
       if (error) {
         console.error('Error fetching staff:', error);
@@ -307,7 +307,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
   };
 
   const resetForm = () => {
-    setNewStaff({ email: '', role: 'viewer' });
+    setNewStaff({ email: '', role: 'staff' });
     setSelectedRegion('');
     setSelectedDistrict('');
     setOfficeLevel('region');
@@ -353,7 +353,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
   const handleStaffClick = (staffMember: UserProfile) => {
     setSelectedStaff(staffMember);
     setEditFormData({
-      role: staffMember.role as 'viewer' | 'approver' | 'admin' | 'staff',
+      role: staffMember.role as 'staff' | 'admin',
       region: staffMember.assigned_region || '',
       district: staffMember.assigned_district || '',
       officeLevel: staffMember.assigned_district ? 'district' : 'region'
@@ -514,11 +514,9 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                     <span className={cn(
                       "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
                       s.role === 'admin' ? "bg-purple-100 text-purple-600" : 
-                      s.role === 'approver' ? "bg-emerald-100 text-emerald-600" :
-                      s.role === 'viewer' ? "bg-blue-100 text-blue-600" :
-                      "bg-stone-100 text-stone-600"
+                      "bg-emerald-100 text-emerald-600"
                     )}>
-                      {s.role}
+                      {s.role === 'admin' ? (lang === 'sw' ? 'Msimamizi' : 'Admin') : (lang === 'sw' ? 'Mtumishi' : 'Staff')}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -722,10 +720,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                       value={newStaff.role}
                       onChange={(e) => setNewStaff({...newStaff, role: e.target.value as any})}
                     >
-                      <option value="viewer">{lang === 'sw' ? 'Mtazamaji (Viewer)' : 'Viewer'}</option>
-                      <option value="staff">{lang === 'sw' ? 'Mtumishi (Staff)' : 'Staff Member'}</option>
-                      <option value="approver">{lang === 'sw' ? 'Muidhinishaji (Approver)' : 'Approver'}</option>
-                      <option value="admin">{lang === 'sw' ? 'Msimamizi (Admin)' : 'Administrator'}</option>
+                      <option value="staff">{lang === 'sw' ? 'Mtumishi - Kutazama, Kuidhinisha, Kuthibitisha' : 'Staff - View, Approve, Verify'}</option>
+                      <option value="admin">{lang === 'sw' ? 'Msimamizi - Kuunda, Kuidhinisha, Kudhibiti' : 'Admin - Create, Approve, Manage'}</option>
                     </select>
                   </div>
 
@@ -912,10 +908,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                         onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as any })}
                         className="w-full h-12 px-4 rounded-xl border border-purple-200 focus:border-purple-500 outline-none transition-all bg-white"
                       >
-                        <option value="viewer">{lang === 'sw' ? 'Mtazamaji (Viewer)' : 'Viewer'}</option>
-                        <option value="staff">{lang === 'sw' ? 'Mtumishi (Staff)' : 'Staff Member'}</option>
-                        <option value="approver">{lang === 'sw' ? 'Muidhinishaji (Approver)' : 'Approver'}</option>
-                        <option value="admin">{lang === 'sw' ? 'Msimamizi (Admin)' : 'Administrator'}</option>
+                        <option value="staff">{lang === 'sw' ? 'Mtumishi - Kutazama, Kuidhinisha, Kuthibitisha' : 'Staff - View, Approve, Verify'}</option>
+                        <option value="admin">{lang === 'sw' ? 'Msimamizi - Kuunda, Kuidhinisha, Kudhibiti' : 'Admin - Create, Approve, Manage'}</option>
                       </select>
                       <div className="flex gap-2">
                         <button
@@ -938,14 +932,10 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ lang }) => {
                     <span className={cn(
                       "px-3 py-1.5 rounded-lg text-sm font-bold",
                       selectedStaff.role === 'admin' ? "bg-purple-200 text-purple-700" : 
-                      selectedStaff.role === 'approver' ? "bg-emerald-200 text-emerald-700" :
-                      selectedStaff.role === 'viewer' ? "bg-blue-200 text-blue-700" :
-                      "bg-stone-200 text-stone-700"
+                      "bg-emerald-200 text-emerald-700"
                     )}>
-                      {selectedStaff.role === 'admin' ? (lang === 'sw' ? 'Msimamizi' : 'Administrator') :
-                       selectedStaff.role === 'approver' ? (lang === 'sw' ? 'Muidhinishaji' : 'Approver') :
-                       selectedStaff.role === 'viewer' ? (lang === 'sw' ? 'Mtazamaji' : 'Viewer') :
-                       (lang === 'sw' ? 'Mtumishi' : 'Staff Member')}
+                      {selectedStaff.role === 'admin' ? (lang === 'sw' ? 'Msimamizi' : 'Admin') :
+                       (lang === 'sw' ? 'Mtumishi' : 'Staff')}
                     </span>
                   )}
                 </div>
