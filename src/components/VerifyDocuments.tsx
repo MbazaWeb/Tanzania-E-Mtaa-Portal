@@ -9,25 +9,56 @@ import {
   Search,
   Shield,
   Clock,
-  FileText
+  FileText,
+  User,
+  MapPin,
+  Calendar,
+  CreditCard,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Language } from "@/src/lib/i18n";
 import { useTranslation } from "@/src/lib/i18n";
-import { supabase } from "@/src/lib/supabase";
+import { supabase, UserRole } from "@/src/lib/supabase";
 import { cn } from "@/src/lib/utils";
+
+// Helper functions for masking sensitive data (partial view for citizens)
+const maskName = (firstName?: string, lastName?: string): string => {
+  if (!firstName && !lastName) return '***';
+  const first = firstName ? firstName.charAt(0) + '***' : '';
+  const last = lastName ? lastName.charAt(0) + '***' : '';
+  return `${first} ${last}`.trim();
+};
+
+const maskNida = (nida?: string): string => {
+  if (!nida) return '***';
+  if (nida.length < 8) return '***' + nida.slice(-3);
+  return nida.slice(0, 4) + '****' + nida.slice(-4);
+};
+
+const maskPhone = (phone?: string): string => {
+  if (!phone) return '***';
+  if (phone.length < 6) return '***';
+  return phone.slice(0, 4) + '****' + phone.slice(-2);
+};
 
 interface VerifyDocumentsProps {
   lang: Language;
   onBack: () => void;
+  userRole?: UserRole; // Optional - if not provided, defaults to public/citizen view
 }
 
 export function VerifyDocuments({
   lang,
   onBack,
+  userRole = 'citizen', // Default to citizen (partial view)
 }: VerifyDocumentsProps) {
   const t = useTranslation(lang);
   const [qrInput, setQrInput] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Check if user has elevated privileges (admin or staff)
+  const hasFullAccess = userRole === 'admin' || userRole === 'staff';
   const [verificationStatus, setVerificationStatus] = useState<
     "pending" | "verified" | "invalid" | null
   >(null);
@@ -40,10 +71,49 @@ export function VerifyDocuments({
     setVerificationStatus("pending");
 
     try {
-      // Search for application by number (which acts as the verification code/QR data)
+      // First try demo applications from localStorage
+      const demoApps = JSON.parse(localStorage.getItem('demo_applications') || '[]');
+      const demoApp = demoApps.find((app: any) => 
+        app.application_number?.toUpperCase() === qrInput.trim().toUpperCase()
+      );
+      
+      if (demoApp) {
+        // Found in demo data
+        const demoUser = JSON.parse(localStorage.getItem('demo_user') || '{}');
+        setVerificationStatus("verified");
+        setVerifiedDocument({
+          id: demoApp.id,
+          type: demoApp.service_name,
+          name: demoApp.service_name,
+          issueDate: new Date(demoApp.updated_at || demoApp.created_at).toLocaleDateString(),
+          issuedAt: demoApp.issued_at,
+          verificationCode: demoApp.application_number,
+          status: demoApp.status,
+          // Basic info (shown to everyone)
+          applicantMasked: maskName(demoUser.first_name, demoUser.last_name),
+          // Full info (only for admin/staff)
+          applicantFull: `${demoUser.first_name || ''} ${demoUser.middle_name || ''} ${demoUser.last_name || ''}`.trim(),
+          nidaNumber: demoUser.nida_number,
+          nidaMasked: maskNida(demoUser.nida_number),
+          phone: demoUser.phone,
+          phoneMasked: maskPhone(demoUser.phone),
+          email: demoUser.email,
+          region: demoApp.region || demoUser.region,
+          district: demoApp.district || demoUser.district,
+          ward: demoApp.ward || demoUser.ward,
+          street: demoApp.street || demoUser.street,
+          formData: demoApp.form_data,
+          paidAt: demoApp.paid_at,
+          serviceFee: demoApp.service_fee
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Search for application by number in Supabase
       const { data, error } = await supabase
         .from('applications')
-        .select('*, services(*), users(*)')
+        .select('*, users(*)')
         .eq('application_number', qrInput.trim().toUpperCase())
         .single();
 
@@ -52,14 +122,31 @@ export function VerifyDocuments({
         setVerifiedDocument(null);
       } else {
         setVerificationStatus("verified");
+        const user = data.users;
         setVerifiedDocument({
           id: data.id,
-          type: data.services?.name_en || data.services?.name,
-          name: data.services?.name,
+          type: data.service_name,
+          name: data.service_name,
           issueDate: new Date(data.updated_at || data.created_at).toLocaleDateString(),
+          issuedAt: data.issued_at,
           verificationCode: data.application_number,
           status: data.status,
-          applicant: `${data.users?.first_name} ${data.users?.last_name}`
+          // Basic info (shown to everyone)
+          applicantMasked: maskName(user?.first_name, user?.last_name),
+          // Full info (only for admin/staff)  
+          applicantFull: `${user?.first_name || ''} ${user?.middle_name || ''} ${user?.last_name || ''}`.trim(),
+          nidaNumber: user?.nida_number,
+          nidaMasked: maskNida(user?.nida_number),
+          phone: user?.phone,
+          phoneMasked: maskPhone(user?.phone),
+          email: user?.email,
+          region: data.region || user?.region,
+          district: data.district || user?.district,
+          ward: data.ward || user?.ward,
+          street: data.street || user?.street,
+          formData: data.form_data,
+          paidAt: data.paid_at,
+          serviceFee: data.service_fee
         });
       }
     } catch (err) {
@@ -197,6 +284,7 @@ export function VerifyDocuments({
                 <CheckCircle2 className="h-12 w-12 text-emerald-500 opacity-20" />
               </div>
               
+              {/* Verification Success Banner */}
               <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                 <CheckCircle2 className="h-8 w-8 text-emerald-600 shrink-0" />
                 <div>
@@ -211,31 +299,130 @@ export function VerifyDocuments({
                 </div>
               </div>
 
+              {/* Access Mode Indicator */}
+              <div className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold",
+                hasFullAccess 
+                  ? "bg-blue-50 text-blue-700 border border-blue-200" 
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+              )}>
+                {hasFullAccess ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {hasFullAccess 
+                  ? (lang === "sw" ? "Mtazamo Kamili (Admin/Staff)" : "Full View (Admin/Staff)")
+                  : (lang === "sw" ? "Mtazamo wa Umma" : "Public View")
+                }
+              </div>
+
+              {/* Document Details */}
               <div className="space-y-4 bg-stone-50 rounded-2xl p-6">
+                {/* Document Type - Always shown */}
                 <div className="flex justify-between items-center border-b border-stone-200 pb-3">
-                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
+                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
                     {lang === "sw" ? "Aina ya Hati:" : "Document Type:"}
                   </span>
                   <span className="font-bold text-stone-900">
                     {verifiedDocument.name}
                   </span>
                 </div>
+
+                {/* Applicant Name - Masked for public, full for staff */}
                 <div className="flex justify-between items-center border-b border-stone-200 pb-3">
-                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
+                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                    <User className="h-4 w-4" />
                     {lang === "sw" ? "Miliki ya:" : "Issued To:"}
                   </span>
                   <span className="font-bold text-stone-900">
-                    {verifiedDocument.applicant}
+                    {hasFullAccess ? verifiedDocument.applicantFull : verifiedDocument.applicantMasked}
                   </span>
                 </div>
+
+                {/* NIDA Number - Only for staff/admin */}
+                {hasFullAccess && verifiedDocument.nidaNumber && (
+                  <div className="flex justify-between items-center border-b border-stone-200 pb-3">
+                    <span className="text-sm font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {lang === "sw" ? "Namba ya NIDA:" : "NIDA Number:"}
+                    </span>
+                    <span className="font-mono font-bold text-stone-900">
+                      {verifiedDocument.nidaNumber}
+                    </span>
+                  </div>
+                )}
+
+                {/* NIDA Masked - For public view */}
+                {!hasFullAccess && verifiedDocument.nidaMasked && (
+                  <div className="flex justify-between items-center border-b border-stone-200 pb-3">
+                    <span className="text-sm font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {lang === "sw" ? "Namba ya NIDA:" : "NIDA Number:"}
+                    </span>
+                    <span className="font-mono font-bold text-stone-400">
+                      {verifiedDocument.nidaMasked}
+                    </span>
+                  </div>
+                )}
+
+                {/* Phone - Only for staff/admin */}
+                {hasFullAccess && verifiedDocument.phone && (
+                  <div className="flex justify-between items-center border-b border-stone-200 pb-3">
+                    <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
+                      {lang === "sw" ? "Simu:" : "Phone:"}
+                    </span>
+                    <span className="font-bold text-stone-900">
+                      {verifiedDocument.phone}
+                    </span>
+                  </div>
+                )}
+
+                {/* Location - Full for staff, region only for public */}
                 <div className="flex justify-between items-center border-b border-stone-200 pb-3">
-                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
+                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    {lang === "sw" ? "Mahali:" : "Location:"}
+                  </span>
+                  <span className="font-bold text-stone-900 text-right">
+                    {hasFullAccess 
+                      ? [verifiedDocument.region, verifiedDocument.district, verifiedDocument.ward, verifiedDocument.street].filter(Boolean).join(', ')
+                      : verifiedDocument.region || 'Tanzania'
+                    }
+                  </span>
+                </div>
+
+                {/* Issue Date - Always shown */}
+                <div className="flex justify-between items-center border-b border-stone-200 pb-3">
+                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
                     {lang === "sw" ? "Tarehe ya Kutolewa:" : "Issue Date:"}
                   </span>
                   <span className="font-bold text-stone-900">
-                    {verifiedDocument.issueDate}
+                    {verifiedDocument.issuedAt 
+                      ? new Date(verifiedDocument.issuedAt).toLocaleDateString()
+                      : verifiedDocument.issueDate
+                    }
                   </span>
                 </div>
+
+                {/* Status - Always shown */}
+                <div className="flex justify-between items-center border-b border-stone-200 pb-3">
+                  <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
+                    {lang === "sw" ? "Hali:" : "Status:"}
+                  </span>
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold",
+                    verifiedDocument.status === 'issued' ? "bg-emerald-100 text-emerald-700" :
+                    verifiedDocument.status === 'approved' ? "bg-blue-100 text-blue-700" :
+                    verifiedDocument.status === 'rejected' ? "bg-red-100 text-red-700" :
+                    "bg-amber-100 text-amber-700"
+                  )}>
+                    {verifiedDocument.status === 'issued' ? (lang === 'sw' ? 'Imetolewa' : 'Issued') :
+                     verifiedDocument.status === 'approved' ? (lang === 'sw' ? 'Imekubaliwa' : 'Approved') :
+                     verifiedDocument.status === 'rejected' ? (lang === 'sw' ? 'Imekataliwa' : 'Rejected') :
+                     verifiedDocument.status}
+                  </span>
+                </div>
+
+                {/* Verification Code - Always shown */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
                     {lang === "sw" ? "Namba ya Uhakiki:" : "Verification Code:"}
@@ -244,7 +431,40 @@ export function VerifyDocuments({
                     {verifiedDocument.verificationCode}
                   </span>
                 </div>
+
+                {/* Payment Info - Only for staff/admin */}
+                {hasFullAccess && verifiedDocument.paidAt && (
+                  <div className="flex justify-between items-center pt-3 border-t border-stone-200">
+                    <span className="text-sm font-bold text-stone-500 uppercase tracking-wider">
+                      {lang === "sw" ? "Malipo:" : "Payment:"}
+                    </span>
+                    <span className="font-bold text-emerald-600">
+                      TZS {verifiedDocument.serviceFee?.toLocaleString() || '0'} - {new Date(verifiedDocument.paidAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Form Data - Only for staff/admin */}
+              {hasFullAccess && verifiedDocument.formData && Object.keys(verifiedDocument.formData).length > 0 && (
+                <div className="bg-blue-50 rounded-2xl p-4 space-y-2">
+                  <p className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-3">
+                    {lang === "sw" ? "Data ya Fomu (Staff Only)" : "Form Data (Staff Only)"}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {Object.entries(verifiedDocument.formData)
+                      .filter(([key]) => !key.includes('payment_data'))
+                      .slice(0, 8)
+                      .map(([key, value]) => (
+                        <div key={key} className="flex flex-col">
+                          <span className="text-blue-500 text-xs capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="font-medium text-blue-900 truncate">{String(value)}</span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button

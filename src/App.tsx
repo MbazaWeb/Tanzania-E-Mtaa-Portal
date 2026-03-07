@@ -354,7 +354,7 @@ export default function App() {
                 animate={{ opacity: 1, x: 0 }}
                 className="py-12"
               >
-                <VerifyDocuments lang={lang} onBack={() => setView('dashboard')} />
+                <VerifyDocuments lang={lang} onBack={() => setView('dashboard')} userRole={user?.role || 'citizen'} />
               </motion.div>
             )}
 
