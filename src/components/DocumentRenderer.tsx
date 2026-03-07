@@ -1,30 +1,25 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font, PDFViewer } from '@react-pdf/renderer';
 
-// Register fonts with error handling
-try {
-  Font.register({
-    family: 'Inter',
-    src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf',
-  });
-
-  Font.register({
-    family: 'InterBold',
-    src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf',
-    fontWeight: 'bold',
-  });
-} catch (e) {
-  console.warn('Font registration failed, using fallback fonts');
-}
+// Register Inter font family with all required variants
+Font.register({
+  family: 'Inter',
+  fonts: [
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf', fontWeight: 400 },
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf', fontWeight: 400, fontStyle: 'italic' },
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCm4LM_Z_8z-GcV9O9km8tmAto.ttf', fontWeight: 700 },
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCm4LM_Z_8z-GcV9O9km8tmAto.ttf', fontWeight: 700, fontStyle: 'italic' },
+  ]
+});
 
 // Use production URL for Tanzania coat of arms (CORS-friendly from same origin)
 const TANZANIA_LOGO_URL = "https://e-serikali-mtaa.vercel.app/tz-coat-of-arms.png";
 
-// Styles matching the official Tanzania government document format
+// Styles matching the official Tanzania government document format - use Helvetica as fallback
 const styles = StyleSheet.create({
   page: {
     padding: 0,
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
     backgroundColor: '#FAF8F0',
   },
   outerBorder: {
@@ -253,7 +248,8 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   console.log('DocumentRenderer - formData:', formData);
 
   const issueDate = application?.issued_at ? new Date(application.issued_at) : new Date();
-  const qrUrl = qrCodeDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`https://e-serikali-mtaa.vercel.app/verify/${application?.application_number || 'unknown'}`)}`;
+  // QR code with explicit format=png for @react-pdf/renderer compatibility
+  const qrUrl = qrCodeDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=png&data=${encodeURIComponent(`https://e-serikali-mtaa.vercel.app/verify/${application?.application_number || 'unknown'}`)}`;
 
   const fullName = `${user.first_name || ''} ${user.middle_name || ''} ${user.last_name || ''}`.replace(/\s+/g, ' ').trim() || 'Mwananchi';
   const gender = user.gender || user.sex || formData.gender || '';
