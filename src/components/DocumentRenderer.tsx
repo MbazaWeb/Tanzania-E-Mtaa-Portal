@@ -234,7 +234,8 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   qrCodeDataUrl
 }) => {
   const formData = application.form_data || {};
-  const user = application.user || {};
+  // Support both 'user' and 'users' property names
+  const user = (application as any).users || application.user || {};
   const template = service?.document_template || {};
   const documentType = template.document_type || service?.name || '';
 

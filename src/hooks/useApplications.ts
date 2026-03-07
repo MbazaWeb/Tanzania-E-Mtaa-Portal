@@ -26,7 +26,8 @@ export function useApplications(user: UserProfile | null) {
         .filter((app: any) => app.user_id === user.id)
         .map((app: any) => ({
           ...app,
-          services: getServiceById(app.service_id) || { name: app.service_name || 'Service', fee: 0 }
+          services: getServiceById(app.service_id) || { name: app.service_name || 'Service', fee: 0 },
+          users: user // Add user data for document generation
         }));
       setApplications(userApps);
       setLoading(false);
@@ -51,7 +52,8 @@ export function useApplications(user: UserProfile | null) {
     if (data) {
       const appsWithServices = data.map((app: any) => ({
         ...app,
-        services: getServiceById(app.service_id) || { name: 'Service', fee: 0 }
+        services: getServiceById(app.service_id) || { name: 'Service', fee: 0 },
+        users: user // Add user data for document generation
       }));
       setApplications(appsWithServices);
     }
