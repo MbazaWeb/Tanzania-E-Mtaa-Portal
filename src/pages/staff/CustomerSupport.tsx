@@ -13,7 +13,9 @@ import {
   AlertCircle, 
   Loader2,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard,
+  ThumbsUp
 } from 'lucide-react';
 import { supabase, Application } from '@/src/lib/supabase';
 import { useLanguage } from '@/src/context/LanguageContext';
@@ -100,6 +102,44 @@ export function CustomerSupport() {
     setProcessing(false);
   };
 
+  const handleConfirmPayment = async () => {
+    if (!application) return;
+    if (!confirm(lang === 'sw' ? 'Je, una uhakika unataka kuthibitisha malipo ya maombi haya?' : 'Are you sure you want to confirm payment for this application?')) return;
+
+    setProcessing(true);
+    const { error } = await supabase
+      .from('applications')
+      .update({ status: 'issued' })
+      .eq('id', application.id);
+
+    if (error) {
+      showToast(error.message, 'error');
+    } else {
+      showToast(lang === 'sw' ? 'Malipo yamethibitishwa. Hati imetolewa.' : 'Payment confirmed. Document issued.', 'success');
+      setApplication({ ...application, status: 'issued' });
+    }
+    setProcessing(false);
+  };
+
+  const handleApprove = async () => {
+    if (!application) return;
+    if (!confirm(lang === 'sw' ? 'Je, una uhakika unataka kuidhinisha maombi haya?' : 'Are you sure you want to approve this application?')) return;
+
+    setProcessing(true);
+    const { error } = await supabase
+      .from('applications')
+      .update({ status: 'pending_payment' })
+      .eq('id', application.id);
+
+    if (error) {
+      showToast(error.message, 'error');
+    } else {
+      showToast(lang === 'sw' ? 'Maombi yameidhinishwa. Inasubiri malipo.' : 'Application approved. Pending payment.', 'success');
+      setApplication({ ...application, status: 'pending_payment' });
+    }
+    setProcessing(false);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -172,6 +212,10 @@ export function CustomerSupport() {
                       <span className="font-bold text-stone-900">{(application as any).services?.name}</span>
                     </div>
                     <div className="flex justify-between items-center border-b border-stone-200 pb-3">
+                      <span className="text-sm font-bold text-stone-500">{lang === 'sw' ? 'Tarehe na Muda' : 'Date & Time'}</span>
+                      <span className="font-bold text-stone-900">{new Date(application.created_at || '').toLocaleDateString()} {new Date(application.created_at || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-stone-200 pb-3">
                       <span className="text-sm font-bold text-stone-500">{lang === 'sw' ? 'Hali' : 'Status'}</span>
                       <StatusBadge status={application.status} lang={lang} />
                     </div>
@@ -201,23 +245,50 @@ export function CustomerSupport() {
                 </div>
               </div>
 
-              <div className="pt-8 border-t border-stone-100 flex flex-wrap gap-4">
-                <button 
-                  onClick={handleRefund}
-                  disabled={processing || application.status === 'submitted'}
-                  className="flex-1 h-14 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100 disabled:opacity-50"
-                >
-                  <RefreshCw size={20} />
-                  {lang === 'sw' ? 'Rejesha Malipo (Refund)' : 'Process Refund'}
-                </button>
-                <button className="flex-1 h-14 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-all flex items-center justify-center gap-2">
-                  <MessageSquare size={20} />
-                  {lang === 'sw' ? 'Tuma Ujumbe' : 'Send Message'}
-                </button>
-                <button className="flex-1 h-14 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100">
-                  <CheckCircle2 size={20} />
-                  {lang === 'sw' ? 'Tatua Tatizo' : 'Resolve Issue'}
-                </button>
+              <div className="pt-8 border-t border-stone-100 space-y-4">
+                {/* Primary Actions Based on Status */}
+                <div className="flex flex-wrap gap-4">
+                  {application.status === 'pending_payment' && (
+                    <button 
+                      onClick={handleConfirmPayment}
+                      disabled={processing}
+                      className="flex-1 h-14 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 disabled:opacity-50"
+                    >
+                      <CreditCard size={20} />
+                      {lang === 'sw' ? 'Thibitisha Malipo' : 'Confirm Payment'}
+                    </button>
+                  )}
+                  {(application.status === 'submitted' || application.status === 'verified') && (
+                    <button 
+                      onClick={handleApprove}
+                      disabled={processing}
+                      className="flex-1 h-14 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-100 disabled:opacity-50"
+                    >
+                      <ThumbsUp size={20} />
+                      {lang === 'sw' ? 'Idhinisha Maombi' : 'Approve Application'}
+                    </button>
+                  )}
+                </div>
+                
+                {/* Secondary Actions */}
+                <div className="flex flex-wrap gap-4">
+                  <button 
+                    onClick={handleRefund}
+                    disabled={processing || application.status === 'submitted'}
+                    className="flex-1 h-14 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100 disabled:opacity-50"
+                  >
+                    <RefreshCw size={20} />
+                    {lang === 'sw' ? 'Rejesha Malipo (Refund)' : 'Process Refund'}
+                  </button>
+                  <button className="flex-1 h-14 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-all flex items-center justify-center gap-2">
+                    <MessageSquare size={20} />
+                    {lang === 'sw' ? 'Tuma Ujumbe' : 'Send Message'}
+                  </button>
+                  <button className="flex-1 h-14 bg-stone-900 text-white rounded-2xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2">
+                    <CheckCircle2 size={20} />
+                    {lang === 'sw' ? 'Tatua Tatizo' : 'Resolve Issue'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

@@ -406,7 +406,10 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                         <p className="text-sm font-semibold text-stone-700">{(app as any).services?.name}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-stone-500">{new Date(app.created_at).toLocaleDateString()}</p>
+                        <div className="flex flex-col">
+                          <p className="text-sm text-stone-600">{new Date(app.created_at).toLocaleDateString()}</p>
+                          <p className="text-xs text-stone-400">{new Date(app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider", getStatusStyle(app.status))}>
@@ -974,7 +977,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                       {lang === 'sw' ? 'Maelezo Kamili ya Maombi' : 'Full Application Details'}
                     </h2>
                     <p className="text-sm text-stone-500 font-medium">
-                      {selectedApp.application_number} • {new Date(selectedApp.created_at).toLocaleDateString()}
+                      {selectedApp.application_number} • {new Date(selectedApp.created_at).toLocaleDateString()} {new Date(selectedApp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>

@@ -160,7 +160,12 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     <p className="font-semibold text-stone-800">{lang === 'sw' ? (app as any).services?.name : (app as any).services?.name_en || (app as any).services?.name}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-stone-500 font-mono">{app.application_number}</td>
-                  <td className="px-6 py-4 text-sm text-stone-500">{new Date(app.created_at).toLocaleDateString()}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <p className="text-sm text-stone-600">{new Date(app.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-stone-400">{new Date(app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       <StatusBadge status={app.status} lang={lang} />
