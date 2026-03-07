@@ -107,6 +107,22 @@ const styles = StyleSheet.create({
     opacity: 0.1,
     transform: 'rotate(-45deg)',
     zIndex: -1,
+  },
+  qrSection: {
+    position: 'absolute',
+    bottom: 80,
+    right: 40,
+    alignItems: 'center',
+  },
+  qrCode: {
+    width: 70,
+    height: 70,
+    marginBottom: 4,
+  },
+  qrLabel: {
+    fontSize: 6,
+    color: '#78716c',
+    textAlign: 'center',
   }
 });
 
@@ -119,6 +135,15 @@ export const DocumentPDF: React.FC<DocumentPDFProps> = ({ application, lang }) =
   const service = (application as any).services;
   const user = (application as any).users;
   const template = service?.document_template;
+
+  // Generate QR code URL with verification data
+  const verificationData = JSON.stringify({
+    id: application.id,
+    app_no: application.application_number,
+    service: service?.name || 'N/A',
+    issued: new Date().toISOString().split('T')[0]
+  });
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verificationData)}`;
 
   const getBody = () => {
     let body = template?.body_template || "";
@@ -183,6 +208,13 @@ export const DocumentPDF: React.FC<DocumentPDFProps> = ({ application, lang }) =
             <Text style={styles.signatureName}>{lang === 'sw' ? 'AFISA MTENDAJI WA MTAA' : 'WARD EXECUTIVE OFFICER'}</Text>
             <Text style={styles.signatureTitle}>{lang === 'sw' ? 'Sahihi na Muhuri' : 'Signature & Stamp'}</Text>
           </View>
+        </View>
+
+        {/* QR Code for Verification */}
+        <View style={styles.qrSection}>
+          <Image src={qrCodeUrl} style={styles.qrCode} />
+          <Text style={styles.qrLabel}>{lang === 'sw' ? 'Scan kuthibitisha' : 'Scan to verify'}</Text>
+          <Text style={styles.qrLabel}>{application.application_number}</Text>
         </View>
 
         {/* Footer */}
