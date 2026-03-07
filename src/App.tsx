@@ -58,6 +58,23 @@ export default function App() {
 
   const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+  // Helper function to get the correct payment amount
+  const getPaymentAmount = (app: Application): number => {
+    const serviceFee = (app as any).services?.fee || 0;
+    const formServiceFee = app.form_data?.service_fee;
+    
+    // If service has a fixed fee > 0, use it
+    if (serviceFee > 0) return serviceFee;
+    
+    // For percentage-based services, use the calculated service_fee from form_data
+    if (formServiceFee && typeof formServiceFee === 'number') return formServiceFee;
+    if (formServiceFee && typeof formServiceFee === 'string') {
+      const parsed = parseFloat(formServiceFee);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return 0;
+  };
+
   // Redirect to appropriate dashboard based on user role
   useEffect(() => {
     if (user && user.role) {
@@ -161,16 +178,29 @@ export default function App() {
     fetchApplications();
   };
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (paymentData: any) => {
     if (!payingApplication) return;
     
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
 
+    // Payment data to store
+    const paymentInfo = {
+      transaction_id: paymentData?.transaction_id || `TXN-${Date.now()}`,
+      amount: paymentData?.amount || 0,
+      payment_method: paymentData?.payment_method || 'unknown',
+      paid_at: paymentData?.paid_at || new Date().toISOString()
+    };
+
     if (!isConfigured || user?.id.startsWith('demo-')) {
       const existing = JSON.parse(localStorage.getItem('demo_applications') || '[]');
       const updated = existing.map((app: any) => 
-        app.id === payingApplication.id ? { ...app, status: 'issued', issued_at: new Date().toISOString() } : app
+        app.id === payingApplication.id ? { 
+          ...app, 
+          status: 'issued', 
+          issued_at: new Date().toISOString(),
+          payment_data: paymentInfo
+        } : app
       );
       localStorage.setItem('demo_applications', JSON.stringify(updated));
       
@@ -182,7 +212,11 @@ export default function App() {
 
     const { error } = await supabase
       .from('applications')
-      .update({ status: 'issued', issued_at: new Date().toISOString() })
+      .update({ 
+        status: 'issued', 
+        issued_at: new Date().toISOString(),
+        payment_data: paymentInfo
+      })
       .eq('id', payingApplication.id);
     
     if (error) {
@@ -360,7 +394,7 @@ export default function App() {
         {payingApplication && (
           <PaymentGateway 
             applicationId={payingApplication.id}
-            amount={(payingApplication as any).services?.fee || 0}
+            amount={getPaymentAmount(payingApplication)}
             onSuccess={handlePaymentSuccess}
             onCancel={() => setPayingApplication(null)}
             lang={lang}

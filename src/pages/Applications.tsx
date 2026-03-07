@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard, RefreshCw } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard, RefreshCw, Receipt } from 'lucide-react';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
@@ -9,6 +9,7 @@ import { supabase, Application } from '@/src/lib/supabase';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
 import { formatCurrency } from '@/src/lib/currency';
 import { DocumentRenderer, DocumentPreview } from '@/src/components/DocumentRenderer';
+import { ReceiptPDF } from '@/src/components/ReceiptPDF';
 
 interface ApplicationsProps {
   applications: Application[];
@@ -334,6 +335,24 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                       </button>
                     ) : app.status === 'issued' ? (
                       <div className="flex items-center justify-end gap-3">
+                        <PDFDownloadLink 
+                          document={
+                            <ReceiptPDF 
+                              application={app} 
+                              paymentData={{
+                                transaction_id: (app as any).payment_data?.transaction_id || `TXN-${app.id.slice(0, 8).toUpperCase()}`,
+                                amount: getPaymentAmount(app),
+                                payment_method: (app as any).payment_data?.payment_method || 'M-Pesa',
+                                paid_at: (app as any).payment_data?.paid_at || app.issued_at || new Date().toISOString()
+                              }}
+                              lang={lang}
+                            />
+                          } 
+                          fileName={`Receipt_${app.application_number}.pdf`}
+                          className="text-amber-600 text-sm font-bold hover:underline"
+                        >
+                          {({ loading }) => loading ? '...' : (lang === 'sw' ? 'Risiti' : 'Receipt')}
+                        </PDFDownloadLink>
                         <button 
                           onClick={() => setPreviewApp(app)}
                           className="text-stone-600 text-sm font-bold hover:underline"
@@ -345,7 +364,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                           fileName={`Certificate_${app.application_number}.pdf`}
                           className="text-emerald-600 text-sm font-bold hover:underline"
                         >
-                          {({ loading }) => loading ? 'Loading...' : (lang === 'sw' ? 'Pakua' : 'Download')}
+                          {({ loading }) => loading ? '...' : (lang === 'sw' ? 'Pakua' : 'Download')}
                         </PDFDownloadLink>
                       </div>
                     ) : (
@@ -426,20 +445,47 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     {t.payNow} ({formatCurrency(getPaymentAmount(app), currency)})
                   </button>
                 ) : app.status === 'issued' ? (
-                  <div className="flex items-center gap-4 w-full justify-between">
-                    <button 
-                      onClick={() => setPreviewApp(app)}
-                      className="flex-1 h-10 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold"
-                    >
-                      {lang === 'sw' ? 'Hakiki' : 'Preview'}
-                    </button>
+                  <div className="space-y-2">
+                    {/* Receipt Download */}
                     <PDFDownloadLink 
-                      document={<DocumentRenderer application={app} service={(app as any).services} />} 
-                      fileName={`Certificate_${app.application_number}.pdf`}
-                      className="flex-1 h-10 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold flex items-center justify-center"
+                      document={
+                        <ReceiptPDF 
+                          application={app} 
+                          paymentData={{
+                            transaction_id: (app as any).payment_data?.transaction_id || `TXN-${app.id.slice(0, 8).toUpperCase()}`,
+                            amount: getPaymentAmount(app),
+                            payment_method: (app as any).payment_data?.payment_method || 'M-Pesa',
+                            paid_at: (app as any).payment_data?.paid_at || app.issued_at || new Date().toISOString()
+                          }}
+                          lang={lang}
+                        />
+                      } 
+                      fileName={`Receipt_${app.application_number}.pdf`}
+                      className="w-full h-10 bg-amber-50 text-amber-600 rounded-xl text-xs font-bold flex items-center justify-center gap-2"
                     >
-                      {({ loading }) => loading ? '...' : (lang === 'sw' ? 'Pakua' : 'Download')}
+                      {({ loading }) => (
+                        <>
+                          <Receipt size={14} />
+                          {loading ? '...' : (lang === 'sw' ? 'Pakua Risiti' : 'Download Receipt')}
+                        </>
+                      )}
                     </PDFDownloadLink>
+                    {/* Document Preview & Download */}
+                    <div className="flex items-center gap-4 w-full justify-between">
+                      <button 
+                        onClick={() => setPreviewApp(app)}
+                        className="flex-1 h-10 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold"
+                      >
+                        {lang === 'sw' ? 'Hakiki' : 'Preview'}
+                      </button>
+                      <PDFDownloadLink 
+                        document={<DocumentRenderer application={app} service={(app as any).services} />} 
+                        fileName={`Certificate_${app.application_number}.pdf`}
+                        className="flex-1 h-10 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold flex items-center justify-center"
+                      >
+                        {({ loading }) => loading ? '...' : (lang === 'sw' ? 'Pakua Hati' : 'Download')}
+                      </PDFDownloadLink>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-stone-400 text-xs font-bold py-2">
@@ -638,26 +684,54 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
 
                 {/* Preview & Download for Issued */}
                 {selectedApp.status === 'issued' && (
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => { setPreviewApp(selectedApp); setSelectedApp(null); }}
-                      className="flex-1 bg-stone-200 text-stone-700 px-6 py-3 rounded-xl font-bold hover:bg-stone-300 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Eye size={18} />
-                      {lang === 'sw' ? 'Hakiki Hati' : 'Preview Document'}
-                    </button>
+                  <div className="space-y-3">
+                    {/* Receipt Download */}
                     <PDFDownloadLink 
-                      document={<DocumentRenderer application={selectedApp} service={(selectedApp as any).services} />} 
-                      fileName={`Certificate_${selectedApp.application_number}.pdf`}
-                      className="flex-1 bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                      document={
+                        <ReceiptPDF 
+                          application={selectedApp} 
+                          paymentData={{
+                            transaction_id: (selectedApp as any).payment_data?.transaction_id || `TXN-${selectedApp.id.slice(0, 8).toUpperCase()}`,
+                            amount: getPaymentAmount(selectedApp),
+                            payment_method: (selectedApp as any).payment_data?.payment_method || 'M-Pesa',
+                            paid_at: (selectedApp as any).payment_data?.paid_at || selectedApp.issued_at || new Date().toISOString()
+                          }}
+                          lang={lang}
+                        />
+                      } 
+                      fileName={`Receipt_${selectedApp.application_number}.pdf`}
+                      className="w-full bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
                     >
                       {({ loading }) => (
                         <>
-                          <FileText size={18} />
-                          {loading ? '...' : (lang === 'sw' ? 'Pakua PDF' : 'Download PDF')}
+                          <Receipt size={18} />
+                          {loading ? '...' : (lang === 'sw' ? 'Pakua Risiti' : 'Download Receipt')}
                         </>
                       )}
                     </PDFDownloadLink>
+
+                    {/* Document Preview & Download */}
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => { setPreviewApp(selectedApp); setSelectedApp(null); }}
+                        className="flex-1 bg-stone-200 text-stone-700 px-6 py-3 rounded-xl font-bold hover:bg-stone-300 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Eye size={18} />
+                        {lang === 'sw' ? 'Hakiki Hati' : 'Preview Document'}
+                      </button>
+                      <PDFDownloadLink 
+                        document={<DocumentRenderer application={selectedApp} service={(selectedApp as any).services} />} 
+                        fileName={`Certificate_${selectedApp.application_number}.pdf`}
+                        className="flex-1 bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                      >
+                        {({ loading }) => (
+                          <>
+                            <FileText size={18} />
+                            {loading ? '...' : (lang === 'sw' ? 'Pakua Hati' : 'Download Document')}
+                          </>
+                        )}
+                      </PDFDownloadLink>
+                    </div>
                   </div>
                 )}
 
