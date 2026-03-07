@@ -15,12 +15,42 @@ import {
   Calendar,
   CreditCard,
   Eye,
-  EyeOff
+  EyeOff,
+  ChevronDown,
+  Fingerprint,
+  Car,
+  Plane,
+  Baby,
+  Vote,
+  BadgeCheck,
+  Wallet,
+  Building2,
+  Users,
+  FileCheck
 } from "lucide-react";
 import { Language } from "@/src/lib/i18n";
 import { useTranslation } from "@/src/lib/i18n";
 import { supabase, UserRole } from "@/src/lib/supabase";
 import { cn } from "@/src/lib/utils";
+
+// Document types for verification
+const DOCUMENT_TYPES = [
+  { id: 'application', name: 'E-Mtaa Application', nameSw: 'Maombi ya E-Mtaa', icon: FileText, placeholder: 'TZ-20240115-XXXX' },
+  { id: 'nida', name: 'NIDA (National ID)', nameSw: 'NIDA (Kitambulisho cha Taifa)', icon: Fingerprint, placeholder: '19850101-12345-00001-00' },
+  { id: 'birth_certificate', name: 'Birth Certificate', nameSw: 'Cheti cha Kuzaliwa', icon: Baby, placeholder: 'BC-2024-123456' },
+  { id: 'passport', name: 'Passport', nameSw: 'Pasipoti', icon: Plane, placeholder: 'AB1234567' },
+  { id: 'voter_card', name: 'E-NEC (Voter Card)', nameSw: 'Kadi ya Mpiga Kura (E-NEC)', icon: Vote, placeholder: 'NEC-12345678' },
+  { id: 'driving_license', name: 'Driving License', nameSw: 'Leseni ya Udereva', icon: Car, placeholder: 'DL-2024-00001234' },
+  { id: 'zanzibar_mkazi', name: 'Zanzibar Mkazi ID', nameSw: 'Kitambulisho cha Mkazi Zanzibar', icon: BadgeCheck, placeholder: 'ZNZ-MKZ-123456' },
+  { id: 'jamii_id', name: 'Jamii ID (Social ID)', nameSw: 'Kitambulisho cha Jamii', icon: Users, placeholder: 'JAMII-2024-12345' },
+  { id: 'tin', name: 'TIN Number', nameSw: 'Namba ya TIN (Kodi)', icon: Wallet, placeholder: '123-456-789' },
+  { id: 'business_license', name: 'Business License', nameSw: 'Leseni ya Biashara', icon: Building2, placeholder: 'BL-DAR-2024-00123' },
+  { id: 'work_permit', name: 'Work Permit', nameSw: 'Kibali cha Kazi', icon: FileCheck, placeholder: 'WP-2024-00001234' },
+  { id: 'residence_permit', name: 'Residence Permit', nameSw: 'Kibali cha Makazi', icon: MapPin, placeholder: 'RP-2024-00001234' },
+  { id: 'professional_cert', name: 'Professional Certificate', nameSw: 'Cheti cha Kitaaluma', icon: BadgeCheck, placeholder: 'PROF-2024-12345' },
+  { id: 'marriage_cert', name: 'Marriage Certificate', nameSw: 'Cheti cha Ndoa', icon: Users, placeholder: 'MC-2024-00001234' },
+  { id: 'death_cert', name: 'Death Certificate', nameSw: 'Cheti cha Kifo', icon: FileText, placeholder: 'DC-2024-00001234' },
+];
 
 // Helper functions for masking sensitive data (partial view for citizens)
 const maskName = (firstName?: string, lastName?: string): string => {
@@ -56,9 +86,12 @@ export function VerifyDocuments({
   const t = useTranslation(lang);
   const [qrInput, setQrInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState("application");
+  const [showDocTypeDropdown, setShowDocTypeDropdown] = useState(false);
   
   // Check if user has elevated privileges (admin or staff)
   const hasFullAccess = userRole === 'admin' || userRole === 'staff';
+  const selectedDocument = DOCUMENT_TYPES.find(d => d.id === selectedDocType) || DOCUMENT_TYPES[0];
   const [verificationStatus, setVerificationStatus] = useState<
     "pending" | "verified" | "invalid" | null
   >(null);
@@ -71,83 +104,16 @@ export function VerifyDocuments({
     setVerificationStatus("pending");
 
     try {
-      // First try demo applications from localStorage
-      const demoApps = JSON.parse(localStorage.getItem('demo_applications') || '[]');
-      const demoApp = demoApps.find((app: any) => 
-        app.application_number?.toUpperCase() === qrInput.trim().toUpperCase()
-      );
-      
-      if (demoApp) {
-        // Found in demo data
-        const demoUser = JSON.parse(localStorage.getItem('demo_user') || '{}');
-        setVerificationStatus("verified");
-        setVerifiedDocument({
-          id: demoApp.id,
-          type: demoApp.service_name,
-          name: demoApp.service_name,
-          issueDate: new Date(demoApp.updated_at || demoApp.created_at).toLocaleDateString(),
-          issuedAt: demoApp.issued_at,
-          verificationCode: demoApp.application_number,
-          status: demoApp.status,
-          // Basic info (shown to everyone)
-          applicantMasked: maskName(demoUser.first_name, demoUser.last_name),
-          // Full info (only for admin/staff)
-          applicantFull: `${demoUser.first_name || ''} ${demoUser.middle_name || ''} ${demoUser.last_name || ''}`.trim(),
-          nidaNumber: demoUser.nida_number,
-          nidaMasked: maskNida(demoUser.nida_number),
-          phone: demoUser.phone,
-          phoneMasked: maskPhone(demoUser.phone),
-          email: demoUser.email,
-          region: demoApp.region || demoUser.region,
-          district: demoApp.district || demoUser.district,
-          ward: demoApp.ward || demoUser.ward,
-          street: demoApp.street || demoUser.street,
-          formData: demoApp.form_data,
-          paidAt: demoApp.paid_at,
-          serviceFee: demoApp.service_fee
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Search for application by number in Supabase
-      const { data, error } = await supabase
-        .from('applications')
-        .select('*, users(*)')
-        .eq('application_number', qrInput.trim().toUpperCase())
-        .single();
-
-      if (error || !data) {
-        setVerificationStatus("invalid");
-        setVerifiedDocument(null);
+      // Handle different document types
+      if (selectedDocType === 'application') {
+        // Original E-Mtaa application verification
+        await verifyEMtaaApplication();
+      } else if (selectedDocType === 'nida') {
+        // NIDA verification - search by NIDA number
+        await verifyNIDA();
       } else {
-        setVerificationStatus("verified");
-        const user = data.users;
-        setVerifiedDocument({
-          id: data.id,
-          type: data.service_name,
-          name: data.service_name,
-          issueDate: new Date(data.updated_at || data.created_at).toLocaleDateString(),
-          issuedAt: data.issued_at,
-          verificationCode: data.application_number,
-          status: data.status,
-          // Basic info (shown to everyone)
-          applicantMasked: maskName(user?.first_name, user?.last_name),
-          // Full info (only for admin/staff)  
-          applicantFull: `${user?.first_name || ''} ${user?.middle_name || ''} ${user?.last_name || ''}`.trim(),
-          nidaNumber: user?.nida_number,
-          nidaMasked: maskNida(user?.nida_number),
-          phone: user?.phone,
-          phoneMasked: maskPhone(user?.phone),
-          email: user?.email,
-          region: data.region || user?.region,
-          district: data.district || user?.district,
-          ward: data.ward || user?.ward,
-          street: data.street || user?.street,
-          formData: data.form_data,
-          paidAt: data.paid_at,
-          serviceFee: data.service_fee
-        });
+        // Other government documents - simulate verification
+        await verifyOtherDocument();
       }
     } catch (err) {
       setVerificationStatus("invalid");
@@ -155,6 +121,195 @@ export function VerifyDocuments({
       setLoading(false);
     }
   };
+
+  // Verify E-Mtaa Application
+  const verifyEMtaaApplication = async () => {
+    // First try demo applications from localStorage
+    const demoApps = JSON.parse(localStorage.getItem('demo_applications') || '[]');
+    const demoApp = demoApps.find((app: any) => 
+      app.application_number?.toUpperCase() === qrInput.trim().toUpperCase()
+    );
+    
+    if (demoApp) {
+      const demoUser = JSON.parse(localStorage.getItem('demo_user') || '{}');
+      setVerificationStatus("verified");
+      setVerifiedDocument({
+        documentType: 'application',
+        id: demoApp.id,
+        type: demoApp.service_name,
+        name: demoApp.service_name,
+        issueDate: new Date(demoApp.updated_at || demoApp.created_at).toLocaleDateString(),
+        issuedAt: demoApp.issued_at,
+        verificationCode: demoApp.application_number,
+        status: demoApp.status,
+        applicantMasked: maskName(demoUser.first_name, demoUser.last_name),
+        applicantFull: `${demoUser.first_name || ''} ${demoUser.middle_name || ''} ${demoUser.last_name || ''}`.trim(),
+        nidaNumber: demoUser.nida_number,
+        nidaMasked: maskNida(demoUser.nida_number),
+        phone: demoUser.phone,
+        phoneMasked: maskPhone(demoUser.phone),
+        email: demoUser.email,
+        region: demoApp.region || demoUser.region,
+        district: demoApp.district || demoUser.district,
+        ward: demoApp.ward || demoUser.ward,
+        street: demoApp.street || demoUser.street,
+        formData: demoApp.form_data,
+        paidAt: demoApp.paid_at,
+        serviceFee: demoApp.service_fee
+      });
+      return;
+    }
+
+    // Search Supabase
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*, users(*)')
+      .eq('application_number', qrInput.trim().toUpperCase())
+      .single();
+
+    if (error || !data) {
+      setVerificationStatus("invalid");
+      setVerifiedDocument(null);
+    } else {
+      const user = data.users;
+      setVerificationStatus("verified");
+      setVerifiedDocument({
+        documentType: 'application',
+        id: data.id,
+        type: data.service_name,
+        name: data.service_name,
+        issueDate: new Date(data.updated_at || data.created_at).toLocaleDateString(),
+        issuedAt: data.issued_at,
+        verificationCode: data.application_number,
+        status: data.status,
+        applicantMasked: maskName(user?.first_name, user?.last_name),
+        applicantFull: `${user?.first_name || ''} ${user?.middle_name || ''} ${user?.last_name || ''}`.trim(),
+        nidaNumber: user?.nida_number,
+        nidaMasked: maskNida(user?.nida_number),
+        phone: user?.phone,
+        phoneMasked: maskPhone(user?.phone),
+        email: user?.email,
+        region: data.region || user?.region,
+        district: data.district || user?.district,
+        ward: data.ward || user?.ward,
+        street: data.street || user?.street,
+        formData: data.form_data,
+        paidAt: data.paid_at,
+        serviceFee: data.service_fee
+      });
+    }
+  };
+
+  // Verify NIDA number
+  const verifyNIDA = async () => {
+    // First check demo user
+    const demoUser = JSON.parse(localStorage.getItem('demo_user') || '{}');
+    if (demoUser.nida_number && demoUser.nida_number.toUpperCase() === qrInput.trim().toUpperCase()) {
+      setVerificationStatus("verified");
+      setVerifiedDocument({
+        documentType: 'nida',
+        type: lang === 'sw' ? 'Kitambulisho cha Taifa (NIDA)' : 'National ID (NIDA)',
+        name: lang === 'sw' ? 'NIDA' : 'National ID',
+        issueDate: '01/01/2020', // NIDA issue date
+        expiryDate: '01/01/2030', // NIDA typically valid for 10 years
+        verificationCode: qrInput.trim().toUpperCase(),
+        status: 'valid',
+        applicantMasked: maskName(demoUser.first_name, demoUser.last_name),
+        applicantFull: `${demoUser.first_name || ''} ${demoUser.middle_name || ''} ${demoUser.last_name || ''}`.trim(),
+        nidaNumber: demoUser.nida_number,
+        nidaMasked: maskNida(demoUser.nida_number),
+        phone: demoUser.phone,
+        phoneMasked: maskPhone(demoUser.phone),
+        email: demoUser.email,
+        region: demoUser.region,
+        district: demoUser.district,
+        ward: demoUser.ward,
+        street: demoUser.street,
+        dateOfBirth: demoUser.date_of_birth,
+        gender: demoUser.gender
+      });
+      return;
+    }
+
+    // Search Supabase users by NIDA
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('nida_number', qrInput.trim().toUpperCase())
+      .single();
+
+    if (error || !data) {
+      setVerificationStatus("invalid");
+      setVerifiedDocument(null);
+    } else {
+      setVerificationStatus("verified");
+      setVerifiedDocument({
+        documentType: 'nida',
+        type: lang === 'sw' ? 'Kitambulisho cha Taifa (NIDA)' : 'National ID (NIDA)',
+        name: lang === 'sw' ? 'NIDA' : 'National ID',
+        issueDate: new Date(data.created_at).toLocaleDateString(),
+        verificationCode: data.nida_number,
+        status: 'valid',
+        applicantMasked: maskName(data.first_name, data.last_name),
+        applicantFull: `${data.first_name || ''} ${data.middle_name || ''} ${data.last_name || ''}`.trim(),
+        nidaNumber: data.nida_number,
+        nidaMasked: maskNida(data.nida_number),
+        phone: data.phone,
+        phoneMasked: maskPhone(data.phone),
+        email: data.email,
+        region: data.region,
+        district: data.district,
+        ward: data.ward,
+        street: data.street,
+        dateOfBirth: data.date_of_birth,
+        gender: data.gender
+      });
+    }
+  };
+
+  // Verify other government documents (simulated)
+  const verifyOtherDocument = async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const docType = DOCUMENT_TYPES.find(d => d.id === selectedDocType);
+    
+    // For demo purposes, generate a simulated response
+    // In production, this would call actual government APIs
+    const inputUpper = qrInput.trim().toUpperCase();
+    
+    // Check if input matches expected format (basic validation)
+    const isValidFormat = inputUpper.length >= 5;
+    
+    if (!isValidFormat) {
+      setVerificationStatus("invalid");
+      setVerifiedDocument(null);
+      return;
+    }
+
+    // Simulate successful verification for demo
+    setVerificationStatus("verified");
+    setVerifiedDocument({
+      documentType: selectedDocType,
+      type: lang === 'sw' ? docType?.nameSw : docType?.name,
+      name: docType?.name || 'Unknown Document',
+      issueDate: new Date(Date.now() - Math.random() * 31536000000 * 5).toLocaleDateString(), // Random date within 5 years
+      verificationCode: inputUpper,
+      status: 'valid',
+      applicantMasked: 'J*** M***',
+      applicantFull: 'John Mwangi Doe',
+      nidaNumber: '19850101-12345-00001-00',
+      nidaMasked: maskNida('19850101-12345-00001-00'),
+      phone: '+255754123456',
+      phoneMasked: maskPhone('+255754123456'),
+      region: 'Dar es Salaam',
+      district: 'Kinondoni',
+      ward: 'Mikocheni',
+      isSimulated: true // Flag to indicate this is simulated data
+    });
+  };
+
+  return (
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -200,16 +355,82 @@ export function VerifyDocuments({
               </div>
             </div>
             
+            {/* Document Type Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-stone-700">
+                {lang === "sw" ? "Aina ya Nyaraka" : "Document Type"}
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowDocTypeDropdown(!showDocTypeDropdown)}
+                  className="w-full h-14 px-4 rounded-2xl border border-stone-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all flex items-center justify-between bg-white hover:bg-stone-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      {React.createElement(selectedDocument.icon, { className: "h-5 w-5 text-emerald-600" })}
+                    </div>
+                    <span className="font-medium text-stone-900">
+                      {lang === "sw" ? selectedDocument.nameSw : selectedDocument.name}
+                    </span>
+                  </div>
+                  <ChevronDown className={cn("h-5 w-5 text-stone-400 transition-transform", showDocTypeDropdown && "rotate-180")} />
+                </button>
+                
+                {showDocTypeDropdown && (
+                  <div className="absolute z-50 mt-2 w-full bg-white rounded-2xl border border-stone-200 shadow-xl max-h-80 overflow-auto">
+                    {DOCUMENT_TYPES.map((doc) => (
+                      <button
+                        key={doc.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDocType(doc.id);
+                          setShowDocTypeDropdown(false);
+                          setQrInput("");
+                          setVerificationStatus(null);
+                        }}
+                        className={cn(
+                          "w-full px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl",
+                          selectedDocType === doc.id && "bg-emerald-50"
+                        )}
+                      >
+                        <div className={cn(
+                          "h-9 w-9 rounded-lg flex items-center justify-center",
+                          selectedDocType === doc.id ? "bg-emerald-500 text-white" : "bg-stone-100 text-stone-600"
+                        )}>
+                          {React.createElement(doc.icon, { className: "h-4 w-4" })}
+                        </div>
+                        <div className="text-left">
+                          <p className={cn(
+                            "font-medium text-sm",
+                            selectedDocType === doc.id ? "text-emerald-700" : "text-stone-900"
+                          )}>
+                            {lang === "sw" ? doc.nameSw : doc.name}
+                          </p>
+                        </div>
+                        {selectedDocType === doc.id && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 ml-auto" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <div className="space-y-4">
-              <input
-                type="text"
-                placeholder={
-                  lang === "sw" ? "Mfano: TZ-20240115-XXXX" : "Example: TZ-20240115-XXXX"
-                }
-                value={qrInput}
-                onChange={(e) => setQrInput(e.target.value)}
-                className="w-full h-14 px-6 rounded-2xl border border-stone-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-mono text-lg uppercase tracking-wider"
-              />
+              <div>
+                <label className="text-sm font-bold text-stone-700 mb-2 block">
+                  {lang === "sw" ? "Namba ya Nyaraka" : "Document Number"}
+                </label>
+                <input
+                  type="text"
+                  placeholder={selectedDocument.placeholder}
+                  value={qrInput}
+                  onChange={(e) => setQrInput(e.target.value)}
+                  className="w-full h-14 px-6 rounded-2xl border border-stone-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-mono text-lg uppercase tracking-wider"
+                />
+              </div>
               <button
                 onClick={handleVerify}
                 disabled={loading || !qrInput.trim()}
