@@ -527,9 +527,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                       {lang === 'sw' ? 'Ada ya Huduma' : 'Service Fee'}
                     </div>
                     <p className="font-semibold text-stone-800">
-                      {(selectedApp as any).services?.fee > 0 
-                        ? formatCurrency((selectedApp as any).services?.fee, currency) 
-                        : (lang === 'sw' ? 'Bure' : 'Free')}
+                      {formatCurrency(getPaymentAmount(selectedApp), currency)}
                     </p>
                   </div>
                 </div>

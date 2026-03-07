@@ -28,6 +28,18 @@ import { cn } from '@/src/lib/utils';
 import { useToast } from '@/src/context/ToastContext';
 import { formatCurrency } from '@/src/lib/currency';
 import { TANZANIA_ADDRESS_DATA } from '@/src/lib/addressData';
+import { HARDCODED_SERVICES } from '@/src/constants/services';
+
+// Helper to get service by ID from hardcoded services
+const getServiceById = (serviceId: string) => {
+  const allServices = [
+    ...HARDCODED_SERVICES.resident,
+    ...HARDCODED_SERVICES.business,
+    ...HARDCODED_SERVICES.property,
+    ...HARDCODED_SERVICES.health
+  ];
+  return allServices.find(s => s.id === serviceId);
+};
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocumentPDF } from './DocumentPDF';
 
@@ -88,11 +100,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
         }
       }
       
-      setApplications(filtered.map((app: any) => ({
-        ...app,
-        services: { name: app.service_name || 'Service' },
-        users: { first_name: 'Demo', last_name: 'User' }
-      })));
+      setApplications(filtered.map((app: any) => {
+        const fullService = getServiceById(app.service_id);
+        return {
+          ...app,
+          services: fullService || { name: app.service_name || 'Service', fee: 0 },
+          users: { first_name: 'Demo', last_name: 'User' }
+        };
+      }));
       setLoading(false);
       return;
     }
@@ -122,7 +137,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
     console.log('ApplicationReview fetch result:', { data, error, count: data?.length });
 
     if (!error && data) {
-      setApplications(data);
+      // Map applications to include full service data from HARDCODED_SERVICES
+      setApplications(data.map((app: any) => {
+        const fullService = getServiceById(app.service_id);
+        return {
+          ...app,
+          services: fullService || { name: 'Unknown Service', fee: 0 }
+        };
+      }));
     } else if (error) {
       console.error('Error fetching applications:', error);
     }

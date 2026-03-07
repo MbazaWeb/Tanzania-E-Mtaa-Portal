@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase, Application, UserProfile } from '@/src/lib/supabase';
+import { HARDCODED_SERVICES } from '@/src/constants/services';
+
+// Helper to get service by ID from hardcoded services
+const getServiceById = (serviceId: string) => {
+  return HARDCODED_SERVICES.find(s => s.id === serviceId) || null;
+};
 
 export function useApplications(user: UserProfile | null) {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -15,12 +21,12 @@ export function useApplications(user: UserProfile | null) {
     if (!isConfigured || (user.id && user.id.startsWith('demo-'))) {
       await new Promise(resolve => setTimeout(resolve, 500));
       const demoApps = JSON.parse(localStorage.getItem('demo_applications') || '[]');
-      // Filter for current user and add mock service data
+      // Filter for current user and add service data from hardcoded services
       const userApps = demoApps
         .filter((app: any) => app.user_id === user.id)
         .map((app: any) => ({
           ...app,
-          services: { name: app.service_name || 'Service' }
+          services: getServiceById(app.service_id) || { name: app.service_name || 'Service', fee: 0 }
         }));
       setApplications(userApps);
       setLoading(false);
@@ -41,7 +47,14 @@ export function useApplications(user: UserProfile | null) {
       console.error('Error fetching applications:', error);
     }
     
-    if (data) setApplications(data);
+    // Add service data from hardcoded services
+    if (data) {
+      const appsWithServices = data.map((app: any) => ({
+        ...app,
+        services: getServiceById(app.service_id) || { name: 'Service', fee: 0 }
+      }));
+      setApplications(appsWithServices);
+    }
     setLoading(false);
   };
 
