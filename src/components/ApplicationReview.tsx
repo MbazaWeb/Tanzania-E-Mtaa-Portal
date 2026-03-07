@@ -56,6 +56,13 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<'rejected' | 'returned' | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchApplications();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   useEffect(() => {
     fetchApplications();
@@ -258,13 +265,23 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-heading font-extrabold text-stone-900">
-            {lang === 'sw' ? 'Uhakiki wa Maombi' : 'Application Review'}
-          </h2>
-          <p className="text-stone-500">
-            {lang === 'sw' ? 'Simamia na uhakiki maombi yote ya wananchi.' : 'Manage and verify all citizen applications.'}
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-heading font-extrabold text-stone-900">
+              {lang === 'sw' ? 'Uhakiki wa Maombi' : 'Application Review'}
+            </h2>
+            <p className="text-stone-500">
+              {lang === 'sw' ? 'Simamia na uhakiki maombi yote ya wananchi.' : 'Manage and verify all citizen applications.'}
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing || loading}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            {lang === 'sw' ? 'Onyesha Upya' : 'Refresh'}
+          </button>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
@@ -26,6 +26,70 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
   const [previewApp, setPreviewApp] = useState<Application | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Add effect to check and update approved applications to pending_payment
+  useEffect(() => {
+    const updateApprovedToPendingPayment = async () => {
+      const approvedApps = applications.filter(app => 
+        app.status === 'approved' && 
+        (app as any).services?.fee > 0 // Only for paid services
+      );
+
+      for (const app of approvedApps) {
+        try {
+          const { error } = await supabase
+            .from('applications')
+            .update({ status: 'pending_payment' })
+            .eq('id', app.id)
+            .eq('status', 'approved'); // Ensure we only update if still approved
+
+          if (error) throw error;
+          
+          // Trigger refresh to get updated data
+          if (onRefresh) {
+            await onRefresh();
+          }
+        } catch (error) {
+          console.error('Error updating approved application to pending payment:', error);
+        }
+      }
+    };
+
+    updateApprovedToPendingPayment();
+  }, [applications, onRefresh]);
+
+  // Alternative: Function to manually check and update status
+  const checkAndUpdateApprovedStatus = async (app: Application) => {
+    if (app.status === 'approved' && (app as any).services?.fee > 0) {
+      try {
+        const { error } = await supabase
+          .from('applications')
+          .update({ status: 'pending_payment' })
+          .eq('id', app.id)
+          .eq('status', 'approved');
+
+        if (error) throw error;
+        
+        if (onRefresh) {
+          await onRefresh();
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Error updating approved application:', error);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+    setIsRefreshing(true);
+    await onRefresh();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   const handleAccept = async (app: Application) => {
     if (!user) return;
@@ -44,6 +108,10 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
         .eq('id', app.id);
 
       if (error) throw error;
+      
+      // After acceptance, check if we need to move to pending_payment
+      await checkAndUpdateApprovedStatus(app);
+      
       if (onRefresh) onRefresh();
     } catch (error) {
       console.error('Error accepting agreement:', error);
@@ -78,6 +146,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
   const statuses = [
     { value: 'all', label: lang === 'sw' ? 'Zote' : 'All' },
     { value: 'submitted', label: lang === 'sw' ? 'Imetumwa' : 'Submitted' },
+    { value: 'approved', label: lang === 'sw' ? 'Imeidhinishwa' : 'Approved' },
     { value: 'pending_payment', label: lang === 'sw' ? 'Inasubiri Malipo' : 'Pending Payment' },
     { value: 'paid', label: lang === 'sw' ? 'Imelipiwa' : 'Paid' },
     { value: 'processing', label: lang === 'sw' ? 'Inashughulikiwa' : 'Processing' },
@@ -85,6 +154,20 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
     { value: 'rejected', label: lang === 'sw' ? 'Imekataliwa' : 'Rejected' },
     { value: 'refunded', label: lang === 'sw' ? 'Imerejeshwa' : 'Refunded' }
   ];
+
+  // Transform applications to ensure approved ones show as pending_payment in UI
+  const displayApplications = useMemo(() => {
+    return filteredAndSortedApplications.map(app => {
+      // If status is approved and service has fee > 0, show as pending_payment for UI
+      if (app.status === 'approved' && (app as any).services?.fee > 0) {
+        return {
+          ...app,
+          status: 'pending_payment' as const
+        };
+      }
+      return app;
+    });
+  }, [filteredAndSortedApplications]);
 
   return (
     <motion.div 
@@ -94,7 +177,19 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
       className="space-y-6"
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold text-stone-800">{t.myApplications}</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-stone-800">{t.myApplications}</h2>
+          {onRefresh && (
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition-all disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              {lang === 'sw' ? 'Onyesha Upya' : 'Refresh'}
+            </button>
+          )}
+        </div>
         
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
@@ -150,7 +245,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {filteredAndSortedApplications.map(app => (
+              {displayApplications.map(app => (
                 <tr 
                   key={app.id} 
                   className="hover:bg-stone-50 transition-colors cursor-pointer"
@@ -242,7 +337,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-stone-100">
-          {filteredAndSortedApplications.map(app => (
+          {displayApplications.map(app => (
             <div 
               key={app.id} 
               className="p-4 space-y-4 cursor-pointer hover:bg-stone-50 transition-colors"
@@ -331,7 +426,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
           ))}
         </div>
 
-        {filteredAndSortedApplications.length === 0 && (
+        {displayApplications.length === 0 && (
           <div className="px-6 py-12 text-center text-stone-400">
             <div className="flex flex-col items-center gap-2">
               <Search size={32} className="opacity-20" />

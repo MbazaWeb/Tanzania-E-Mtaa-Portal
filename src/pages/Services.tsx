@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { HARDCODED_SERVICES } from '@/src/constants/services';
 import { Service } from '@/src/lib/supabase';
@@ -18,11 +18,20 @@ import {
 
 interface ServicesProps {
   onSelectService: (service: Service) => void;
+  onRefresh?: () => void;
 }
 
-export function Services({ onSelectService }: ServicesProps) {
+export function Services({ onSelectService, onRefresh }: ServicesProps) {
   const { lang, currency } = useLanguage();
   const { user } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+    setIsRefreshing(true);
+    await onRefresh();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   console.log('Services rendering:', { 
     servicesCount: HARDCODED_SERVICES.length, 
@@ -46,11 +55,23 @@ export function Services({ onSelectService }: ServicesProps) {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
     >
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-stone-900">{lang === 'sw' ? 'Huduma Zinazopatikana' : 'Available Services'}</h2>
-        <p className="text-stone-500 font-medium">
-          {lang === 'sw' ? 'Chagua huduma unayoihitaji na ufanye maombi.' : 'Choose the service you need and make an application.'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-stone-900">{lang === 'sw' ? 'Huduma Zinazopatikana' : 'Available Services'}</h2>
+          <p className="text-stone-500 font-medium">
+            {lang === 'sw' ? 'Chagua huduma unayoihitaji na ufanye maombi.' : 'Choose the service you need and make an application.'}
+          </p>
+        </div>
+        {onRefresh && (
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            {lang === 'sw' ? 'Onyesha Upya' : 'Refresh'}
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

@@ -44,7 +44,14 @@ export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshProfile();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
   
   // Form state for editing
   const [formData, setFormData] = useState({
@@ -244,6 +251,17 @@ export function Profile() {
       animate={{ opacity: 1, x: 0 }}
       className="max-w-4xl mx-auto space-y-8"
     >
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-stone-900">{lang === 'sw' ? 'Wasifu Wangu' : 'My Profile'}</h1>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition-all disabled:opacity-50"
+        >
+          <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+          {lang === 'sw' ? 'Onyesha Upya' : 'Refresh'}
+        </button>
+      </div>
       <div className="bg-white rounded-4xl border border-stone-100 shadow-xl overflow-hidden">
         <div className="bg-emerald-600 p-8 md:p-12 text-white relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">

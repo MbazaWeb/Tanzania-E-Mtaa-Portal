@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FileText, 
@@ -6,7 +6,8 @@ import {
   CheckCircle, 
   CheckCircle2, 
   AlertCircle, 
-  Building2 
+  Building2,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
@@ -17,11 +18,20 @@ import { Application } from '@/src/lib/supabase';
 interface DashboardProps {
   applications: Application[];
   setView: (view: any) => void;
+  onRefresh?: () => void;
 }
 
-export function Dashboard({ applications, setView }: DashboardProps) {
+export function Dashboard({ applications, setView, onRefresh }: DashboardProps) {
   const { user } = useAuth();
   const { lang } = useLanguage();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+    setIsRefreshing(true);
+    await onRefresh();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   return (
     <motion.div 
@@ -30,6 +40,19 @@ export function Dashboard({ applications, setView }: DashboardProps) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold text-stone-900">{lang === 'sw' ? 'Dashibodi' : 'Dashboard'}</h1>
+        {onRefresh && (
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            {lang === 'sw' ? 'Onyesha Upya' : 'Refresh'}
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard 
           icon={<FileText className="text-blue-500" />} 

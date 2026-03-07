@@ -252,7 +252,7 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
             {view === 'dashboard' && (
-              <Dashboard applications={applications} setView={setView} />
+              <Dashboard applications={applications} setView={setView} onRefresh={fetchApplications} />
             )}
 
             {view === 'admin_dashboard' && user?.role === 'admin' && (
@@ -296,7 +296,7 @@ export default function App() {
               <Services onSelectService={(service) => {
                 setSelectedService(service);
                 setView('apply');
-              }} />
+              }} onRefresh={fetchApplications} />
             )}
 
             {view === 'apply' && selectedService && (
