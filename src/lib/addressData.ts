@@ -88,6 +88,135 @@ export const TANZANIA_ADDRESS_DATA: RegionData[] = [
     districts: [
       { name: "Mjini", wards: ["Amani", "Chumbuni", "Gulioni", "Jang'ombe", "Karakana", "Kwahani", "Kwamtipura", "Magomeni", "Makadara", "Malindi", "Matalumwa", "Mchangani", "Mpendae", "Mwembeladu", "Mwembetanga", "Nyerere", "Rahaleo", "Sebleni", "Shangani", "Sogea", "Vikokotoni"] }
     ]
+  },
+  {
+    name: "Manyara",
+    districts: [
+      { name: "Babati Town", wards: ["Babati", "Bagara", "Bonga", "Maisaka", "Mutuka", "Nangara", "Singe"] },
+      { name: "Babati District", wards: ["Arri", "Ayasanda", "Bashay", "Dareda", "Duru", "Endakiso", "Gallapo", "Gidas", "Gorowa", "Hanang", "Magara", "Malangi", "Manu", "Mamire", "Maswa", "Nar", "Orng'adida", "Qash", "Riroda", "Singe", "Sigino"] },
+      { name: "Hanang", wards: ["Balangdalalu", "Bassodawish", "Dirma", "Endagaw", "Endasak", "Ganana", "Gehandu", "Gendabi", "Giting", "Hirbadaw", "Kateshi", "Lalaji", "Masakta", "Masqaroda", "Measkron", "Mulbadaw", "Nangwa", "Sirop", "Siwana", "Wareta"] },
+      { name: "Kiteto", wards: ["Bwawani", "Dosidosi", "Engusero", "Kibaya", "Loolera", "Makame", "Namelock", "Ndaleta", "Ndoroboni", "Njoro", "Olkitikiti", "Partimbo", "Sunya"] },
+      { name: "Mbulu", wards: ["Bashnet", "Daudi", "Dongobesh", "Endagikot", "Endamilay", "Geterer", "Harar", "Haydom", "Hydom", "Kainam", "Maghang", "Maretadu", "Masqaroda", "Mbulu Mjini", "Murray", "Tlawi", "Tumati", "Yaeda Ampa"] },
+      { name: "Simanjiro", wards: ["Emboret", "Endonyongijape", "Kiruani", "Lengijave", "Loiborsoit", "Loiborosi", "Lolibondo", "Mererani", "Naberera", "Ngorika", "Orkesumet", "Ruvu Remiti", "Shambarai", "Terrat"] }
+    ]
+  },
+  {
+    name: "Iringa",
+    districts: [
+      { name: "Iringa Municipal", wards: ["Gangilonga", "Ilala", "Isakalilo", "Kalenga", "Kitwiru", "Kwakilosa", "Mivinjeni", "Mkimbizi", "Mkwawa", "Mlandege", "Mtwivila", "Nduli", "Ruaha Mbuyuni"] },
+      { name: "Iringa District", wards: ["Ifunda", "Ihemi", "Ilalanda", "Image", "Isimani", "Itunundu", "Izazi", "Kalenga", "Kidamali", "Kigonzile", "Kilolo", "Kiponzelo", "Lumuli", "Lugalo", "Mahuninga", "Magunga", "Malengamakali", "Mlowa", "Mseke", "Mgama", "Maboga", "Pawaga", "Tanangozi", "Udekwa", "Ulanda", "Wasa"] }
+    ]
+  },
+  {
+    name: "Njombe",
+    districts: [
+      { name: "Njombe Town", wards: ["Igominyi", "Ihanga", "Iwungilo", "Lupembe", "Lui", "Luponde", "Makowo", "Matola", "Njombe", "Ramadhani", "Uwemba", "Yakobi"] },
+      { name: "Njombe District", wards: ["Imalinyi", "Iwungilo", "Kidegembye", "Kifanya", "Lupembe", "Magereza", "Makungu", "Ninga", "Ukalawa", "Uwemba", "Wangingombe"] }
+    ]
+  },
+  {
+    name: "Rukwa",
+    districts: [
+      { name: "Sumbawanga Municipal", wards: ["Chanji", "Izia", "Kaoze", "Katandala", "Majengo", "Mazwi", "Milanzi", "Mollo", "Ntendo", "Pito", "Senga"] },
+      { name: "Sumbawanga District", wards: ["Kalambanzite", "Kasanga", "Katazi", "Kipeta", "Laela", "Legezamwendo", "Milepa", "Mpui", "Mtowisa", "Sandulula", "Tatanda", "Uwisi"] }
+    ]
+  },
+  {
+    name: "Ruvuma",
+    districts: [
+      { name: "Songea Municipal", wards: ["Bombambili", "Lizaboni", "Majengo", "Maposeni", "Mateka", "Mfaranyaki", "Misufini", "Mjimwema", "Mletele", "Ruhuwiko", "Ruvuma", "Subira", "Tunduru"] },
+      { name: "Songea District", wards: ["Gumbiro", "Hanga", "Lilambo", "Liparamba", "Litisha", "Luhimba", "Madaba", "Mahande", "Matimira", "Mtyangimbole", "Muhuwesi", "Nakahuga", "Ndongosi", "Njelu", "Peramiho", "Ruhuwiko", "Tinginya", "Wino"] }
+    ]
+  },
+  {
+    name: "Singida",
+    districts: [
+      { name: "Singida Municipal", wards: ["Ipembe", "Kindai", "Mandewa", "Majengo", "Mitunduruni", "Mtamaa", "Mtipa", "Mughanga", "Muungano", "Mwankoko", "Puma"] },
+      { name: "Singida District", wards: ["Dung'unyi", "Ghaido", "Ikungi", "Ilongero", "Issuna", "Itaja", "Kinyagigi", "Makiungu", "Mang'onyi", "Mrama", "Msange", "Mtinko", "Mudida", "Ngimu", "Ntuntu", "Puma", "Sepuka", "Unyambwa"] }
+    ]
+  },
+  {
+    name: "Tabora",
+    districts: [
+      { name: "Tabora Municipal", wards: ["Cheyo", "Gongoni", "Ifucha", "Ikomwa", "Ipuli", "Isevya", "Itetemya", "Kalunde", "Kakola", "Kanyenye", "Kiloleni", "Mabama", "Malolo", "Mapambano", "Mtendeni", "Ndevelwa", "Ng'ambo", "Tambukareli", "Tumbi"] },
+      { name: "Tabora District", wards: ["Ibiri", "Igalula", "Isikizya", "Kalua", "Kangeme", "Kipalapala", "Loya", "Mabama", "Magiri", "Mambali", "Ndono", "Nsololo", "Sikonge", "Tumbi", "Upuge", "Usagari", "Usoke"] }
+    ]
+  },
+  {
+    name: "Shinyanga",
+    districts: [
+      { name: "Shinyanga Municipal", wards: ["Chamaguha", "Ibadakuli", "Kambarage", "Kitangili", "Kolandoto", "Lubaga", "Mwagala", "Mwamalasa", "Ndala", "Ngokolo", "Old Shinyanga", "Upuge"] },
+      { name: "Shinyanga District", wards: ["Bushashi", "Imesela", "Itwangi", "Lyabukande", "Lyamidati", "Mwakipoya", "Nsalala", "Salawe", "Solwa", "Tinde", "Ushetu", "Usule"] }
+    ]
+  },
+  {
+    name: "Simiyu",
+    districts: [
+      { name: "Bariadi", wards: ["Bariadi", "Bumangi", "Dutwa", "Isanga", "Lagangabilili", "Mwanhuzi", "Nkololo", "Nyakabindi", "Nyamswa", "Nyangokolwa", "Sapiwi", "Somanda", "Sengwa"] },
+      { name: "Maswa", wards: ["Buchambi", "Bugarama", "Dakama", "Ipililo", "Isanga", "Kulimi", "Lalago", "Mwabusalu", "Nyalikungu", "Senani", "Sukuma", "Tinde"] }
+    ]
+  },
+  {
+    name: "Geita",
+    districts: [
+      { name: "Geita Town", wards: ["Bombambili", "Bukoli", "Buhalahala", "Bujula", "Bulela", "Busolwa", "Ihanamilo", "Kalangalala", "Kharumwa", "Lwamgasa", "Mtakuja", "Nyakagomba", "Nyaruyeye"] },
+      { name: "Geita District", wards: ["Bugulula", "Bukombwe", "Busanda", "Chigunga", "Ihanamilo", "Kamhanga", "Kaseme", "Katoro", "Lwamgasa", "Lubanga", "Nkome", "Nyamalimbe", "Nyanguku"] }
+    ]
+  },
+  {
+    name: "Katavi",
+    districts: [
+      { name: "Mpanda Town", wards: ["Ilembo", "Kakese", "Kasokola", "Kawajense", "Makanyagio", "Maromaryo", "Misunkumilo", "Mpanda Ndogo", "Mpanda", "Shanwe", "Uwanja wa Ndege"] },
+      { name: "Mpanda District", wards: ["Ikola", "Kabungu", "Karema", "Kasansa", "Kasekese", "Kashishi", "Katumba", "Mamba", "Mishamo", "Nsimbo", "Sibwesa", "Sitalike", "Ugalla"] }
+    ]
+  },
+  {
+    name: "Kigoma",
+    districts: [
+      { name: "Kigoma Ujiji Municipal", wards: ["Bangwe", "Buhanda", "Businde", "Gungu", "Kagera", "Kasingwa", "Katubuka", "Kibirizi", "Kigoma", "Kitongoni", "Majengo", "Mwanga Kaskazini", "Mwanga Kusini", "Rusimbi", "Ujiji"] },
+      { name: "Kigoma District", wards: ["Bitale", "Bubango", "Kandaga", "Kagunga", "Kalinzi", "Kazuramimba", "Kibwesa", "Matyazo", "Mkongoro", "Mpotela", "Mgaraganza", "Nkungwe", "Simbo", "Sunuka"] }
+    ]
+  },
+  {
+    name: "Lindi",
+    districts: [
+      { name: "Lindi Municipal", wards: ["Chikonji", "Jamhuri", "Makonde", "Matopeni", "Mbanja", "Mikumbi", "Mingoyo", "Mitandi", "Msinjahili", "Ndoro", "Ng'apa", "Rasbura", "Rahaleo", "Tandangongoro", "Wailes"] },
+      { name: "Lindi District", wards: ["Chikonji", "Kilangala", "Kilimani", "Kiwalala", "Madangwa", "Mchinga", "Mnazi Mmoja", "Mtama", "Nachunyu", "Pangatena", "Rutamba", "Sudi"] }
+    ]
+  },
+  {
+    name: "Mtwara",
+    districts: [
+      { name: "Mtwara Mikindani Municipal", wards: ["Chikongola", "Chuno", "Dinde", "Jangwani", "Likombe", "Magomeni", "Majengo", "Mashindiko", "Mikindani", "Mitengo", "Mnazi Mmoja", "Mtawanya", "Naliendele", "Rahaleo", "Shangani"] },
+      { name: "Mtwara District", wards: ["Dihimba", "Kitere", "Libobe", "Likwaya", "Lipwidi", "Madimba", "Malamba", "Mandawa", "Mayanga", "Mbuo", "Mikindani", "Mkunya", "Mnima", "Msanga Mkuu", "Mwenge", "Nanyamba", "Ziwani"] }
+    ]
+  },
+  {
+    name: "Unguja Kaskazini",
+    districts: [
+      { name: "Kaskazini A", wards: ["Chaani", "Gamba", "Kendwa", "Kijini", "Kivunge", "Matemwe", "Mkokotoni", "Nungwi", "Potoa", "Tumbatu"] },
+      { name: "Kaskazini B", wards: ["Bumbwini", "Donge", "Fukuchani", "Kinyasini", "Mahonda", "Mangapwani", "Mkwajuni", "Muwanda"] }
+    ]
+  },
+  {
+    name: "Unguja Kusini",
+    districts: [
+      { name: "Kusini", wards: ["Bwejuu", "Chwaka", "Jambiani", "Kizimkazi Dimbani", "Kizimkazi Mkunguni", "Makunduchi", "Mtende", "Muyuni", "Nganani", "Paje", "Pete", "Tunguu"] }
+    ]
+  },
+  {
+    name: "Pemba Kaskazini",
+    districts: [
+      { name: "Wete", wards: ["Chwale", "Fundo", "Gando", "Kambini", "Kiuyu", "Kojani", "mgogoni", "Mtambile", "Mzambarauani", "Ole", "Pandani", "Pujini", "Selemu", "Shumba Mjini", "Wete"] },
+      { name: "Micheweni", wards: ["Chamboni", "Konde", "Makangale", "Maziwa ng'ombe", "Micheweni", "Msuka", "Shumba Viamboni", "Tumbe", "Wingwi"] }
+    ]
+  },
+  {
+    name: "Pemba Kusini",
+    districts: [
+      { name: "Chake Chake", wards: ["Chake Chake", "Chanjaani", "Chokocho", "Kibokoni", "Kichungwani", "Machomanne", "Mbuzini", "Mchanga Mdogo", "Mgelema", "Mkoani", "Mtambani", "Ng'ambwa", "Ole", "Piki", "Uwandani", "Vitongoji", "Wesha"] },
+      { name: "Mkoani", wards: ["Changaweni", "Chokocho", "Kanga", "Kengeja", "Kiwani", "Kukuu", "Makombeni", "Mapofu", "Mbuyuni", "Michenzani", "Mkoani", "Mtambwe", "Ndagoni", "Ng'ambwa", "Wambaa", "Wingwi Njuguni"] }
+    ]
   }
 ];
 
