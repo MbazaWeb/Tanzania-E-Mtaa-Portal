@@ -28,12 +28,39 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Helper function to get the correct payment amount
+  // For percentage-based services (Mauziano, PANGISHA), use form_data.service_fee
+  // For fixed fee services, use services.fee
+  const getPaymentAmount = (app: Application): number => {
+    const serviceFee = (app as any).services?.fee || 0;
+    const formServiceFee = app.form_data?.service_fee;
+    
+    // If service has a fixed fee > 0, use it
+    if (serviceFee > 0) {
+      return serviceFee;
+    }
+    
+    // For percentage-based services (Mauziano, PANGISHA), use the calculated service_fee from form_data
+    if (formServiceFee && typeof formServiceFee === 'number') {
+      return formServiceFee;
+    }
+    
+    // Try to parse if it's a string
+    if (formServiceFee && typeof formServiceFee === 'string') {
+      const parsed = parseFloat(formServiceFee);
+      if (!isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    
+    return 0;
+  };
+
   // Add effect to check and update approved applications to pending_payment
   useEffect(() => {
     const updateApprovedToPendingPayment = async () => {
       const approvedApps = applications.filter(app => 
-        app.status === 'approved' && 
-        (app as any).services?.fee > 0 // Only for paid services
+        app.status === 'approved'
       );
 
       for (const app of approvedApps) {
@@ -61,7 +88,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
 
   // Alternative: Function to manually check and update status
   const checkAndUpdateApprovedStatus = async (app: Application) => {
-    if (app.status === 'approved' && (app as any).services?.fee > 0) {
+    if (app.status === 'approved') {
       try {
         const { error } = await supabase
           .from('applications')
@@ -158,8 +185,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
   // Transform applications to ensure approved ones show as pending_payment in UI
   const displayApplications = useMemo(() => {
     return filteredAndSortedApplications.map(app => {
-      // If status is approved and service has fee > 0, show as pending_payment for UI
-      if (app.status === 'approved' && (app as any).services?.fee > 0) {
+      // If status is approved, show as pending_payment for UI (all services now require payment step)
+      if (app.status === 'approved') {
         return {
           ...app,
           status: 'pending_payment' as const
@@ -303,7 +330,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                         onClick={() => onPay(app)}
                         className="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200"
                       >
-                        {(app as any).services?.fee > 0 ? `${t.payNow} (${formatCurrency((app as any).services?.fee, currency)})` : (lang === 'sw' ? 'Thibitisha (Bure)' : 'Confirm (Free)')}
+                        {t.payNow} ({formatCurrency(getPaymentAmount(app), currency)})
                       </button>
                     ) : app.status === 'issued' ? (
                       <div className="flex items-center justify-end gap-3">
@@ -396,7 +423,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     onClick={() => onPay(app)}
                     className="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all"
                   >
-                    {(app as any).services?.fee > 0 ? `${t.payNow} (${formatCurrency((app as any).services?.fee, currency)})` : (lang === 'sw' ? 'Thibitisha (Bure)' : 'Confirm (Free)')}
+                    {t.payNow} ({formatCurrency(getPaymentAmount(app), currency)})
                   </button>
                 ) : app.status === 'issued' ? (
                   <div className="flex items-center gap-4 w-full justify-between">
@@ -607,7 +634,7 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     className="w-full bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2"
                   >
                     <CreditCard size={18} />
-                    {(selectedApp as any).services?.fee > 0 ? `${t.payNow} (${formatCurrency((selectedApp as any).services?.fee, currency)})` : (lang === 'sw' ? 'Thibitisha (Bure)' : 'Confirm (Free)')}
+                    {t.payNow} ({formatCurrency(getPaymentAmount(selectedApp), currency)})
                   </button>
                 )}
 
