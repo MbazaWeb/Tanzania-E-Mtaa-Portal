@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { Application } from '@/src/lib/supabase';
+import { TANZANIA_LOGO_BASE64 } from '@/src/constants/logo';
 
 const styles = StyleSheet.create({
   page: {
@@ -184,7 +185,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ application, paymentData
         {/* Header */}
         <View style={styles.header}>
           <Image 
-            src="https://e-serikali-mtaa.vercel.app/tz-coat-of-arms.png" 
+            src={TANZANIA_LOGO_BASE64} 
             style={styles.logo}
           />
           <Text style={styles.country}>JAMHURI YA MUUNGANO WA TANZANIA</Text>

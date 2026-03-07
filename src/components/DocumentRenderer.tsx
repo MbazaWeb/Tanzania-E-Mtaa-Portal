@@ -1,19 +1,9 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font, PDFViewer } from '@react-pdf/renderer';
+import { TANZANIA_LOGO_BASE64 } from '@/src/constants/logo';
 
-// Register Inter font family with all required variants
-Font.register({
-  family: 'Inter',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf', fontWeight: 400, fontStyle: 'italic' },
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCm4LM_Z_8z-GcV9O9km8tmAto.ttf', fontWeight: 700 },
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcCm4LM_Z_8z-GcV9O9km8tmAto.ttf', fontWeight: 700, fontStyle: 'italic' },
-  ]
-});
-
-// Use production URL for Tanzania coat of arms (CORS-friendly from same origin)
-const TANZANIA_LOGO_URL = "https://e-serikali-mtaa.vercel.app/tz-coat-of-arms.png";
+// Use embedded base64 logo (no CORS issues)
+const TANZANIA_LOGO_URL = TANZANIA_LOGO_BASE64;
 
 // Styles matching the official Tanzania government document format - use Helvetica as fallback
 const styles = StyleSheet.create({

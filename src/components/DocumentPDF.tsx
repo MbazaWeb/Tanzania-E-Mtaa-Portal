@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import { Application } from '@/src/lib/supabase';
+import { TANZANIA_LOGO_BASE64 } from '@/src/constants/logo';
 
 // Register fonts if needed, but standard ones are usually fine for a start.
 // For Swahili, standard fonts work.
@@ -177,7 +178,7 @@ export const DocumentPDF: React.FC<DocumentPDFProps> = ({ application, lang }) =
         {/* Header */}
         <View style={styles.header}>
           <Image 
-            src={template?.header?.logo_url || "https://e-serikali-mtaa.vercel.app/tz-coat-of-arms.png"} 
+            src={TANZANIA_LOGO_BASE64} 
             style={styles.logo}
           />
           <Text style={styles.country}>{template?.header?.country || "JAMHURI YA MUUNGANO WA TANZANIA"}</Text>
