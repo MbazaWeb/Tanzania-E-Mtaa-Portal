@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS users (
     office_id UUID,
     assigned_region TEXT,
     assigned_district TEXT,
+    region TEXT,
+    district TEXT,
+    ward TEXT,
+    street TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
