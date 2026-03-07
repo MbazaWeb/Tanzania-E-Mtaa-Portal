@@ -1,6 +1,6 @@
 import { Service } from '@/src/lib/supabase';
 
-export const TANZANIA_LOGO_URL = "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png";
+export const TANZANIA_LOGO_URL = "/tz-coat-of-arms.png";
 
 export const HARDCODED_SERVICES: Service[] = [
   {
@@ -56,7 +56,7 @@ export const HARDCODED_SERVICES: Service[] = [
       "header": {
         "country": "JAMHURI YA MUUNGANO WA TANZANIA",
         "office": "OFISI YA RAIS - TAMISEMI",
-        "logo_url": "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"
+        "logo_url": "/tz-coat-of-arms.png"
       },
       "footer": "Cheti hiki ni rasmi na kinaweza kuthibitishwa kwa kuchanganua QR code."
     },
@@ -87,7 +87,7 @@ export const HARDCODED_SERVICES: Service[] = [
       "header": {
         "country": "JAMHURI YA MUUNGANO WA TANZANIA",
         "office": "OFISI YA RAIS - TAMISEMI",
-        "logo_url": "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"
+        "logo_url": "/tz-coat-of-arms.png"
       },
       "subject": "YAH: UTAMBULISHO WA NDUGU [FULL_NAME]",
       "body_template": "Ofisi ya Serikali ya Mtaa inamtambulisha ndugu [FULL_NAME] kuwa ni mkazi halali wa mtaa huu. Barua hii imetolewa kwa ajili ya [PURPOSE] katika taasisi ya [INSTITUTION_NAME].",
@@ -121,7 +121,7 @@ export const HARDCODED_SERVICES: Service[] = [
       "header": {
         "country": "JAMHURI YA MUUNGANO WA TANZANIA",
         "office": "OFISI YA RAIS - TAMISEMI",
-        "logo_url": "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"
+        "logo_url": "/tz-coat-of-arms.png"
       },
       "subject": "YAH: KIBALI CHA KUFANYA [EVENT_TYPE]",
       "body_template": "Ofisi ya Serikali ya Mtaa inatoa kibali kwa ndugu [FULL_NAME] kufanya [EVENT_TYPE] katika eneo la [EVENT_LOCATION] tarehe [EVENT_DATE].",
@@ -151,7 +151,7 @@ export const HARDCODED_SERVICES: Service[] = [
       "header": {
         "country": "JAMHURI YA MUUNGANO WA TANZANIA",
         "office": "OFISI YA RAIS - TAMISEMI",
-        "logo_url": "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"
+        "logo_url": "/tz-coat-of-arms.png"
       },
       "subject": "YAH: TAARIFA YA MSIBA NA MAZISHI YA [DECEASED_FULL_NAME]",
       "body_template": "Kwa huzuni kubwa, tunamtangaza kifo cha ndugu yetu mpenzi [DECEASED_FULL_NAME], ambaye ametufia tarehe [DATE_OF_DEATH]. Marehemu atazikwa katika [BURIAL_LOCATION].",
@@ -227,7 +227,7 @@ export const HARDCODED_SERVICES: Service[] = [
       "header": {
         "country": "JAMHURI YA MUUNGANO WA TANZANIA",
         "office": "OFISI YA RAIS - TAMISEMI",
-        "logo_url": "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"
+        "logo_url": "/tz-coat-of-arms.png"
       },
       "subject": "YAH: UTHIBITISHO WA MAKUBALIANO YA MAUZIANO YA [ASSET_TYPE]",
       "body_template": "Ofisi ya Serikali ya Mtaa inathibitisha kuwa kumefanyika makubaliano ya mauziano ya [ASSET_TYPE] yaliyopo [STREET], [WARD], [DISTRICT], [REGION] (Namba: [PLOT_NUMBER]/[HOUSE_NO]/[CAR_REG_NO]) yenye thamani ya TZS [SALE_PRICE] kati ya Muuzaji [SELLER_NAME] na Mnunuzi [BUYER_NAME]. Jumla ya malipo ikijumuisha kodi na ada ni TZS [TOTAL_AMOUNT].",
@@ -322,7 +322,7 @@ export const HARDCODED_SERVICES: Service[] = [
       "header": {
         "country": "JAMHURI YA MUUNGANO WA TANZANIA",
         "office": "OFISI YA RAIS - TAMISEMI",
-        "logo_url": "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"
+        "logo_url": "/tz-coat-of-arms.png"
       },
       "subject": "YAH: UTHIBITISHO WA MKATABA WA PANGO LA NYUMBA [HOUSE_NUMBER]",
       "body_template": "Ofisi ya Serikali ya Mtaa inathibitisha mkataba wa pango kati ya Mwenye Nyumba [LANDLORD_NAME] na Mpangaji [TENANT_NAME] kwa ajili ya nyumba namba [HOUSE_NUMBER] iliyopo [STREET], [WARD], [DISTRICT], [REGION]. Kodi ya pango ni TZS [MONTHLY_RENT] kwa mwezi kwa kipindi cha miezi [PAYMENT_PERIOD]. Jumla ya malipo ni TZS [TOTAL_RENT] (ikijumuisha VAT na Ada ya Huduma).",

@@ -1,19 +1,24 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, Font, PDFViewer } from '@react-pdf/renderer';
 
-// Register fonts
-Font.register({
-  family: 'Inter',
-  src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf',
-});
+// Register fonts with error handling
+try {
+  Font.register({
+    family: 'Inter',
+    src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf',
+  });
 
-Font.register({
-  family: 'InterBold',
-  src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf',
-  fontWeight: 'bold',
-});
+  Font.register({
+    family: 'InterBold',
+    src: 'https://fonts.gstatic.com/s/inter/v12/UcCOjAkZgdPTi9cHCcZfMDpn3dk.ttf',
+    fontWeight: 'bold',
+  });
+} catch (e) {
+  console.warn('Font registration failed, using fallback fonts');
+}
 
-const TANZANIA_LOGO_URL = "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png";
+// Use local public asset for Tanzania coat of arms
+const TANZANIA_LOGO_URL = "/tz-coat-of-arms.png";
 
 // Styles matching the official Tanzania government document format
 const styles = StyleSheet.create({

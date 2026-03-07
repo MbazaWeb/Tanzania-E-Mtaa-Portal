@@ -177,7 +177,7 @@ export const DocumentPDF: React.FC<DocumentPDFProps> = ({ application, lang }) =
         {/* Header */}
         <View style={styles.header}>
           <Image 
-            src={template?.header?.logo_url || "https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png"} 
+            src={template?.header?.logo_url || "/tz-coat-of-arms.png"} 
             style={styles.logo}
           />
           <Text style={styles.country}>{template?.header?.country || "JAMHURI YA MUUNGANO WA TANZANIA"}</Text>

@@ -184,7 +184,7 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ application, paymentData
         {/* Header */}
         <View style={styles.header}>
           <Image 
-            src="https://images.seeklogo.com/logo-png/31/1/coat-of-arms-of-tanzania-logo-png_seeklogo-311608.png" 
+            src="/tz-coat-of-arms.png" 
             style={styles.logo}
           />
           <Text style={styles.country}>JAMHURI YA MUUNGANO WA TANZANIA</Text>
