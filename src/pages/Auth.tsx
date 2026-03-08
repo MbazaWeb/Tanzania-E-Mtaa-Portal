@@ -62,7 +62,8 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
     firstName: "", middleName: "", lastName: "", sex: "Me", nationality: "Mtanzania", nidaNumber: "",
     country: "Tanzania", region: "", district: "", ward: "", street: "", phone: "", email: "", password: "", confirmPassword: "",
     lat: null as number | null, lng: null as number | null,
-    isDiaspora: false, countryOfResidence: "", passportNumber: "", countryOfCitizenship: "Tanzania"
+    isDiaspora: false, countryOfResidence: "", passportNumber: "", countryOfCitizenship: "Tanzania",
+    hasNida: true, idType: "" as string, idNumber: "" as string
   });
 
   const formatNIDA = (value: string) => {
@@ -279,8 +280,13 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
       return;
     }
 
-    if (regForm.nationality === 'Mtanzania' && regForm.nidaNumber.replace(/\D/g, '').length !== 20) {
+    if (regForm.nationality === 'Mtanzania' && regForm.hasNida && regForm.nidaNumber.replace(/\D/g, '').length !== 20) {
       showToast(lang === 'sw' ? "Namba ya NIDA lazima iwe na tarakimu 20" : "NIDA number must be 20 digits", 'error');
+      return;
+    }
+
+    if (regForm.nationality === 'Mtanzania' && !regForm.hasNida && (!regForm.idType || !regForm.idNumber)) {
+      showToast(lang === 'sw' ? "Tafadhali chagua aina ya kitambulisho na ingiza namba" : "Please select ID type and enter ID number", 'error');
       return;
     }
 
@@ -303,8 +309,8 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
         throw new Error(lang === 'sw' ? "Barua pepe hii tayari imeshasajiliwa. Tafadhali ingia." : "This email is already registered. Please login.");
       }
 
-      // Check if NIDA already exists (only for Tanzanians)
-      if (regForm.nationality === 'Mtanzania' && regForm.nidaNumber) {
+      // Check if NIDA already exists (only for Tanzanians with NIDA)
+      if (regForm.nationality === 'Mtanzania' && regForm.hasNida && regForm.nidaNumber) {
         const { data: existingNida } = await supabase
           .from('users')
           .select('id')
@@ -336,7 +342,9 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
           gender: regForm.sex,
           nationality: regForm.nationality === 'Mtanzania' ? 'Tanzanian' : 'Foreigner',
           country_of_citizenship: regForm.nationality === 'Mtanzania' ? 'Tanzania' : regForm.countryOfCitizenship,
-          nida_number: regForm.nidaNumber,
+          nida_number: regForm.hasNida ? regForm.nidaNumber : null,
+          id_type: !regForm.hasNida ? regForm.idType : null,
+          id_number: !regForm.hasNida ? regForm.idNumber : null,
           region: regForm.region,
           district: regForm.district,
           ward: regForm.ward,
@@ -696,29 +704,88 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
 
                     {regForm.nationality === 'Mtanzania' ? (
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1">{lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'}</label>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text"
-                              value={regForm.nidaNumber}
-                              onChange={(e) => updateRegForm('nidaNumber', formatNIDA(e.target.value))}
-                              className="flex-1 h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
-                              placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
-                              aria-label="NIDA Number"
-                            />
-                            <button 
-                              type="button"
-                              onClick={verifyNIDA}
-                              disabled={nidaVerifying || regForm.nidaNumber.replace(/\D/g, '').length !== 20}
-                              className="px-6 bg-stone-900 text-white rounded-2xl font-bold hover:bg-stone-800 transition-all disabled:opacity-50"
-                            >
-                              {nidaVerifying ? <Loader2 className="animate-spin" /> : (lang === 'sw' ? 'Hakiki' : 'Verify')}
-                            </button>
-                          </div>
-                          {nidaError && <p className="text-xs text-red-500 font-bold flex items-center gap-1"><AlertCircle size={12} /> {nidaError}</p>}
-                          {nidaVerified && <p className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 size={12} /> {lang === 'sw' ? 'NIDA imehakikiwa kikamilifu' : 'NIDA verified successfully'}</p>}
+                        {/* Toggle: Has NIDA or Not */}
+                        <div className="flex gap-4 items-center">
+                          <button
+                            type="button"
+                            onClick={() => updateRegForm('hasNida', true)}
+                            className={`flex-1 h-12 rounded-xl font-bold transition-all ${regForm.hasNida ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600'}`}
+                          >
+                            {lang === 'sw' ? 'Nina NIDA' : 'I have NIDA'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateRegForm('hasNida', false)}
+                            className={`flex-1 h-12 rounded-xl font-bold transition-all ${!regForm.hasNida ? 'bg-amber-600 text-white' : 'bg-stone-100 text-stone-600'}`}
+                          >
+                            {lang === 'sw' ? 'Sina NIDA' : "I don't have NIDA"}
+                          </button>
                         </div>
+
+                        {regForm.hasNida ? (
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1">{lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'}</label>
+                            <div className="flex gap-2">
+                              <input 
+                                type="text"
+                                value={regForm.nidaNumber}
+                                onChange={(e) => updateRegForm('nidaNumber', formatNIDA(e.target.value))}
+                                className="flex-1 h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                                placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
+                                aria-label="NIDA Number"
+                              />
+                              <button 
+                                type="button"
+                                onClick={verifyNIDA}
+                                disabled={nidaVerifying || regForm.nidaNumber.replace(/\D/g, '').length !== 20}
+                                className="px-6 bg-stone-900 text-white rounded-2xl font-bold hover:bg-stone-800 transition-all disabled:opacity-50"
+                              >
+                                {nidaVerifying ? <Loader2 className="animate-spin" /> : (lang === 'sw' ? 'Hakiki' : 'Verify')}
+                              </button>
+                            </div>
+                            {nidaError && <p className="text-xs text-red-500 font-bold flex items-center gap-1"><AlertCircle size={12} /> {nidaError}</p>}
+                            {nidaVerified && <p className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 size={12} /> {lang === 'sw' ? 'NIDA imehakikiwa kikamilifu' : 'NIDA verified successfully'}</p>}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1">{lang === 'sw' ? 'Aina ya Kitambulisho' : 'ID Type'}</label>
+                              <select
+                                value={regForm.idType}
+                                onChange={(e) => updateRegForm('idType', e.target.value)}
+                                className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                                aria-label="ID Type"
+                              >
+                                <option value="">{lang === 'sw' ? 'Chagua Aina ya Kitambulisho' : 'Select ID Type'}</option>
+                                <option value="birth_certificate">{lang === 'sw' ? 'Cheti cha Kuzaliwa' : 'Birth Certificate'}</option>
+                                <option value="voter_id">{lang === 'sw' ? 'Kadi ya Mpiga Kura (E-NEC)' : 'Voter ID (E-NEC)'}</option>
+                                <option value="driving_license">{lang === 'sw' ? 'Leseni ya Udereva' : 'Driving License'}</option>
+                                <option value="zanzibar_id">{lang === 'sw' ? 'Kitambulisho cha Zanzibar' : 'Zanzibar ID'}</option>
+                                <option value="student_id">{lang === 'sw' ? 'Kitambulisho cha Mwanafunzi' : 'Student ID'}</option>
+                                <option value="employer_id">{lang === 'sw' ? 'Kitambulisho cha Kazi' : 'Employer ID'}</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-stone-500 uppercase tracking-widest ml-1">{lang === 'sw' ? 'Namba ya Kitambulisho' : 'ID Number'}</label>
+                              <input 
+                                type="text"
+                                value={regForm.idNumber}
+                                onChange={(e) => updateRegForm('idNumber', e.target.value)}
+                                className="w-full h-14 px-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                                placeholder={lang === 'sw' ? 'Ingiza Namba ya Kitambulisho' : 'Enter ID Number'}
+                                aria-label="ID Number"
+                              />
+                            </div>
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                              <p className="text-xs text-amber-700">
+                                <AlertCircle size={12} className="inline mr-1" />
+                                {lang === 'sw' 
+                                  ? 'Akaunti bila NIDA itahitaji uthibitisho wa ziada. Huduma zingine zinaweza kuwa na vikwazo.' 
+                                  : 'Accounts without NIDA require additional verification. Some services may be restricted.'}
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-2">
