@@ -197,8 +197,8 @@ export default function App() {
       const updated = existing.map((app: any) => 
         app.id === payingApplication.id ? { 
           ...app, 
-          status: 'issued', 
-          issued_at: new Date().toISOString(),
+          status: 'paid', 
+          paid_at: new Date().toISOString(),
           payment_data: paymentInfo
         } : app
       );
@@ -206,7 +206,7 @@ export default function App() {
       
       setPayingApplication(null);
       fetchApplications();
-      showToast(lang === 'sw' ? 'Malipo yamepokelewa! Hati yako imetolewa.' : 'Payment received! Your document has been issued.', 'success');
+      showToast(lang === 'sw' ? 'Malipo yamepokelewa! Inasubiri uthibitisho wa Mtumishi.' : 'Payment received! Awaiting staff verification.', 'success');
       return;
     }
 
@@ -219,7 +219,7 @@ export default function App() {
     const { error } = await supabase
       .from('applications')
       .update({ 
-        status: 'issued',
+        status: 'paid',
         form_data: updatedFormData
       })
       .eq('id', payingApplication.id);
@@ -232,7 +232,7 @@ export default function App() {
     
     setPayingApplication(null);
     fetchApplications();
-    showToast(lang === 'sw' ? 'Malipo yamepokelewa! Hati yako imetolewa.' : 'Payment received! Your document has been issued.', 'success');
+    showToast(lang === 'sw' ? 'Malipo yamepokelewa! Inasubiri uthibitisho wa Mtumishi.' : 'Payment received! Awaiting staff verification.', 'success');
   };
 
   if (authLoading) {
