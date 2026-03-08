@@ -403,7 +403,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
 
                   <View style={styles.signatureBlock}>
                     <View style={styles.signatureLine} />
-                    <Text style={styles.signatureTitle}>Mtendaji wa Kata / Kijiji</Text>
+                    <Text style={styles.signatureTitle}>Mtendaji wa Kata</Text>
                   </View>
 
                   <View style={styles.signatureBlock}>
@@ -532,7 +532,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
                 <View style={styles.qrSection}>
                   <View style={styles.qrContainer}>
                     <Image src={qrUrl} style={styles.qrCode} />
-                    <Text style={styles.qrLabel}>THIBITISHA QR CODE</Text>
+                    <Text style={styles.qrLabel}>QR CODE YA UTHIBITISHO</Text>
                     <View style={styles.verifiedBadge}>
                       <Text style={styles.verifiedText}>✓ IMETHIBITISHWA KIDIJITALI</Text>
                     </View>
@@ -750,7 +750,11 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
                   <View style={styles.signatureBlock}>
                     <View style={styles.signatureLine} />
                     <Text style={styles.signatureTitle}>Kasiimu wa Fedha</Text>
-                    <Text style={{ fontSize: 8, textAlign: 'center', color: '#666' }}>{formData.ward || user.ward || 'Kata'}</Text>
+                  </View>
+
+                  <View style={styles.signatureBlock}>
+                    <View style={styles.signatureLine} />
+                    <Text style={styles.signatureTitle}>Mtendaji wa Kata</Text>
                   </View>
                 </View>
               </View>
@@ -832,7 +836,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
                 <View style={styles.qrSection}>
                   <View style={styles.qrContainer}>
                     <Image src={qrUrl} style={styles.qrCode} />
-                    <Text style={styles.qrLabel}>THIBITISHA HATI</Text>
+                    <Text style={styles.qrLabel}>QR CODE YA UTHIBITISHO</Text>
                     <View style={styles.verifiedBadge}>
                       <Text style={styles.verifiedText}>✓ IMETHIBITISHWA KIDIJITALI</Text>
                     </View>
@@ -840,7 +844,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
 
                   <View style={styles.signatureBlock}>
                     <View style={styles.signatureLine} />
-                    <Text style={styles.signatureTitle}>Mtendaji wa Kata / Kijiji</Text>
+                    <Text style={styles.signatureTitle}>Mtendaji wa Kata</Text>
                   </View>
 
                   <View style={styles.signatureBlock}>
@@ -919,7 +923,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
 
                 <View style={styles.signatureBlock}>
                   <View style={styles.signatureLine} />
-                  <Text style={styles.signatureTitle}>Mtendaji wa Kata / Kijiji</Text>
+                  <Text style={styles.signatureTitle}>Mtendaji wa Kata</Text>
                 </View>
 
                 <View style={styles.signatureBlock}>
