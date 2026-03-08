@@ -273,6 +273,26 @@ export const TANZANIA_ADDRESS_DATA: RegionData[] = [
     ]
   },
   {
+    name: "Mara",
+    districts: [
+      { name: "Musoma Municipal", wards: ["Buhare", "Iringo", "Kamunyonge", "Kitaji", "Kigera", "Makoko", "Mwigobero", "Mukendo", "Nyakanga", "Nyasho", "Nyashurungwa", "Rwamunga", "Ryamisanga", "Kwangwa", "Nyamatare"] },
+      { name: "Musoma District", wards: ["Bukima", "Bukingwa", "Buhemba", "Butiama", "Busegwe", "Etaro", "Iramba", "Kiabakari", "Makongoro", "Muriaza", "Mugango", "Nyakatende", "Nyahanga", "Ryamisanga", "Suguti", "Sanyere", "Taring'a", "Masanga"] },
+      { name: "Bunda", wards: ["Balili", "Bunda", "Bukabwa", "Chitengule", "Guta", "Igundu", "Kiriba", "Kunzugu", "Kasuguti", "Ketare", "Mchangani", "Mihingo", "Mugeta", "Murure", "Namasanga", "Namuhula", "Nyambono", "Nyamsangura", "Salama", "Sazira", "Serengeti", "Tingirima"] },
+      { name: "Tarime", wards: ["Binagi", "Borega", "Bumera", "Gorong'a", "Itongo", "Kegonga", "Kemambo", "Manga", "Matongo", "Muriba", "Nkerege", "Nyamara", "Nyarogusu", "Pemba", "Sirari", "Susuni", "Turwa"] },
+      { name: "Serengeti", wards: ["Ikoma", "Issenye", "Kebanchabancha", "Kisaka", "Mbalibali", "Morotonga", "Nata", "Nyichoka", "Nyambureti", "Park Nyigoti", "Robanda", "Mugumu", "Machochwe", "Nyansurura", "Sedeko"] },
+      { name: "Rorya", wards: ["Ingri", "Kirogo", "Kisumwa", "Koryo", "Mkoma", "Nyamunga", "Nyamtinga", "Obwere", "Ochuna", "Roche", "Rorya", "Suba", "Sota", "Utegi", "Kibara"] }
+    ]
+  },
+  {
+    name: "Songwe",
+    districts: [
+      { name: "Momba", wards: ["Chitete", "Chilulumo", "Ivuna", "Kamsamba", "Kapele", "Katumba", "Lungwa", "Momba", "Mpona", "Msangano", "Ndalambo", "Tembela", "Ulenje"] },
+      { name: "Mbozi", wards: ["Halungu", "Hasamba", "Igamba", "Ihanda", "Itumba", "Idimi", "Kamsamba", "Mlowo", "Msangano", "Myunga", "Nambala", "Ndalambo", "Ruanda", "Shiwinga", "Tunduma", "Vwawa"] },
+      { name: "Songwe", wards: ["Chapwa", "Ikana", "Kapalala", "Kiwira", "Makao", "Mapogoro", "Masoko", "Mpemba", "Msia", "Muungano", "Namswea", "Ndola", "Njugilo", "Santilya", "Totowe"] },
+      { name: "Ileje", wards: ["Bulambya", "Chitete", "Ibanda", "Ikana", "Isongole", "Itumba", "Kafule", "Luswisi", "Malangali", "Mbebe", "Mlale", "Ngulilo", "Sange"] }
+    ]
+  },
+  {
     name: "Unguja Mjini Magharibi",
     districts: [
       { name: "Mjini", wards: ["Amani", "Chumbuni", "Darajani", "Forodhani", "Gulioni", "Jang'ombe", "Karakana", "Kidongo Chekundu", "Kokoni", "Kwahani", "Kwamtipura", "Magomeni", "Makadara", "Malindi", "Matalumwa", "Mchangani", "Mikunguni", "Mpendae", "Mwanakwerekwe", "Mwembeladu", "Mwembetanga", "Nyerere", "Rahaleo", "Sebleni", "Shangani", "Sogea", "Vikokotoni", "Vuga"] },
