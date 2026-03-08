@@ -46,7 +46,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   const { showToast } = useToast();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'submitted' | 'paid' | 'verified' | 'approved' | 'rejected' | 'pending_review'>('all');
+  const [filter, setFilter] = useState<'all' | 'submitted' | 'pending_payment' | 'paid' | 'verified' | 'approved' | 'rejected' | 'pending_review'>('all');
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('all');
   const [districtFilter, setDistrictFilter] = useState('all');
@@ -218,8 +218,25 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       return;
     }
 
-    // Always go to pending_payment - citizen confirms even for free services
-    await updateStatus(selectedApp.id, 'pending_payment');
+    // Different next status based on current status
+    let nextStatus = 'pending_payment';
+    
+    if (selectedApp.status === 'submitted' || selectedApp.status === 'pending_review') {
+      // First approval - send to payment
+      nextStatus = 'pending_payment';
+    } else if (selectedApp.status === 'paid') {
+      // Application is paid - verify and approve in one step
+      nextStatus = 'approved';
+    } else if (selectedApp.status === 'verified') {
+      // Already verified - final approval
+      nextStatus = 'approved';
+    }
+
+    await updateStatus(selectedApp.id, nextStatus);
+    
+    if (nextStatus === 'approved') {
+      showToast(lang === 'sw' ? 'Maombi yameidhinishwa! Tayari kutoa hati.' : 'Application approved! Ready to issue document.', 'success');
+    }
   };
 
   const handleReject = async () => {
@@ -267,6 +284,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   const getStatusStyle = (status: string) => {
     const styles: any = {
       submitted: "bg-blue-50 text-blue-600 border-blue-100",
+      pending_payment: "bg-orange-50 text-orange-600 border-orange-100",
       paid: "bg-amber-50 text-amber-600 border-amber-100",
       verified: "bg-indigo-50 text-indigo-600 border-indigo-100",
       pending_review: "bg-purple-50 text-purple-600 border-purple-100",
@@ -327,6 +345,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
             >
               <option value="all">{lang === 'sw' ? 'Hali Yote' : 'All Status'}</option>
               <option value="submitted">{lang === 'sw' ? 'Yaliyotumwa' : 'Submitted'}</option>
+              <option value="pending_payment">{lang === 'sw' ? 'Yanasubiri Malipo' : 'Pending Payment'}</option>
               <option value="paid">{lang === 'sw' ? 'Yaliyolipiwa' : 'Paid'}</option>
               <option value="verified">{lang === 'sw' ? 'Yaliyothibitishwa' : 'Verified'}</option>
               <option value="pending_review">{lang === 'sw' ? 'Yanasubiri Uhakiki' : 'Pending Review'}</option>
@@ -642,6 +661,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{lang === 'sw' ? 'Hatua za Uhakiki' : 'Verification Actions'}</p>
                       
                       <div className="grid grid-cols-1 gap-2">
+                        {/* Verify button - only for paid status */}
                         {selectedApp.status === 'paid' && (
                           <button 
                             disabled={processing}
@@ -649,11 +669,20 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                             className="w-full h-12 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
                           >
                             {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
-                            {lang === 'sw' ? 'Thibitisha Maombi' : 'Verify Application'}
+                            {lang === 'sw' ? 'Thibitisha Malipo' : 'Verify Payment'}
                           </button>
                         )}
 
-                        {['submitted', 'paid', 'verified', 'pending_review'].includes(selectedApp.status) && (
+                        {/* Pending Payment Info */}
+                        {selectedApp.status === 'pending_payment' && (
+                          <div className="w-full h-12 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            {lang === 'sw' ? 'Inasubiri Malipo ya Mwananchi' : 'Awaiting Citizen Payment'}
+                          </div>
+                        )}
+
+                        {/* Approve to Payment - for submitted/pending_review */}
+                        {['submitted', 'pending_review'].includes(selectedApp.status) && (
                           <button 
                             disabled={processing || 
                               ((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
@@ -669,11 +698,33 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                             )}
                           >
                             {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                            {lang === 'sw' ? 'Idhinisha' : 'Approve Application'}
+                            {lang === 'sw' ? 'Idhinisha → Malipo' : 'Approve → Payment'}
                           </button>
                         )}
 
-                        {['submitted', 'paid', 'verified', 'pending_review'].includes(selectedApp.status) && (
+                        {/* Final Approval - for paid/verified */}
+                        {['paid', 'verified'].includes(selectedApp.status) && (
+                          <button 
+                            disabled={processing || 
+                              ((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                              ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
+                            }
+                            onClick={handleApprove}
+                            className={cn(
+                              "w-full h-12 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg",
+                              (((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                               ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
+                                ? "bg-stone-300 cursor-not-allowed shadow-none"
+                                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
+                            )}
+                          >
+                            {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                            {lang === 'sw' ? 'Idhinisha Maombi' : 'Approve Application'}
+                          </button>
+                        )}
+
+                        {/* Return/Reject buttons */}
+                        {['submitted', 'paid', 'verified', 'pending_review', 'pending_payment'].includes(selectedApp.status) && (
                           <div className="space-y-2">
                             {showFeedbackInput ? (
                               <div className="space-y-2 animate-in slide-in-from-top-2">
