@@ -578,140 +578,146 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         <Page size="A4" style={styles.page}>
           <View style={styles.outerBorder}>
             <View style={styles.innerBorder}>
-              {/* Header */}
+              {/* Header - matching HATI/CHETI format */}
               <View style={styles.header}>
                 <Image src={TANZANIA_LOGO_URL} style={styles.emblem} />
                 <Text style={styles.republicText}>JAMHURI YA MUUNGANO WA TANZANIA</Text>
-                <Text style={styles.officeText}>OFISI YA RAIS – TAMISEMI</Text>
-                <Text style={[styles.subOfficeText, { color: '#1B5E20' }]}>E-MTAA PORTAL – MFUMO WA HUDUMA ZA SERIKALI</Text>
+                <Text style={styles.officeText}>OFISI YA RAIS</Text>
+                <Text style={styles.subOfficeText}>TAWALA ZA MIKOA NA SERIKALI ZA MITAA</Text>
               </View>
 
               <Text style={styles.title}>RISITI YA MALIPO</Text>
 
+              {/* Reference and Date - matching HATI/CHETI format */}
+              <View style={styles.refDateRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                  <Text style={styles.refText}>Namba ya Risiti:</Text>
+                  <Text style={[styles.fieldValue, { minWidth: 150 }]}>{receiptNo}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                  <Text style={styles.refText}>Tarehe:</Text>
+                  <Text style={[styles.fieldValue, { minWidth: 120 }]}>{formatDateSwahili(issueDate)}</Text>
+                </View>
+              </View>
+
               {/* Status Badge */}
-              <View style={{ alignItems: 'center', marginBottom: 15 }}>
-                <View style={{ backgroundColor: '#1B5E20', paddingVertical: 6, paddingHorizontal: 20, borderRadius: 15 }}>
-                  <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' }}>● HALI: MALIPO YAMEKAMILIKA</Text>
+              <View style={{ alignItems: 'center', marginBottom: 12 }}>
+                <View style={styles.verifiedBadge}>
+                  <Text style={styles.verifiedText}>✓ MALIPO YAMEKAMILIKA</Text>
                 </View>
               </View>
 
               {/* TAARIFA ZA MUAMALA */}
-              <View style={{ backgroundColor: '#f5f5f0', padding: 12, marginBottom: 10, border: '1pt solid #ddd' }}>
-                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 8, color: '#1B5E20' }}>TAARIFA ZA MUAMALA</Text>
+              <Text style={styles.sectionHeader}>TAARIFA ZA MUAMALA</Text>
+              <View style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                   <View style={{ width: '50%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Receipt No:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{receiptNo}</Text>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Control Number:</Text>
+                      <Text style={styles.fieldValue}>{controlNo}</Text>
+                    </View>
                   </View>
                   <View style={{ width: '50%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Control Number:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{controlNo}</Text>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Transaction ID:</Text>
+                      <Text style={styles.fieldValue}>{transactionId}</Text>
+                    </View>
                   </View>
                   <View style={{ width: '50%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Transaction ID:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{transactionId}</Text>
-                  </View>
-                  <View style={{ width: '25%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Tarehe:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{paymentDate}</Text>
-                  </View>
-                  <View style={{ width: '25%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Saa:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{paymentTime}</Text>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Saa:</Text>
+                      <Text style={styles.fieldValue}>{paymentTime}</Text>
+                    </View>
                   </View>
                   <View style={{ width: '50%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Njia ya Malipo:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{application.payment_method || 'M-Pesa'}</Text>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Njia ya Malipo:</Text>
+                      <Text style={styles.fieldValue}>{application.payment_method || 'M-Pesa'}</Text>
+                    </View>
                   </View>
                   <View style={{ width: '50%', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Namba Iliyolipa:</Text>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{maskedPhone}</Text>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Namba Iliyolipa:</Text>
+                      <Text style={styles.fieldValue}>{maskedPhone}</Text>
+                    </View>
                   </View>
                 </View>
               </View>
 
               {/* TAARIFA ZA MLIPAJI */}
-              <View style={{ backgroundColor: '#fff', padding: 12, marginBottom: 10, border: '1pt solid #ddd' }}>
-                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 8, color: '#1B5E20' }}>TAARIFA ZA MLIPAJI</Text>
+              <Text style={styles.sectionHeader}>TAARIFA ZA MLIPAJI</Text>
+              <View style={{ marginBottom: 10 }}>
                 <View style={styles.fieldRow}>
-                  <Text style={{ fontSize: 9, width: 80 }}>Jina la Mlipaji:</Text>
-                  <Text style={{ fontSize: 9, fontWeight: 'bold', flex: 1 }}>{fullName}</Text>
+                  <Text style={styles.fieldLabel}>Jina la Mlipaji:</Text>
+                  <Text style={styles.fieldValueLong}>{fullName}</Text>
                 </View>
                 <View style={styles.fieldRow}>
-                  <Text style={{ fontSize: 9, width: 80 }}>NIDA:</Text>
-                  <Text style={{ fontSize: 9, fontWeight: 'bold', flex: 1 }}>{user.nida_number || 'N/A'}</Text>
+                  <Text style={styles.fieldLabel}>Namba ya NIDA:</Text>
+                  <Text style={[styles.fieldValue, { minWidth: 180 }]}>{user.nida_number || 'N/A'}</Text>
                 </View>
               </View>
 
               {/* TAARIFA ZA HUDUMA */}
-              <View style={{ backgroundColor: '#f5f5f0', padding: 12, marginBottom: 10, border: '1pt solid #ddd' }}>
-                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 8, color: '#1B5E20' }}>TAARIFA ZA HUDUMA</Text>
+              <Text style={styles.sectionHeader}>TAARIFA ZA HUDUMA</Text>
+              <View style={{ marginBottom: 10 }}>
                 <View style={styles.fieldRow}>
-                  <Text style={{ fontSize: 9, width: 100 }}>Huduma:</Text>
-                  <Text style={{ fontSize: 9, fontWeight: 'bold', flex: 1 }}>{service?.name || 'Huduma'}</Text>
+                  <Text style={styles.fieldLabel}>Huduma:</Text>
+                  <Text style={styles.fieldValueLong}>{service?.name || 'Huduma'}</Text>
                 </View>
                 <View style={styles.fieldRow}>
-                  <Text style={{ fontSize: 9, width: 100 }}>Namba ya Maombi:</Text>
-                  <Text style={{ fontSize: 9, fontWeight: 'bold', flex: 1 }}>{application.application_number}</Text>
+                  <Text style={styles.fieldLabel}>Namba ya Maombi:</Text>
+                  <Text style={[styles.fieldValue, { minWidth: 150 }]}>{application.application_number}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', marginTop: 5 }}>
-                  <View style={{ width: '50%' }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Mkoa:</Text>
-                    <Text style={{ fontSize: 9 }}>{formData.region || user.region || ''}</Text>
-                  </View>
-                  <View style={{ width: '50%' }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Wilaya:</Text>
-                    <Text style={{ fontSize: 9 }}>{formData.district || user.district || ''}</Text>
-                  </View>
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Mkoa:</Text>
+                  <Text style={[styles.fieldValue, { minWidth: 140 }]}>{formData.region || user.region || ''}</Text>
+                  <Text style={styles.fieldLabel}>, Wilaya:</Text>
+                  <Text style={styles.fieldValueLong}>{formData.district || user.district || ''}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', marginTop: 3 }}>
-                  <View style={{ width: '50%' }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Kata:</Text>
-                    <Text style={{ fontSize: 9 }}>{formData.ward || user.ward || ''}</Text>
-                  </View>
-                  <View style={{ width: '50%' }}>
-                    <Text style={{ fontSize: 8, color: '#666' }}>Mtaa:</Text>
-                    <Text style={{ fontSize: 9 }}>{formData.street || user.street || ''}</Text>
-                  </View>
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Kata:</Text>
+                  <Text style={[styles.fieldValue, { minWidth: 140 }]}>{formData.ward || user.ward || ''}</Text>
+                  <Text style={styles.fieldLabel}>, Mtaa:</Text>
+                  <Text style={styles.fieldValueLong}>{formData.street || user.street || ''}</Text>
                 </View>
               </View>
 
               {/* MGANYO WA MALIPO */}
+              <Text style={styles.sectionHeader}>MGANYO WA MALIPO</Text>
               <View style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 6, color: '#1B5E20' }}>MGANYO WA MALIPO</Text>
                 <View style={styles.table}>
                   <View style={styles.tableRow}>
                     <View style={[styles.tableColHeader, { width: '50%' }]}><Text style={styles.tableCellHeader}>Maelezo</Text></View>
                     <View style={[styles.tableColHeader, { width: '25%' }]}><Text style={styles.tableCellHeader}>%</Text></View>
-                    <View style={[styles.tableColHeader, { width: '25%' }]}><Text style={styles.tableCellHeader}>Kiasi</Text></View>
+                    <View style={[styles.tableColHeader, { width: '25%' }]}><Text style={styles.tableCellHeader}>Kiasi (TZS)</Text></View>
                   </View>
                   <View style={styles.tableRow}>
-                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>VAT</Text></View>
+                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Kodi ya Ongezeko (VAT)</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>18%</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{vatAmount.toLocaleString()}</Text></View>
                   </View>
                   <View style={styles.tableRow}>
-                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Region</Text></View>
+                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Mkoa</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>10%</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{regionAmount.toLocaleString()}</Text></View>
                   </View>
                   <View style={styles.tableRow}>
-                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>District</Text></View>
+                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Wilaya</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>15%</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{districtAmount.toLocaleString()}</Text></View>
                   </View>
                   <View style={styles.tableRow}>
-                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Ward</Text></View>
+                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Kata</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>20%</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{wardAmount.toLocaleString()}</Text></View>
                   </View>
                   <View style={styles.tableRow}>
-                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Street</Text></View>
+                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Mtaa</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>27%</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{streetAmount.toLocaleString()}</Text></View>
                   </View>
                   <View style={styles.tableRow}>
-                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Service Charge</Text></View>
+                    <View style={[styles.tableCol, { width: '50%' }]}><Text style={styles.tableCell}>Ada ya Huduma</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>10%</Text></View>
                     <View style={[styles.tableCol, { width: '25%' }]}><Text style={styles.tableCell}>{serviceChargeAmount.toLocaleString()}</Text></View>
                   </View>
@@ -719,20 +725,33 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
               </View>
 
               {/* JUMLA */}
-              <View style={{ alignItems: 'center', marginVertical: 10 }}>
-                <Text style={{ fontSize: 9, color: '#666' }}>JUMLA</Text>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1B5E20' }}>TZS {fee.toLocaleString()}</Text>
-                <View style={{ backgroundColor: '#1B5E20', paddingVertical: 4, paddingHorizontal: 15, borderRadius: 10, marginTop: 5 }}>
-                  <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' }}>● PAID</Text>
+              <View style={{ alignItems: 'flex-end', marginVertical: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, fontWeight: 'bold' }}>JUMLA KUU: </Text>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1B5E20' }}>TZS {fee.toLocaleString()}</Text>
                 </View>
               </View>
 
-              {/* Footer with QR */}
+              <Text style={styles.bodyText}>
+                Risiti hii ni uthibitisho wa malipo yaliyofanywa kwa huduma iliyotajwa hapo juu.
+              </Text>
+
+              {/* Footer with QR - matching HATI/CHETI format */}
               <View style={styles.footer}>
-                <View style={{ alignItems: 'center' }}>
-                  <Image src={qrUrl} style={[styles.qrCode, { width: 70, height: 70 }]} />
-                  <Text style={{ fontSize: 8, fontWeight: 'bold', marginTop: 3 }}>QR CODE YA UTHIBITISHO</Text>
-                  <Text style={{ fontSize: 7, color: '#666', textAlign: 'center', marginTop: 2 }}>Scan QR kuthibitisha risiti hii kupitia{'\n'}E-MTAA Portal Verification System</Text>
+                <View style={styles.qrSection}>
+                  <View style={styles.qrContainer}>
+                    <Image src={qrUrl} style={styles.qrCode} />
+                    <Text style={styles.qrLabel}>QR CODE YA UTHIBITISHO</Text>
+                    <View style={styles.verifiedBadge}>
+                      <Text style={styles.verifiedText}>✓ MALIPO YAMETHIBITISHWA</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.signatureBlock}>
+                    <View style={styles.signatureLine} />
+                    <Text style={styles.signatureTitle}>Kasiimu wa Fedha</Text>
+                    <Text style={{ fontSize: 8, textAlign: 'center', color: '#666' }}>{formData.ward || user.ward || 'Kata'}</Text>
+                  </View>
                 </View>
               </View>
             </View>
