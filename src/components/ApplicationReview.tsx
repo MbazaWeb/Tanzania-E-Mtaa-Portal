@@ -620,6 +620,48 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                     <Eye size={14} />
                     {lang === 'sw' ? 'Soma Maombi Kamili' : 'Read Full Application'}
                   </button>
+                  
+                  {/* Quick Action Buttons - Moved to header for visibility */}
+                  {['admin', 'staff'].includes(user?.role || '') && !['issued', 'rejected'].includes(selectedApp.status) && (
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      {['submitted', 'pending_review'].includes(selectedApp.status) && (
+                        <button 
+                          disabled={processing}
+                          onClick={handleApprove}
+                          className="col-span-2 h-12 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+                        >
+                          {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                          {lang === 'sw' ? 'Idhinisha → Malipo' : 'Approve → Payment'}
+                        </button>
+                      )}
+                      {selectedApp.status === 'pending_payment' && (
+                        <div className="col-span-2 h-12 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          {lang === 'sw' ? 'Inasubiri Malipo' : 'Awaiting Payment'}
+                        </div>
+                      )}
+                      {['paid', 'verified'].includes(selectedApp.status) && (
+                        <button 
+                          disabled={processing}
+                          onClick={handleApprove}
+                          className="col-span-2 h-12 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+                        >
+                          {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                          {lang === 'sw' ? 'Idhinisha Maombi' : 'Approve Application'}
+                        </button>
+                      )}
+                      {selectedApp.status === 'approved' && (
+                        <button 
+                          disabled={processing}
+                          onClick={() => updateStatus(selectedApp.id, 'issued')}
+                          className="col-span-2 h-12 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                        >
+                          {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                          {lang === 'sw' ? 'Toa Hati' : 'Issue Document'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-6 space-y-6">
