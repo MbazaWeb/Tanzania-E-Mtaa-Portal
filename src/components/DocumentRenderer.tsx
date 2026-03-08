@@ -419,9 +419,26 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
     );
   }
 
-  // BARUA YA UTAMBULISHO - Identification Letter
+  // BARUA YA UTAMBULISHO - Identification Letter (supports multiple addresses)
   if (documentType.includes('UTAMBULISHO') || documentType.toLowerCase().includes('identification') || documentType.toLowerCase().includes('introduction') || service?.name?.includes('Utambulisho') || service?.name?.includes('Barua')) {
     const purposeMap: Record<string, string> = {
+      'BENKI': 'BENKI — Kufungua akaunti ya benki.',
+      'AJIRA': 'AJIRA — Kuthibitisha mkazi kwa ajili ya kazi.',
+      'CHUO': 'ELIMU — Kusajili chuo/shule.',
+      'AFYA': 'AFYA — Kupata huduma za afya.',
+      'LESENI_BIASHARA': 'LESENI — Kuomba leseni ya biashara.',
+      'LESENI_UDEREVA': 'LESENI — Kuomba leseni ya udereva.',
+      'SIMU': 'SIMU — Kusajili SIM card.',
+      'PASSPORT': 'SAFARI — Kuomba passport/visa.',
+      'TRA': 'KODI — Kupata huduma za TRA.',
+      'BIMA': 'BIMA — Kupata huduma za bima.',
+      'KUSAJILI_MTOTO': 'ELIMU — Kusajili mtoto shuleni.',
+      'MKOPO': 'FEDHA — Kuomba mkopo.',
+      'ARDHI': 'MALI — Kununua ardhi/nyumba.',
+      'HUDUMA_UMEME_MAJI': 'HUDUMA — Kupata umeme/maji.',
+      'WAAJIRI': 'AJIRA — Uthibitisho kwa waajiri.',
+      'SERIKALI': 'SERIKALI — Maombi ya serikali.',
+      'NYINGINEZO': formData.purpose_details || 'Mahitaji mengine.',
       'bank': 'BENKI — Kufungua akaunti ya benki.',
       'employment': 'AJIRA — Kuthibitisha mkazi kwa ajili ya kazi.',
       'school': 'ELIMU — Kusajili mtoto shuleni.',
@@ -431,127 +448,169 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
     };
     const purposeText = purposeMap[formData.purpose] || formData.purpose || 'Matumizi rasmi.';
 
-    return (
-      <Document>
-        <Page size="A4" style={styles.page}>
-          <View style={styles.outerBorder}>
-            <View style={styles.innerBorder}>
-              {/* Photo Box - Top Left */}
-              <View style={styles.photoSection}>
-                <View style={styles.photoBox}>
-                  {user?.photo_url ? (
-                    <Image src={user.photo_url} style={styles.photo} />
-                  ) : (
-                    <Text style={styles.photoPlaceholder}>PICHA{'\n'}PHOTO</Text>
-                  )}
-                </View>
-                <Text style={styles.nidaLabel}>NIDA</Text>
-                <Text style={styles.nidaNumber}>{user?.nida_number || 'N/A'}</Text>
+    // Collect all institutions (primary + extras)
+    const institutions: { name: string; address: string }[] = [];
+    
+    // Primary institution (field names updated to match new schema)
+    const primaryName = formData.institution_1_name || formData.institution_name || '';
+    const primaryAddress = formData.institution_1_address || formData.institution_address || '';
+    if (primaryName) {
+      institutions.push({ name: primaryName, address: primaryAddress });
+    }
+    
+    // Extra institutions (2-6) based on num_extra_addresses
+    const numExtra = parseInt(formData.num_extra_addresses || '0');
+    for (let i = 2; i <= numExtra + 1 && i <= 6; i++) {
+      const instName = formData[`institution_${i}_name`];
+      const instAddr = formData[`institution_${i}_address`] || '';
+      if (instName) {
+        institutions.push({ name: instName, address: instAddr });
+      }
+    }
+    
+    // If no institutions found, add a placeholder
+    if (institutions.length === 0) {
+      institutions.push({ name: 'Taasisi Husika', address: '' });
+    }
+
+    // Generate a page for each institution
+    const renderLetterPage = (inst: { name: string; address: string }, index: number) => (
+      <Page key={index} size="A4" style={styles.page}>
+        <View style={styles.outerBorder}>
+          <View style={styles.innerBorder}>
+            {/* Photo Box - Top Left */}
+            <View style={styles.photoSection}>
+              <View style={styles.photoBox}>
+                {user?.photo_url ? (
+                  <Image src={user.photo_url} style={styles.photo} />
+                ) : (
+                  <Text style={styles.photoPlaceholder}>PICHA{'\n'}PHOTO</Text>
+                )}
               </View>
+              <Text style={styles.nidaLabel}>NIDA</Text>
+              <Text style={styles.nidaNumber}>{user?.nida_number || 'N/A'}</Text>
+            </View>
 
-              {/* Header */}
-              <View style={styles.header}>
-                <Image src={TANZANIA_LOGO_URL} style={styles.emblem} />
-                <Text style={styles.republicText}>JAMHURI YA MUUNGANO WA TANZANIA</Text>
-                <Text style={styles.officeText}>OFISI YA RAIS</Text>
-                <Text style={styles.subOfficeText}>TAWALA ZA MIKOA NA SERIKALI ZA MITAA</Text>
+            {/* Header */}
+            <View style={styles.header}>
+              <Image src={TANZANIA_LOGO_URL} style={styles.emblem} />
+              <Text style={styles.republicText}>JAMHURI YA MUUNGANO WA TANZANIA</Text>
+              <Text style={styles.officeText}>OFISI YA RAIS</Text>
+              <Text style={styles.subOfficeText}>TAWALA ZA MIKOA NA SERIKALI ZA MITAA</Text>
+            </View>
+
+            <Text style={styles.title}>BARUA YA UTAMBULISHO</Text>
+
+            {/* Reference and Date */}
+            <View style={styles.refDateRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                <Text style={styles.refText}>Kumb. Na:</Text>
+                <Text style={[styles.fieldValue, { minWidth: 150 }]}>{application.application_number}{institutions.length > 1 ? `-${index + 1}` : ''}</Text>
               </View>
-
-              <Text style={styles.title}>BARUA YA UTAMBULISHO</Text>
-
-              {/* Reference and Date */}
-              <View style={styles.refDateRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-                  <Text style={styles.refText}>Kumb. Na:</Text>
-                  <Text style={[styles.fieldValue, { minWidth: 150 }]}>{application.application_number}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-                  <Text style={styles.refText}>Tarehe:</Text>
-                  <Text style={[styles.fieldValue, { minWidth: 120 }]}>{formatDateSwahili(issueDate)}</Text>
-                </View>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                <Text style={styles.refText}>Tarehe:</Text>
+                <Text style={[styles.fieldValue, { minWidth: 120 }]}>{formatDateSwahili(issueDate)}</Text>
               </View>
+            </View>
 
-              {/* Body */}
-              <Text style={styles.sectionHeader}>HATI HII INATHIBITISHA KUWA:</Text>
+            {/* Destination Institution */}
+            <View style={{ marginTop: 10, marginBottom: 5 }}>
+              <Text style={{ fontSize: 11, fontWeight: 'bold' }}>KWENDA:</Text>
+              <Text style={{ fontSize: 11, marginLeft: 10 }}>{inst.name}</Text>
+              {inst.address && <Text style={{ fontSize: 10, marginLeft: 10, color: '#666' }}>{inst.address}</Text>}
+            </View>
 
-              {/* Name and NIDA */}
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>Ndugu</Text>
-                <Text style={styles.fieldValueLong}>{fullName}</Text>
-                <Text style={styles.fieldLabel}>, mwenye NIDA:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 200 }]}>{user.nida_number || formData.nida_number || ''}</Text>
-                <Text style={styles.fieldLabel}>,</Text>
-              </View>
+            {/* Body */}
+            <Text style={styles.sectionHeader}>HATI HII INATHIBITISHA KUWA:</Text>
 
-              {/* Gender, DOB, Place */}
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>Jinsia:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 50 }]}>{genderSwahili}</Text>
-                <Text style={styles.fieldLabel}>, Alizaliwa:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 80 }]}>{user.dob || formData.dob || ''}</Text>
-                <Text style={styles.fieldLabel}>, Mahala:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 130 }]}>{formData.birthplace || user.nationality || 'Tanzania'}</Text>
-                <Text style={styles.fieldLabel}>,</Text>
-              </View>
+            {/* Name and NIDA */}
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Ndugu</Text>
+              <Text style={styles.fieldValueLong}>{fullName}</Text>
+              <Text style={styles.fieldLabel}>, mwenye NIDA:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 200 }]}>{user.nida_number || formData.nida_number || ''}</Text>
+              <Text style={styles.fieldLabel}>,</Text>
+            </View>
 
-              {/* Resident Location */}
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>Ni mkazi wa:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 130 }]}>{formData.region || user.region || ''}</Text>
-                <Text style={styles.fieldLabel}>, Wilaya:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 130 }]}>{formData.district || user.district || ''}</Text>
-                <Text style={styles.fieldLabel}>, Wilaya ya</Text>
-                <Text style={[styles.fieldValue, { minWidth: 80 }]}>{formData.ward || user.ward || ''}</Text>
-                <Text style={styles.fieldLabel}>,</Text>
-              </View>
+            {/* Gender, DOB, Place */}
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Jinsia:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 50 }]}>{genderSwahili}</Text>
+              <Text style={styles.fieldLabel}>, Alizaliwa:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 80 }]}>{user.dob || formData.dob || ''}</Text>
+              <Text style={styles.fieldLabel}>, Mahala:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 130 }]}>{formData.birthplace || user.nationality || 'Tanzania'}</Text>
+              <Text style={styles.fieldLabel}>,</Text>
+            </View>
 
-              {/* Street */}
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>Mtaa:</Text>
-                <Text style={styles.fieldValueLong}>{formData.street || user.street || ''}</Text>
-              </View>
+            {/* Resident Location */}
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Ni mkazi wa:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 130 }]}>{formData.region || user.region || ''}</Text>
+              <Text style={styles.fieldLabel}>, Wilaya:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 130 }]}>{formData.district || user.district || ''}</Text>
+              <Text style={styles.fieldLabel}>, Kata ya</Text>
+              <Text style={[styles.fieldValue, { minWidth: 80 }]}>{formData.ward || user.ward || ''}</Text>
+              <Text style={styles.fieldLabel}>,</Text>
+            </View>
 
-              {/* Postal */}
-              <View style={styles.fieldRow}>
-                <Text style={styles.fieldLabel}>Namba ya Posta:</Text>
-                <Text style={[styles.fieldValue, { minWidth: 120 }]}>{formData.postal_code || ''}</Text>
-              </View>
+            {/* Street */}
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Mtaa:</Text>
+              <Text style={styles.fieldValueLong}>{formData.street || user.street || ''}</Text>
+            </View>
 
-              {/* Purpose */}
-              <View style={{ marginTop: 15 }}>
-                <Text style={{ fontSize: 11, fontWeight: 'bold' }}>Sababu: {purposeText}</Text>
-              </View>
+            {/* Postal */}
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Namba ya Posta:</Text>
+              <Text style={[styles.fieldValue, { minWidth: 120 }]}>{formData.postal_code || ''}</Text>
+            </View>
 
-              {/* Official statement */}
-              <Text style={styles.bodyText}>
-                Barua hii imetolewa kwa <Text style={styles.italicText}>madhumuni ya kumtambua</Text> mhusika tajwa hapo juu kwa matumzi rasmi.
-              </Text>
+            {/* Purpose */}
+            <View style={{ marginTop: 15 }}>
+              <Text style={{ fontSize: 11, fontWeight: 'bold' }}>Sababu: {purposeText}</Text>
+            </View>
 
-              {/* Footer */}
-              <View style={styles.footer}>
-                <View style={styles.qrSection}>
-                  <View style={styles.qrContainer}>
-                    <Image src={qrUrl} style={styles.qrCode} />
-                    <Text style={styles.qrLabel}>QR CODE YA UTHIBITISHO</Text>
-                    <View style={styles.verifiedBadge}>
-                      <Text style={styles.verifiedText}>✓ IMETHIBITISHWA KIDIJITALI</Text>
-                    </View>
+            {/* Official statement */}
+            <Text style={styles.bodyText}>
+              Barua hii imetolewa kwa <Text style={styles.italicText}>madhumuni ya kumtambua</Text> mhusika tajwa hapo juu kwa matumizi rasmi katika taasisi ya {inst.name}.
+            </Text>
+
+            {/* Note about specific use */}
+            <Text style={{ fontSize: 9, marginTop: 10, fontStyle: 'italic', color: '#666' }}>
+              Barua hii ni ya matumizi maalumu kwa taasisi iliyoainishwa hapo juu pekee.
+            </Text>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <View style={styles.qrSection}>
+                <View style={styles.qrContainer}>
+                  <Image src={qrUrl} style={styles.qrCode} />
+                  <Text style={styles.qrLabel}>QR CODE YA UTHIBITISHO</Text>
+                  <View style={styles.verifiedBadge}>
+                    <Text style={styles.verifiedText}>✓ IMETHIBITISHWA KIDIJITALI</Text>
                   </View>
+                </View>
 
-                  <View style={styles.signatureBlock}>
-                    <View style={styles.signatureLine} />
-                    <Text style={styles.signatureTitle}>Mtendaji wa Kata</Text>
-                  </View>
+                <View style={styles.signatureBlock}>
+                  <View style={styles.signatureLine} />
+                  <Text style={styles.signatureTitle}>Mtendaji wa Kata</Text>
+                </View>
 
-                  <View style={styles.signatureBlock}>
-                    <View style={styles.signatureLine} />
-                    <Text style={styles.signatureTitle}>Diwani wa Kata</Text>
-                  </View>
+                <View style={styles.signatureBlock}>
+                  <View style={styles.signatureLine} />
+                  <Text style={styles.signatureTitle}>Diwani wa Kata</Text>
                 </View>
               </View>
             </View>
           </View>
-        </Page>
+        </View>
+      </Page>
+    );
+
+    return (
+      <Document>
+        {institutions.map((inst, index) => renderLetterPage(inst, index))}
       </Document>
     );
   }

@@ -32,29 +32,37 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
   // Helper function to get the correct payment amount
   // For percentage-based services (Mauziano, PANGISHA), use form_data.service_fee
   // For fixed fee services, use services.fee
+  // For Barua ya Utambulisho, add extra address fees
   const getPaymentAmount = (app: Application): number => {
     const serviceFee = (app as any).services?.fee || 0;
     const formServiceFee = app.form_data?.service_fee;
+    const extraAddressFee = (app as any).services?.extra_address_fee || 0;
+    
+    let baseFee = 0;
     
     // If service has a fixed fee > 0, use it
     if (serviceFee > 0) {
-      return serviceFee;
+      baseFee = serviceFee;
     }
-    
     // For percentage-based services (Mauziano, PANGISHA), use the calculated service_fee from form_data
-    if (formServiceFee && typeof formServiceFee === 'number') {
-      return formServiceFee;
+    else if (formServiceFee && typeof formServiceFee === 'number') {
+      baseFee = formServiceFee;
     }
-    
     // Try to parse if it's a string
-    if (formServiceFee && typeof formServiceFee === 'string') {
+    else if (formServiceFee && typeof formServiceFee === 'string') {
       const parsed = parseFloat(formServiceFee);
       if (!isNaN(parsed)) {
-        return parsed;
+        baseFee = parsed;
       }
     }
     
-    return 0;
+    // Calculate extra address fees for Barua ya Utambulisho (service id "2")
+    if (extraAddressFee > 0 && app.form_data?.num_extra_addresses) {
+      const numExtra = parseInt(app.form_data.num_extra_addresses) || 0;
+      baseFee += numExtra * extraAddressFee;
+    }
+    
+    return baseFee;
   };
 
   // Add effect to check and update approved applications to pending_payment

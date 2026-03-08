@@ -152,6 +152,7 @@ export const HARDCODED_SERVICES: Service[] = [
       ]}
     ],
     diaspora_form_schema: null,
+    validity_months: 12,
     document_template: {
       "document_type": "CHETI CHA MKAZI",
       "header": {
@@ -159,7 +160,7 @@ export const HARDCODED_SERVICES: Service[] = [
         "office": "OFISI YA RAIS - TAMISEMI",
         "logo_url": "https://e-serikali-mtaa.vercel.app/tz-coat-of-arms.png"
       },
-      "footer": "Cheti hiki ni rasmi na kinaweza kuthibitishwa kwa kuchanganua QR code."
+      "footer": "Cheti hiki ni rasmi na kinaweza kuthibitishwa kwa kuchanganua QR code. Hati hii ina muda wa miezi 12 tangu tarehe ya kutolewa."
     },
     created_at: new Date().toISOString()
   },
@@ -201,21 +202,40 @@ export const HARDCODED_SERVICES: Service[] = [
       ]},
       {"name": "purpose_details", "label": "Maelezo ya Sababu (kama ni NYINGINEZO)", "type": "textarea", "showIf": {"field": "purpose", "value": "NYINGINEZO"}},
       
-      {"name": "section_destination", "label": "TAASISI INAYOHUSIKA", "type": "header"},
-      {"name": "institution_name", "label": "Jina la Taasisi", "type": "text", "required": true},
-      {"name": "institution_address", "label": "Anwani ya Taasisi", "type": "text"},
-      {"name": "contact_person", "label": "Jina la Anayehusika (kama unamjua)", "type": "text"},
+      {"name": "section_destination", "label": "TAASISI YA KWANZA (PRIMARY DESTINATION)", "type": "header"},
+      {"name": "institution_1_name", "label": "Jina la Taasisi", "type": "text", "required": true},
+      {"name": "institution_1_address", "label": "Anwani ya Taasisi", "type": "text"},
+      {"name": "institution_1_contact", "label": "Jina la Anayehusika (kama unamjua)", "type": "text"},
       
-      {"name": "section_validity", "label": "MUDA WA BARUA", "type": "header"},
-      {"name": "validity_period", "label": "Muda wa Barua", "type": "select", "options": [
-        {"label": "MIEZI 3 (Kawaida)", "value": "3_MONTHS"},
-        {"label": "MIEZI 6", "value": "6_MONTHS"},
-        {"label": "MWAKA 1", "value": "1_YEAR"}
+      {"name": "section_extra", "label": "TAASISI ZA ZIADA (Extra TZS 1,000 kwa kila anwani)", "type": "header"},
+      {"name": "num_extra_addresses", "label": "Idadi ya Anwani za Ziada", "type": "select", "options": [
+        {"label": "HAKUNA (0)", "value": "0"},
+        {"label": "1 (Jumla TZS 4,000)", "value": "1"},
+        {"label": "2 (Jumla TZS 5,000)", "value": "2"},
+        {"label": "3 (Jumla TZS 6,000)", "value": "3"},
+        {"label": "4 (Jumla TZS 7,000)", "value": "4"},
+        {"label": "5 (Jumla TZS 8,000)", "value": "5"}
       ]},
+      
+      {"name": "institution_2_name", "label": "Taasisi ya 2 - Jina", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["1", "2", "3", "4", "5"]}},
+      {"name": "institution_2_address", "label": "Taasisi ya 2 - Anwani", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["1", "2", "3", "4", "5"]}},
+      
+      {"name": "institution_3_name", "label": "Taasisi ya 3 - Jina", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["2", "3", "4", "5"]}},
+      {"name": "institution_3_address", "label": "Taasisi ya 3 - Anwani", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["2", "3", "4", "5"]}},
+      
+      {"name": "institution_4_name", "label": "Taasisi ya 4 - Jina", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["3", "4", "5"]}},
+      {"name": "institution_4_address", "label": "Taasisi ya 4 - Anwani", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["3", "4", "5"]}},
+      
+      {"name": "institution_5_name", "label": "Taasisi ya 5 - Jina", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["4", "5"]}},
+      {"name": "institution_5_address", "label": "Taasisi ya 5 - Anwani", "type": "text", "showIf": {"field": "num_extra_addresses", "values": ["4", "5"]}},
+      
+      {"name": "institution_6_name", "label": "Taasisi ya 6 - Jina", "type": "text", "showIf": {"field": "num_extra_addresses", "value": "5"}},
+      {"name": "institution_6_address", "label": "Taasisi ya 6 - Anwani", "type": "text", "showIf": {"field": "num_extra_addresses", "value": "5"}},
       
       {"name": "additional_info", "label": "Maelezo ya Ziada", "type": "textarea"}
     ],
     diaspora_form_schema: null,
+    extra_address_fee: 1000,
     document_template: {
       "document_type": "BARUA YA UTAMBULISHO",
       "header": {
@@ -225,7 +245,8 @@ export const HARDCODED_SERVICES: Service[] = [
       },
       "subject": "YAH: UTAMBULISHO WA NDUGU [FULL_NAME]",
       "body_template": "Ofisi ya Serikali ya Mtaa inamtambulisha ndugu [FULL_NAME] kuwa ni mkazi halali wa mtaa huu. Barua hii imetolewa kwa ajili ya [PURPOSE] katika taasisi ya [INSTITUTION_NAME].",
-      "footer": "Barua hii ni halali kwa muda wa miezi mitatu tangu tarehe ya kutolewa."
+      "footer": "Barua hii ni ya matumizi maalumu kwa taasisi iliyoainishwa hapo juu pekee.",
+      "multi_address_note": "Barua tofauti zitatayarishwa kwa kila taasisi iliyoainishwa."
     },
     created_at: new Date().toISOString()
   },

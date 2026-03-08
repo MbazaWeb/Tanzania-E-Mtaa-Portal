@@ -54,6 +54,8 @@ export interface Service {
   fee: number;
   active: boolean;
   diaspora_form_schema?: any;
+  validity_months?: number;  // How long the document is valid (e.g., 12 for Hati ya Mkazi)
+  extra_address_fee?: number;  // Extra fee per additional address (for Barua ya Utambulisho)
   created_at?: string;
 }
 
