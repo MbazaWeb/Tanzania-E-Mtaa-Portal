@@ -418,7 +418,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Huduma' : 'Service'}</th>
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Tarehe' : 'Date'}</th>
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Hali' : 'Status'}</th>
-                  <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider text-right"></th>
+                  <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider text-center">{lang === 'sw' ? 'Hatua' : 'Actions'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -466,11 +466,74 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider", getStatusStyle(app.status))}>
-                          {app.status}
+                          {app.status === 'pending_payment' ? (lang === 'sw' ? 'Malipo' : 'Payment') : app.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <ChevronRight className="h-4 w-4 text-stone-300 ml-auto" />
+                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        {['admin', 'staff'].includes(user?.role || '') && (
+                          <div className="flex items-center justify-center gap-1">
+                            {/* Quick Approve Button */}
+                            {['submitted', 'pending_review'].includes(app.status) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedApp(app);
+                                  setTimeout(() => {
+                                    updateStatus(app.id, 'pending_payment');
+                                    showToast(lang === 'sw' ? 'Imeidhinishwa! Inasubiri malipo.' : 'Approved! Awaiting payment.', 'success');
+                                  }, 100);
+                                }}
+                                title={lang === 'sw' ? 'Idhinisha' : 'Approve'}
+                                className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-all"
+                              >
+                                <CheckCircle size={16} />
+                              </button>
+                            )}
+                            {['paid', 'verified'].includes(app.status) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedApp(app);
+                                  setTimeout(() => {
+                                    updateStatus(app.id, 'approved');
+                                    showToast(lang === 'sw' ? 'Maombi yameidhinishwa!' : 'Application approved!', 'success');
+                                  }, 100);
+                                }}
+                                title={lang === 'sw' ? 'Idhinisha Maombi' : 'Approve'}
+                                className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-all"
+                              >
+                                <CheckCircle size={16} />
+                              </button>
+                            )}
+                            {app.status === 'approved' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedApp(app);
+                                  setTimeout(() => {
+                                    updateStatus(app.id, 'issued');
+                                    showToast(lang === 'sw' ? 'Hati imetolewa!' : 'Document issued!', 'success');
+                                  }, 100);
+                                }}
+                                title={lang === 'sw' ? 'Toa Hati' : 'Issue'}
+                                className="h-8 w-8 rounded-lg bg-stone-900 text-white hover:bg-black flex items-center justify-center transition-all"
+                              >
+                                <FileText size={14} />
+                              </button>
+                            )}
+                            {/* View Details Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedApp(app);
+                              }}
+                              title={lang === 'sw' ? 'Ona Maelezo' : 'View Details'}
+                              className="h-8 w-8 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 flex items-center justify-center transition-all"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
