@@ -13,6 +13,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1c1917', // stone-900
   },
+  // Photo box in top left
+  photoSection: {
+    position: 'absolute',
+    top: 40,
+    left: 40,
+    width: 80,
+    alignItems: 'center',
+  },
+  photoBox: {
+    width: 70,
+    height: 85,
+    borderWidth: 1,
+    borderColor: '#78716c',
+    backgroundColor: '#f5f5f4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  photo: {
+    width: 68,
+    height: 83,
+    objectFit: 'cover',
+  },
+  photoPlaceholder: {
+    fontSize: 8,
+    color: '#a8a29e',
+    textAlign: 'center',
+  },
+  nidaLabel: {
+    fontSize: 6,
+    color: '#78716c',
+    marginBottom: 2,
+  },
+  nidaNumber: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#1c1917',
+  },
   header: {
     marginBottom: 30,
     textAlign: 'center',
@@ -150,14 +188,19 @@ export const DocumentPDF: React.FC<DocumentPDFProps> = ({ application, lang }) =
     let body = template?.body_template || "";
     const data = {
       ...application.form_data,
-      FULL_NAME: `${user?.first_name} ${user?.last_name}`,
+      FULL_NAME: `${user?.first_name} ${user?.middle_name || ''} ${user?.last_name}`.replace(/\s+/g, ' ').trim(),
+      NIDA_NUMBER: user?.nida_number || 'N/A',
       DATE: new Date().toLocaleDateString(),
-      APP_NUMBER: application.application_number
+      APP_NUMBER: application.application_number,
+      REGION: user?.region || '',
+      DISTRICT: user?.district || '',
+      WARD: user?.ward || '',
+      STREET: user?.street || ''
     };
     
     Object.entries(data).forEach(([key, value]) => {
       const placeholder = `[${key.toUpperCase()}]`;
-      body = body.replace(placeholder, String(value));
+      body = body.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), String(value));
     });
     
     return body || (lang === 'sw' ? 'Hati hii inathibitisha kuwa maombi yameidhinishwa.' : 'This document confirms that the application has been approved.');
@@ -174,6 +217,19 @@ export const DocumentPDF: React.FC<DocumentPDFProps> = ({ application, lang }) =
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.watermark}>E-MTAA</Text>
+
+        {/* Photo Box - Top Left */}
+        <View style={styles.photoSection}>
+          <View style={styles.photoBox}>
+            {user?.photo_url ? (
+              <Image src={user.photo_url} style={styles.photo} />
+            ) : (
+              <Text style={styles.photoPlaceholder}>PICHA{'\n'}PHOTO</Text>
+            )}
+          </View>
+          <Text style={styles.nidaLabel}>{lang === 'sw' ? 'NIDA' : 'NIDA ID'}</Text>
+          <Text style={styles.nidaNumber}>{user?.nida_number || 'N/A'}</Text>
+        </View>
 
         {/* Header */}
         <View style={styles.header}>

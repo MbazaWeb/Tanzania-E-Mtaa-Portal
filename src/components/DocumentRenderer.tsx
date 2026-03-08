@@ -24,6 +24,46 @@ const styles = StyleSheet.create({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
+    position: 'relative',
+  },
+  // Photo section - top left corner
+  photoSection: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    width: 75,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  photoBox: {
+    width: 65,
+    height: 80,
+    borderWidth: 1,
+    borderColor: '#78716c',
+    backgroundColor: '#f5f5f4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  photo: {
+    width: 63,
+    height: 78,
+    objectFit: 'cover',
+  },
+  photoPlaceholder: {
+    fontSize: 7,
+    color: '#a8a29e',
+    textAlign: 'center',
+  },
+  nidaLabel: {
+    fontSize: 5,
+    color: '#78716c',
+    marginBottom: 1,
+  },
+  nidaNumber: {
+    fontSize: 6,
+    fontWeight: 'bold',
+    color: '#1c1917',
   },
   header: {
     textAlign: 'center',
@@ -256,6 +296,19 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         <Page size="A4" style={styles.page}>
           <View style={styles.outerBorder}>
             <View style={styles.innerBorder}>
+              {/* Photo Box - Top Left */}
+              <View style={styles.photoSection}>
+                <View style={styles.photoBox}>
+                  {user?.photo_url ? (
+                    <Image src={user.photo_url} style={styles.photo} />
+                  ) : (
+                    <Text style={styles.photoPlaceholder}>PICHA{'\n'}PHOTO</Text>
+                  )}
+                </View>
+                <Text style={styles.nidaLabel}>NIDA</Text>
+                <Text style={styles.nidaNumber}>{user?.nida_number || 'N/A'}</Text>
+              </View>
+
               {/* Header */}
               <View style={styles.header}>
                 <Image src={TANZANIA_LOGO_URL} style={styles.emblem} />
@@ -383,6 +436,19 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         <Page size="A4" style={styles.page}>
           <View style={styles.outerBorder}>
             <View style={styles.innerBorder}>
+              {/* Photo Box - Top Left */}
+              <View style={styles.photoSection}>
+                <View style={styles.photoBox}>
+                  {user?.photo_url ? (
+                    <Image src={user.photo_url} style={styles.photo} />
+                  ) : (
+                    <Text style={styles.photoPlaceholder}>PICHA{'\n'}PHOTO</Text>
+                  )}
+                </View>
+                <Text style={styles.nidaLabel}>NIDA</Text>
+                <Text style={styles.nidaNumber}>{user?.nida_number || 'N/A'}</Text>
+              </View>
+
               {/* Header */}
               <View style={styles.header}>
                 <Image src={TANZANIA_LOGO_URL} style={styles.emblem} />
