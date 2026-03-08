@@ -310,8 +310,6 @@ export function VerifyDocuments({
   };
 
   return (
-
-  return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4">
