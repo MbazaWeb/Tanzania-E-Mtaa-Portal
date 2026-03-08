@@ -282,6 +282,12 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   console.log('DocumentRenderer - formData:', formData);
 
   const issueDate = application?.issued_at ? new Date(application.issued_at) : new Date();
+  
+  // Calculate expiry date based on service validity (default 12 months for Mkazi)
+  const validityMonths = (service as any)?.validity_months || 12;
+  const expiryDate = new Date(issueDate);
+  expiryDate.setMonth(expiryDate.getMonth() + validityMonths);
+  
   // QR code with explicit format=png for @react-pdf/renderer compatibility
   const qrUrl = qrCodeDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=png&data=${encodeURIComponent(`https://e-serikali-mtaa.vercel.app/verify/${application?.application_number || 'unknown'}`)}`;
 
@@ -328,6 +334,18 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
                 <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                   <Text style={styles.refText}>Tarehe:</Text>
                   <Text style={[styles.fieldValue, { minWidth: 120 }]}>{formatDateSwahili(issueDate)}</Text>
+                </View>
+              </View>
+
+              {/* Expiry Date Box */}
+              <View style={{ backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#D97706', borderRadius: 4, padding: 8, marginVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#92400E' }}>⚠ MUDA WA HATI:</Text>
+                  <Text style={{ fontSize: 10, marginLeft: 8, color: '#B45309' }}>Miezi {validityMonths}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#92400E' }}>ITAISHA:</Text>
+                  <Text style={{ fontSize: 10, marginLeft: 5, color: '#B45309', fontWeight: 'bold' }}>{formatDateSwahili(expiryDate)}</Text>
                 </View>
               </View>
 
@@ -389,6 +407,17 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
               <Text style={styles.bodyText}>
                 Cheti hiki kimetolewa kwa madhumuni ya matumizi rasmi pale kitakapohitajika.
               </Text>
+
+              {/* Caution Box */}
+              <View style={{ backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#DC2626', borderRadius: 4, padding: 8, marginTop: 10 }}>
+                <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#991B1B', marginBottom: 3 }}>⚠ TAHADHARI / CAUTION:</Text>
+                <Text style={{ fontSize: 8, color: '#7F1D1D', lineHeight: 1.4 }}>
+                  1. Kughushi hati hii ni kosa la jinai linaloadhibiwa na sheria za Tanzania.{'\n'}
+                  2. Hati hii itatumika tu kwa muda uliooainishwa hapo juu.{'\n'}
+                  3. Baada ya muda kuisha, mwombaji atahitaji kuomba upya.{'\n'}
+                  4. Forgery of this document is a criminal offense punishable by law.
+                </Text>
+              </View>
 
               {/* Footer */}
               <View style={styles.footer}>
@@ -580,6 +609,17 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
             <Text style={{ fontSize: 9, marginTop: 10, fontStyle: 'italic', color: '#666' }}>
               Barua hii ni ya matumizi maalumu kwa taasisi iliyoainishwa hapo juu pekee.
             </Text>
+
+            {/* Caution Box for Introduction Letter */}
+            <View style={{ backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#DC2626', borderRadius: 4, padding: 6, marginTop: 8 }}>
+              <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#991B1B', marginBottom: 2 }}>⚠ TAHADHARI / CAUTION:</Text>
+              <Text style={{ fontSize: 7, color: '#7F1D1D', lineHeight: 1.3 }}>
+                1. Barua hii ni ya matumizi ya MARA MOJA pekee kwa taasisi tajwa.{'\n'}
+                2. Haiwezi kutumika kwa taasisi au madhumuni mengine.{'\n'}
+                3. Kughushi barua hii ni kosa la jinai.{'\n'}
+                4. This letter is for SINGLE USE only at the named institution.
+              </Text>
+            </View>
 
             {/* Footer */}
             <View style={styles.footer}>
