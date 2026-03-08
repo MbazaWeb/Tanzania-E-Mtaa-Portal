@@ -20,7 +20,8 @@ interface FormField {
   };
   showIf?: {
     field: string;
-    value: any;
+    value?: any;
+    values?: any[];  // Support for multiple values (OR condition)
   };
 }
 
@@ -351,10 +352,15 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
       {/* Form Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {schema.map((field) => {
-          // Conditional rendering
+          // Conditional rendering - support both single value and array of values
           if (field.showIf) {
             const watchedValue = watch(field.showIf.field);
-            if (watchedValue !== field.showIf.value) return null;
+            // Check if using array of values (OR condition)
+            if (field.showIf.values && Array.isArray(field.showIf.values)) {
+              if (!field.showIf.values.includes(watchedValue)) return null;
+            } else if (field.showIf.value !== undefined) {
+              if (watchedValue !== field.showIf.value) return null;
+            }
           }
 
           if (field.type === 'header') {
