@@ -96,6 +96,15 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
       validator = field.required && !field.showIf ? z.string().min(1, 'Date is required') : z.string().optional();
     } else if (field.type === 'select') {
       validator = field.required && !field.showIf ? z.string().min(1, `${field.label} is required`) : z.string().optional();
+    } else if (field.type === 'checkbox') {
+      // Checkbox validation - required means it must be checked (true)
+      if (field.required && !field.showIf) {
+        validator = z.boolean().refine((val) => val === true, {
+          message: `${field.label} is required`
+        });
+      } else {
+        validator = z.boolean().optional();
+      }
     } else {
       validator = z.any().optional();
     }
