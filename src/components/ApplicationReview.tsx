@@ -162,6 +162,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       ...(status === 'pending_payment' && { approved_by: user?.id, approved_at: new Date().toISOString() }),
       ...(status === 'rejected' && { rejected_by: user?.id, rejected_at: new Date().toISOString() }),
       ...(status === 'returned' && { returned_by: user?.id, returned_at: new Date().toISOString() }),
+      ...(status === 'verified' && { verified_by: user?.id, verified_at: new Date().toISOString() }),
       ...(status === 'issued' && { issued_by: user?.id, issued_at: new Date().toISOString() }),
     };
 
