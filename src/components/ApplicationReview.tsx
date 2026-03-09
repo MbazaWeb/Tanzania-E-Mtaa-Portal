@@ -22,8 +22,11 @@ import {
   RefreshCw,
   ClipboardList,
   Paperclip,
-  ExternalLink
+  ExternalLink,
+  CreditCard,
+  CheckCircle2
 } from 'lucide-react';
+import { ApplicationProgressBar } from './ui/ApplicationProgressBar';
 import { cn } from '@/src/lib/utils';
 import { useToast } from '@/src/context/ToastContext';
 import { formatCurrency } from '@/src/lib/currency';
@@ -46,7 +49,8 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   const { showToast } = useToast();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'submitted' | 'pending_payment' | 'paid' | 'verified' | 'approved' | 'rejected' | 'pending_review'>('all');
+  const [filter, setFilter] = useState<'all' | 'submitted' | 'pending_payment' | 'paid' | 'verified' | 'approved' | 'rejected' | 'pending_review' | 'issued'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('all');
   const [districtFilter, setDistrictFilter] = useState('all');
@@ -268,6 +272,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
     const matchesDistrict = districtFilter === 'all' || app.district === districtFilter;
     const matchesService = serviceFilter === 'all' || app.service_id === serviceFilter;
     
+    // Check payment status - paid statuses include: paid, verified, approved, issued
+    const isPaid = ['paid', 'verified', 'approved', 'issued'].includes(app.status);
+    const matchesPayment = paymentFilter === 'all' || 
+      (paymentFilter === 'paid' && isPaid) ||
+      (paymentFilter === 'unpaid' && !isPaid);
+    
     const searchLower = search.toLowerCase();
     const matchesSearch = 
       app.application_number.toLowerCase().includes(searchLower) ||
@@ -275,7 +285,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       (app as any).users?.last_name?.toLowerCase().includes(searchLower) ||
       (app as any).services?.name?.toLowerCase().includes(searchLower);
       
-    return matchesStatus && matchesRegion && matchesDistrict && matchesService && matchesSearch;
+    return matchesStatus && matchesRegion && matchesDistrict && matchesService && matchesSearch && matchesPayment;
   });
 
   const totalPages = Math.ceil(filteredApps.length / itemsPerPage);
@@ -350,7 +360,23 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
               <option value="verified">{lang === 'sw' ? 'Yaliyothibitishwa' : 'Verified'}</option>
               <option value="pending_review">{lang === 'sw' ? 'Yanasubiri Uhakiki' : 'Pending Review'}</option>
               <option value="approved">{lang === 'sw' ? 'Yaliyoidhinishwa' : 'Approved'}</option>
+              <option value="issued">{lang === 'sw' ? 'Yaliyotolewa' : 'Issued'}</option>
               <option value="rejected">{lang === 'sw' ? 'Yaliyokataliwa' : 'Rejected'}</option>
+            </select>
+
+            {/* Payment Filter */}
+            <select 
+              className="h-11 px-4 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white font-semibold text-sm"
+              value={paymentFilter}
+              aria-label={lang === 'sw' ? 'Chuja kwa malipo' : 'Filter by payment'}
+              onChange={(e) => {
+                setPaymentFilter(e.target.value as 'all' | 'paid' | 'unpaid');
+                setCurrentPage(1);
+              }}
+            >
+              <option value="all">{lang === 'sw' ? 'Malipo Yote' : 'All Payments'}</option>
+              <option value="paid">{lang === 'sw' ? 'Yamelipiwa' : 'Paid'}</option>
+              <option value="unpaid">{lang === 'sw' ? 'Hayajalipiwa' : 'Unpaid'}</option>
             </select>
 
             <select 
@@ -417,6 +443,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Mwombaji' : 'Applicant'}</th>
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Huduma' : 'Service'}</th>
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Tarehe' : 'Date'}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Malipo' : 'Payment'}</th>
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">{lang === 'sw' ? 'Hali' : 'Status'}</th>
                   <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider text-center">{lang === 'sw' ? 'Hatua' : 'Actions'}</th>
                 </tr>
@@ -424,13 +451,13 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
               <tbody className="divide-y divide-stone-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                     </td>
                   </tr>
                 ) : filteredApps.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-stone-400">
+                    <td colSpan={6} className="px-6 py-12 text-center text-stone-400">
                       {lang === 'sw' ? 'Hakuna maombi yaliyopatikana.' : 'No applications found.'}
                     </td>
                   </tr>
@@ -463,6 +490,20 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                           <p className="text-sm text-stone-600">{new Date(app.created_at).toLocaleDateString()}</p>
                           <p className="text-xs text-stone-400">{new Date(app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {/* Payment Status */}
+                        {['paid', 'verified', 'approved', 'issued'].includes(app.status) ? (
+                          <div className="flex items-center gap-1.5 text-emerald-600">
+                            <CheckCircle2 size={14} />
+                            <span className="text-[10px] font-bold uppercase">{lang === 'sw' ? 'Imelipiwa' : 'Paid'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-orange-600">
+                            <CreditCard size={14} />
+                            <span className="text-[10px] font-bold uppercase">{lang === 'sw' ? 'Haijalipwa' : 'Unpaid'}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider", getStatusStyle(app.status))}>
@@ -612,6 +653,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                   </div>
                   <h3 className="text-xl font-heading font-extrabold text-stone-900">{(selectedApp as any).services?.name}</h3>
                   <p className="text-sm text-stone-500">{(selectedApp as any).users?.first_name} {(selectedApp as any).users?.last_name}</p>
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-4 p-4 bg-white rounded-xl border border-stone-200">
+                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">
+                      {lang === 'sw' ? 'Hatua za Maombi' : 'Application Progress'}
+                    </p>
+                    <ApplicationProgressBar status={selectedApp.status} lang={lang} />
+                  </div>
                   
                   <button 
                     onClick={() => setShowFullDetails(true)}

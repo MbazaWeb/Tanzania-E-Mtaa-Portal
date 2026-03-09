@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard, RefreshCw, Receipt } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Calendar, CheckCircle, Loader2, X, Eye, FileText, User, MapPin, Phone, Mail, Clock, CreditCard, RefreshCw, Receipt, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { useToast } from '@/src/context/ToastContext';
 import { supabase, Application } from '@/src/lib/supabase';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
+import { ApplicationProgressBar, PaymentStatusBadge } from '@/src/components/ui/ApplicationProgressBar';
 import { formatCurrency } from '@/src/lib/currency';
 import { DocumentRenderer, DocumentPreview } from '@/src/components/DocumentRenderer';
 import { ReceiptPDF } from '@/src/components/ReceiptPDF';
@@ -298,8 +299,24 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <StatusBadge status={app.status} lang={lang} />
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={app.status} lang={lang} />
+                        {/* Payment Status Indicator */}
+                        {['paid', 'verified', 'approved', 'issued'].includes(app.status) ? (
+                          <span className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
+                            <CheckCircle2 size={12} />
+                            {lang === 'sw' ? 'Imelipiwa' : 'Paid'}
+                          </span>
+                        ) : ['submitted', 'pending_payment'].includes(app.status) && getPaymentAmount(app) > 0 ? (
+                          <span className="flex items-center gap-1 text-orange-600 text-[10px] font-bold">
+                            <CreditCard size={12} />
+                            {lang === 'sw' ? 'Haijalipwa' : 'Unpaid'}
+                          </span>
+                        ) : null}
+                      </div>
+                      {/* Progress Visualization */}
+                      <ApplicationProgressBar status={app.status} lang={lang} compact />
                       {app.status === 'returned' && app.feedback && (
                         <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 max-w-50">
                           <p className="text-[10px] font-bold text-amber-800 uppercase mb-1">
@@ -403,7 +420,21 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                   <p className="text-xs text-stone-500 font-mono mt-1">{app.application_number}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <StatusBadge status={app.status} lang={lang} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={app.status} lang={lang} />
+                  </div>
+                  {/* Payment Status for Mobile */}
+                  {['paid', 'verified', 'approved', 'issued'].includes(app.status) ? (
+                    <span className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
+                      <CheckCircle2 size={12} />
+                      {lang === 'sw' ? 'Imelipiwa' : 'Paid'}
+                    </span>
+                  ) : ['submitted', 'pending_payment'].includes(app.status) && getPaymentAmount(app) > 0 ? (
+                    <span className="flex items-center gap-1 text-orange-600 text-[10px] font-bold">
+                      <CreditCard size={12} />
+                      {lang === 'sw' ? 'Haijalipwa' : 'Unpaid'}
+                    </span>
+                  ) : null}
                   {app.status === 'returned' && app.feedback && (
                     <div className="bg-amber-50 p-2 rounded-lg border border-amber-100 text-right max-w-45">
                       <p className="text-[9px] font-bold text-amber-800 uppercase">
