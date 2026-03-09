@@ -24,7 +24,8 @@ import {
   Paperclip,
   ExternalLink,
   CreditCard,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { ApplicationProgressBar } from './ui/ApplicationProgressBar';
 import { cn } from '@/src/lib/utils';
@@ -67,9 +68,87 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<'rejected' | 'returned' | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [globalSearchMode, setGlobalSearchMode] = useState(false);
+  const [isGlobalSearching, setIsGlobalSearching] = useState(false);
+
+  // Global search by application number - searches ALL applications regardless of location
+  const handleGlobalSearch = async () => {
+    if (!search.trim()) {
+      showToast(lang === 'sw' ? 'Tafadhali ingiza namba ya ombi' : 'Please enter application number', 'error');
+      return;
+    }
+    
+    setIsGlobalSearching(true);
+    setGlobalSearchMode(true);
+    
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');
+    
+    if (!isConfigured || (user?.id && user.id.startsWith('demo-'))) {
+      const demoApps = JSON.parse(localStorage.getItem('demo_applications') || '[]');
+      const found = demoApps.filter((app: any) => 
+        app.application_number?.toLowerCase().includes(search.toLowerCase())
+      );
+      setApplications(found.map((app: any) => {
+        const fullService = getServiceById(app.service_id);
+        return {
+          ...app,
+          services: fullService || { name: app.service_name || 'Service', fee: 0 },
+          users: { first_name: 'Demo', last_name: 'User' }
+        };
+      }));
+      setIsGlobalSearching(false);
+      if (found.length === 0) {
+        showToast(lang === 'sw' ? 'Hakuna ombi lililopatikana' : 'No application found', 'error');
+      } else {
+        showToast(lang === 'sw' ? `Maombi ${found.length} yamepatikana` : `${found.length} application(s) found`, 'success');
+      }
+      return;
+    }
+    
+    console.log('Global search for:', search);
+    
+    // Search across ALL applications - no location filter
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .ilike('application_number', `%${search}%`)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Global search error:', error);
+      showToast(lang === 'sw' ? 'Hitilafu katika kutafuta' : 'Search error', 'error');
+      setIsGlobalSearching(false);
+      return;
+    }
+    
+    if (data && data.length > 0) {
+      setApplications(data.map((app: any) => {
+        const fullService = getServiceById(app.service_id);
+        return {
+          ...app,
+          services: fullService || { name: 'Unknown Service', fee: 0 }
+        };
+      }));
+      showToast(lang === 'sw' ? `Maombi ${data.length} yamepatikana` : `${data.length} application(s) found`, 'success');
+    } else {
+      setApplications([]);
+      showToast(lang === 'sw' ? 'Hakuna ombi lililopatikana' : 'No application found', 'error');
+    }
+    
+    setIsGlobalSearching(false);
+  };
+  
+  // Clear global search and return to normal view
+  const clearGlobalSearch = () => {
+    setGlobalSearchMode(false);
+    setSearch('');
+    fetchApplications();
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setGlobalSearchMode(false);
     await fetchApplications();
     setTimeout(() => setIsRefreshing(false), 500);
   };
@@ -350,19 +429,55 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-            <input 
-              type="text"
-              placeholder={lang === 'sw' ? 'Tafuta...' : 'Search...'}
-              className="pl-10 pr-4 h-11 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white w-64"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
+          <div className="relative flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+              <input 
+                type="text"
+                placeholder={lang === 'sw' ? 'Tafuta namba ya ombi...' : 'Search application number...'}
+                className="pl-10 pr-4 h-11 rounded-xl border border-stone-200 focus:border-primary outline-none transition-all bg-white w-64"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  if (!globalSearchMode) {
+                    setCurrentPage(1);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleGlobalSearch();
+                  }
+                }}
+              />
+            </div>
+            <button
+              onClick={handleGlobalSearch}
+              disabled={isGlobalSearching || !search.trim()}
+              className="h-11 px-4 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {isGlobalSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              {lang === 'sw' ? 'Tafuta Kote' : 'Search All'}
+            </button>
+            {globalSearchMode && (
+              <button
+                onClick={clearGlobalSearch}
+                className="h-11 px-4 bg-stone-200 text-stone-700 rounded-xl font-semibold text-sm hover:bg-stone-300 transition-all flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                {lang === 'sw' ? 'Ondoa' : 'Clear'}
+              </button>
+            )}
           </div>
+          
+          {globalSearchMode && (
+            <div className="w-full px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+              {lang === 'sw' ? '🔍 Tafutaji kutoka database nzima - maombi yote yanaonyeshwa' : '🔍 Searching entire database - showing all matching applications'}
+            </div>
+          )}
           
           <div className="flex items-center gap-2">
             <select 
