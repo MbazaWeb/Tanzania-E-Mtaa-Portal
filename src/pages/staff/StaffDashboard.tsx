@@ -18,7 +18,11 @@ import { useLanguage } from '@/src/context/LanguageContext';
 import { StatCard } from '@/src/components/ui/StatCard';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
 
-export function StaffDashboard() {
+interface StaffDashboardProps {
+  setView: (view: string) => void;
+}
+
+export function StaffDashboard({ setView }: StaffDashboardProps) {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -187,7 +191,12 @@ export function StaffDashboard() {
         <div className="lg:col-span-2 bg-white rounded-4xl border border-stone-100 shadow-xl overflow-hidden">
           <div className="px-8 py-6 border-b border-stone-100 flex items-center justify-between">
             <h3 className="text-xl font-bold text-stone-900">{lang === 'sw' ? 'Maombi ya Karibuni' : 'Recent Applications'}</h3>
-            <button className="text-sm font-bold text-emerald-600 hover:underline">{lang === 'sw' ? 'Tazama Yote' : 'View All'}</button>
+            <button 
+              onClick={() => setView('application_review')}
+              className="text-sm font-bold text-emerald-600 hover:underline"
+            >
+              {lang === 'sw' ? 'Tazama Yote' : 'View All'}
+            </button>
           </div>
           <div className="divide-y divide-stone-50">
             {loading ? (
@@ -200,7 +209,11 @@ export function StaffDashboard() {
                 {lang === 'sw' ? 'Hakuna maombi mapya.' : 'No new applications.'}
               </div>
             ) : applications.map((app) => (
-              <div key={app.id} className="px-8 py-4 flex items-center justify-between hover:bg-stone-50 transition-colors">
+              <div 
+                key={app.id} 
+                onClick={() => setView('application_review')}
+                className="px-8 py-4 flex items-center justify-between hover:bg-stone-50 transition-colors cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500">
                     <FileText size={20} />
@@ -223,7 +236,10 @@ export function StaffDashboard() {
               {lang === 'sw' ? 'Njia za Mkato' : 'Quick Access'}
             </h3>
             <div className="space-y-3 relative z-10">
-              <button className="w-full p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-3">
+              <button 
+                onClick={() => setView('customer_support')}
+                className="w-full p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-3"
+              >
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                   <HelpCircle size={20} />
                 </div>
@@ -232,7 +248,10 @@ export function StaffDashboard() {
                   <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold">{lang === 'sw' ? 'Tafuta Maombi' : 'Search Applications'}</p>
                 </div>
               </button>
-              <button className="w-full p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-3">
+              <button 
+                onClick={() => setView('manual_verification')}
+                className="w-full p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-3"
+              >
                 <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
                   <UserCheck size={20} />
                 </div>

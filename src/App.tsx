@@ -300,7 +300,7 @@ export default function App() {
             )}
 
             {view === 'staff_dashboard' && user?.role === 'staff' && (
-              <StaffDashboard />
+              <StaffDashboard setView={setView} />
             )}
 
             {view === 'office_management' && user?.role === 'admin' && (
