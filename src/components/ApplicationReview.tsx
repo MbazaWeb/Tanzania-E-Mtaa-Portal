@@ -187,23 +187,44 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       return;
     }
 
-    const { error } = await supabase
+    console.log('updateStatus: Updating application', id, 'to status:', status);
+    
+    const { data, error } = await supabase
       .from('applications')
       .update(updateData)
-      .eq('id', id);
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (!error) {
-      setApplications(prev => prev.map(app => app.id === id ? { ...app, ...updateData } : app));
-      if (selectedApp?.id === id) {
-        setSelectedApp(prev => prev ? { ...prev, ...updateData } : null);
-      }
-      if (status === 'pending_payment') {
-        showToast(lang === 'sw' ? 'Maombi yameidhinishwa! Inasubiri malipo.' : 'Application approved! Awaiting payment.', 'success');
-      }
-      if (status === 'returned') {
-        showToast(lang === 'sw' ? 'Maombi yamerudishwa kwa mabadiliko.' : 'Application returned for changes.', 'success');
-      }
+    if (error) {
+      console.error('updateStatus: Error updating application:', error);
+      showToast(lang === 'sw' ? 'Hitilafu: ' + error.message : 'Error: ' + error.message, 'error');
+      setProcessing(false);
+      return;
     }
+
+    console.log('updateStatus: Successfully updated application:', data);
+    
+    setApplications(prev => prev.map(app => app.id === id ? { ...app, ...updateData } : app));
+    if (selectedApp?.id === id) {
+      setSelectedApp(prev => prev ? { ...prev, ...updateData } : null);
+    }
+    
+    // Success toasts based on status
+    if (status === 'pending_payment') {
+      showToast(lang === 'sw' ? 'Maombi yameidhinishwa! Inasubiri malipo.' : 'Application approved! Awaiting payment.', 'success');
+    } else if (status === 'returned') {
+      showToast(lang === 'sw' ? 'Maombi yamerudishwa kwa mabadiliko.' : 'Application returned for changes.', 'success');
+    } else if (status === 'verified') {
+      showToast(lang === 'sw' ? 'Maombi yamethibitishwa!' : 'Application verified!', 'success');
+    } else if (status === 'approved') {
+      showToast(lang === 'sw' ? 'Maombi yameidhinishwa!' : 'Application approved!', 'success');
+    } else if (status === 'issued') {
+      showToast(lang === 'sw' ? 'Hati imetolewa!' : 'Document issued!', 'success');
+    } else if (status === 'rejected') {
+      showToast(lang === 'sw' ? 'Maombi yamekataliwa.' : 'Application rejected.', 'info');
+    }
+    
     setProcessing(false);
   };
 
