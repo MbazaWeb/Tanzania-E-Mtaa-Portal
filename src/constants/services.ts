@@ -373,6 +373,10 @@ export const HARDCODED_SERVICES: Service[] = [
       {"name": "seller_tin", "label": "Namba ya TIN (TRA)", "type": "text", "required": true},
       {"name": "agreement_file", "label": "Pakia Mkataba wa Mauziano (Attached Agreement)", "type": "file", "required": true},
       {"name": "section_buyer_info", "label": "TAARIFA ZA MNUNUZI (BUYER)", "type": "header"},
+      {"name": "buyer_is_self", "label": "Je, mnunuzi ni wewe mwenyewe?", "type": "select", "options": [
+        {"label": "NDIYO - Mimi ndiye mnunuzi", "value": "SELF"},
+        {"label": "HAPANA - Mnunuzi ni mtu mwingine", "value": "OTHER"}
+      ], "required": true},
       {"name": "buyer_nida", "label": "Namba ya NIDA ya Mnunuzi", "type": "text", "required": true},
       {"name": "buyer_name", "label": "Jina Kamili la Mnunuzi", "type": "text", "required": true}
     ],
@@ -447,6 +451,10 @@ export const HARDCODED_SERVICES: Service[] = [
       {"name": "landlord_phone", "label": "Namba ya Simu ya Mwenye Nyumba / Msimamizi", "type": "tel", "required": true},
       
       {"name": "section_tenant", "label": "TAARIFA ZA MPANGAJI (TENANT)", "type": "header"},
+      {"name": "tenant_is_self", "label": "Je, mpangaji ni wewe mwenyewe?", "type": "select", "options": [
+        {"label": "NDIYO - Mimi ndiye mpangaji", "value": "SELF"},
+        {"label": "HAPANA - Mpangaji ni mtu mwingine", "value": "OTHER"}
+      ], "required": true},
       {"name": "tenant_name", "label": "Jina Kamili la Mpangaji", "type": "text", "required": true},
       {"name": "tenant_nida", "label": "Namba ya NIDA ya Mpangaji", "type": "text", "required": true},
       {"name": "tenant_marital_status", "label": "Hali ya Ndoa ya Mpangaji", "type": "select", "options": [

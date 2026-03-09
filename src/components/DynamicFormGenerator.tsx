@@ -65,27 +65,44 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
   const [useProfileData, setUseProfileData] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Minor-specific state
+  const [minorRelationType, setMinorRelationType] = useState<'own_child' | 'other'>('own_child');
+  const [minorIdType, setMinorIdType] = useState<'birth_certificate' | 'school_registration'>('birth_certificate');
+  const [minorName, setMinorName] = useState('');
+  const [minorIdNumber, setMinorIdNumber] = useState('');
+  const [guardianIdType, setGuardianIdType] = useState('');
+  const [guardianIdNumber, setGuardianIdNumber] = useState('');
+  const [guardianRelationship, setGuardianRelationship] = useState('');
+  
+  // File upload state for specific fields
+  const [fieldFiles, setFieldFiles] = useState<Record<string, File[]>>({});
+  const fieldFileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
   // Generate Zod schema dynamically
   const shape: any = {};
   schema.forEach((field) => {
     if (field.type === 'header') return; // Skip headers in validation
+    if (field.disabled) return; // Skip disabled (auto-calculated) fields from validation
+    if (field.type === 'file') return; // Skip file fields - handled separately
     
     let validator: z.ZodTypeAny = z.any();
     if (field.type === 'text' || field.type === 'textarea' || field.type === 'tel') {
       let v = z.string();
-      if (field.required) v = v.min(1, `${field.label} is required`);
-      validator = v;
+      if (field.required && !field.showIf) v = v.min(1, `${field.label} is required`);
+      validator = field.required && !field.showIf ? v : v.optional();
     } else if (field.type === 'number') {
-      let v = z.number();
-      if (field.required) v = v.min(0);
-      validator = v;
+      validator = z.any().optional(); // Numbers can be auto-calculated
     } else if (field.type === 'date') {
-      validator = z.string().min(1, 'Date is required');
+      validator = field.required && !field.showIf ? z.string().min(1, 'Date is required') : z.string().optional();
+    } else if (field.type === 'select') {
+      validator = field.required && !field.showIf ? z.string().min(1, `${field.label} is required`) : z.string().optional();
+    } else {
+      validator = z.any().optional();
     }
-    shape[field.name] = (field.required && !field.showIf) ? validator : validator.optional();
+    shape[field.name] = validator;
   });
 
-  const formSchema = z.object(shape);
+  const formSchema = z.object(shape).passthrough(); // passthrough allows extra fields
   
   // Prepare default values from profile if available and useProfileData is true
   const getDefaultValues = () => {
@@ -127,6 +144,30 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
   const watchPaymentPeriod = watch('payment_period');
   const watchSalePrice = watch('sale_price');
   const watchAssetType = watch('asset_type');
+  const watchTenantIsSelf = watch('tenant_is_self');
+  const watchBuyerIsSelf = watch('buyer_is_self');
+
+  // Auto-fill tenant fields when "SELF" is selected
+  useEffect(() => {
+    if (watchTenantIsSelf === 'SELF' && userProfile) {
+      const fullName = [userProfile.first_name, userProfile.middle_name, userProfile.last_name]
+        .filter(Boolean)
+        .join(' ');
+      setValue('tenant_name', fullName);
+      setValue('tenant_nida', userProfile.nida_number || '');
+    }
+  }, [watchTenantIsSelf, userProfile, setValue]);
+
+  // Auto-fill buyer fields when "SELF" is selected
+  useEffect(() => {
+    if (watchBuyerIsSelf === 'SELF' && userProfile) {
+      const fullName = [userProfile.first_name, userProfile.middle_name, userProfile.last_name]
+        .filter(Boolean)
+        .join(' ');
+      setValue('buyer_name', fullName);
+      setValue('buyer_nida', userProfile.nida_number || '');
+    }
+  }, [watchBuyerIsSelf, userProfile, setValue]);
 
   useEffect(() => {
     // Rent calculations (PANGISHA)
@@ -173,13 +214,60 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
     }
   };
 
+  // Handle file upload for specific form field
+  const handleFieldFileChange = (fieldName: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setFieldFiles(prev => ({
+        ...prev,
+        [fieldName]: Array.from(files)
+      }));
+    }
+  };
+
+  const removeFieldFile = (fieldName: string, fileName: string) => {
+    setFieldFiles(prev => ({
+      ...prev,
+      [fieldName]: (prev[fieldName] || []).filter(f => f.name !== fileName)
+    }));
+  };
+
   const removeAttachment = (name: string) => {
     setAttachments((prev) => prev.filter((a) => a !== name));
   };
 
   const onFormSubmit = (data: any) => {
     console.log('Form submitted with data:', data);
-    onSubmit(data, attachments, applicantType, applicantType !== 'self' ? representativeName : undefined);
+    
+    // Include minor data if applicable
+    const enrichedData = {
+      ...data,
+      // Add file field names
+      ...(Object.keys(fieldFiles).reduce((acc, key) => {
+        acc[key] = fieldFiles[key].map(f => f.name).join(', ');
+        return acc;
+      }, {} as Record<string, string>)),
+      // Add minor data if minor applicant type
+      ...(applicantType === 'minor' && {
+        minor_relation_type: minorRelationType,
+        minor_id_type: minorIdType,
+        minor_name: minorName || representativeName,
+        minor_id_number: minorIdNumber,
+        ...(minorRelationType === 'other' && {
+          guardian_id_type: guardianIdType,
+          guardian_id_number: guardianIdNumber,
+          guardian_relationship: guardianRelationship
+        })
+      })
+    };
+    
+    // Include all file names in attachments
+    const allAttachments = [
+      ...attachments,
+      ...Object.values(fieldFiles).flat().map(f => f.name)
+    ];
+    
+    onSubmit(enrichedData, allAttachments, applicantType, applicantType !== 'self' ? representativeName : undefined);
   };
 
   const onFormError = (errors: any) => {
@@ -308,6 +396,142 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                 ? 'Tafadhali hakikisha una mamlaka ya kuwakilisha mtu huyu' 
                 : 'Please ensure you have authority to represent this person'}
             </p>
+          </div>
+        )}
+
+        {/* Minor-specific detailed fields */}
+        {applicantType === 'minor' && (
+          <div className="mt-4 space-y-4">
+            {/* Is this your own child or someone else's? */}
+            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+              <label className="text-sm font-bold text-stone-700 mb-3 block">
+                {lang === 'sw' ? 'Uhusiano na Mtoto' : 'Relationship to Child'} <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMinorRelationType('own_child')}
+                  className={cn(
+                    "p-3 rounded-xl border-2 text-left transition-all",
+                    minorRelationType === 'own_child'
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-stone-200 bg-white"
+                  )}
+                >
+                  <p className="font-bold text-stone-800">{lang === 'sw' ? 'Mtoto wangu mwenyewe' : 'My own child'}</p>
+                  <p className="text-xs text-stone-500">{lang === 'sw' ? 'Mzazi/Mlezi wa mtoto' : 'Parent/Guardian'}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMinorRelationType('other')}
+                  className={cn(
+                    "p-3 rounded-xl border-2 text-left transition-all",
+                    minorRelationType === 'other'
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-stone-200 bg-white"
+                  )}
+                >
+                  <p className="font-bold text-stone-800">{lang === 'sw' ? 'Mtoto wa mtu mwingine' : 'Someone else\'s child'}</p>
+                  <p className="text-xs text-stone-500">{lang === 'sw' ? 'Mwakilishi aliyeidhinishwa' : 'Authorized representative'}</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Child ID Type Selection */}
+            <div className="p-4 bg-white rounded-xl border border-stone-200">
+              <label className="text-sm font-bold text-stone-700 mb-3 block">
+                {lang === 'sw' ? 'Aina ya Utambulisho wa Mtoto' : 'Child ID Type'} <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMinorIdType('birth_certificate')}
+                  className={cn(
+                    "p-3 rounded-xl border-2 text-left transition-all",
+                    minorIdType === 'birth_certificate'
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-stone-200 bg-white"
+                  )}
+                >
+                  <p className="font-bold text-stone-800">{lang === 'sw' ? 'Cheti cha Kuzaliwa' : 'Birth Certificate'}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMinorIdType('school_registration')}
+                  className={cn(
+                    "p-3 rounded-xl border-2 text-left transition-all",
+                    minorIdType === 'school_registration'
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-stone-200 bg-white"
+                  )}
+                >
+                  <p className="font-bold text-stone-800">{lang === 'sw' ? 'Namba ya Usajili Shule' : 'School Registration No.'}</p>
+                </button>
+              </div>
+              
+              {/* Child ID Number */}
+              <div className="mt-3">
+                <input
+                  type="text"
+                  value={minorIdNumber}
+                  onChange={(e) => setMinorIdNumber(e.target.value)}
+                  placeholder={minorIdType === 'birth_certificate' 
+                    ? (lang === 'sw' ? 'Namba ya Cheti cha Kuzaliwa' : 'Birth Certificate Number')
+                    : (lang === 'sw' ? 'Namba ya Usajili Shule' : 'School Registration Number')
+                  }
+                  className="w-full h-12 px-4 rounded-xl border border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Guardian/Representative Details (if not own child) */}
+            {minorRelationType === 'other' && (
+              <div className="p-4 bg-white rounded-xl border border-stone-200 space-y-3">
+                <label className="text-sm font-bold text-stone-700 mb-2 block">
+                  {lang === 'sw' ? 'Taarifa za Mwakilishi' : 'Representative Details'} <span className="text-red-500">*</span>
+                </label>
+                
+                {/* ID Type */}
+                <select
+                  value={guardianIdType}
+                  onChange={(e) => setGuardianIdType(e.target.value)}
+                  aria-label={lang === 'sw' ? 'Aina ya Kitambulisho' : 'ID Type'}
+                  className="w-full h-12 px-4 rounded-xl border border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all bg-white"
+                >
+                  <option value="">{lang === 'sw' ? 'Chagua Aina ya Kitambulisho' : 'Select ID Type'}</option>
+                  <option value="NIDA">NIDA</option>
+                  <option value="PASSPORT">Passport</option>
+                  <option value="VOTER_ID">{lang === 'sw' ? 'Kadi ya Mpiga Kura' : 'Voter ID'}</option>
+                  <option value="DRIVING_LICENSE">{lang === 'sw' ? 'Leseni ya Udereva' : 'Driving License'}</option>
+                </select>
+                
+                {/* ID Number */}
+                <input
+                  type="text"
+                  value={guardianIdNumber}
+                  onChange={(e) => setGuardianIdNumber(e.target.value)}
+                  placeholder={lang === 'sw' ? 'Namba ya Kitambulisho' : 'ID Number'}
+                  aria-label={lang === 'sw' ? 'Namba ya Kitambulisho' : 'ID Number'}
+                  className="w-full h-12 px-4 rounded-xl border border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
+                />
+                
+                {/* Relationship */}
+                <select
+                  value={guardianRelationship}
+                  onChange={(e) => setGuardianRelationship(e.target.value)}
+                  aria-label={lang === 'sw' ? 'Uhusiano na Mtoto' : 'Relationship to Child'}
+                  className="w-full h-12 px-4 rounded-xl border border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all bg-white"
+                >
+                  <option value="">{lang === 'sw' ? 'Uhusiano na Mtoto' : 'Relationship to Child'}</option>
+                  <option value="UNCLE">{lang === 'sw' ? 'Mjomba/Baba Mdogo' : 'Uncle'}</option>
+                  <option value="AUNT">{lang === 'sw' ? 'Shangazi/Mama Mdogo' : 'Aunt'}</option>
+                  <option value="GRANDPARENT">{lang === 'sw' ? 'Babu/Bibi' : 'Grandparent'}</option>
+                  <option value="SIBLING">{lang === 'sw' ? 'Ndugu' : 'Sibling'}</option>
+                  <option value="LEGAL_GUARDIAN">{lang === 'sw' ? 'Mlezi wa Kisheria' : 'Legal Guardian'}</option>
+                  <option value="OTHER">{lang === 'sw' ? 'Nyingine' : 'Other'}</option>
+                </select>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -450,11 +674,47 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                       );
                     case 'file':
                       return (
-                        <div className="flex items-center gap-3 p-3 border border-stone-200 rounded-xl bg-stone-50">
-                          <FileText className="h-5 w-5 text-stone-400" />
-                          <span className="text-sm text-stone-500 italic">
-                            {lang === 'sw' ? 'Tumia sehemu ya viambatisho chini' : 'Use attachments section below'}
-                          </span>
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            ref={(el) => { fieldFileRefs.current[field.name] = el; }}
+                            onChange={(e) => handleFieldFileChange(field.name, e)}
+                            className="hidden"
+                            multiple
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            aria-label={field.label}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fieldFileRefs.current[field.name]?.click()}
+                            aria-label={lang === 'sw' ? `Pakia faili za ${field.label}` : `Upload files for ${field.label}`}
+                            className="w-full py-3 border-2 border-dashed border-stone-300 rounded-xl text-stone-600 hover:border-emerald-500 hover:text-emerald-600 transition-all flex items-center justify-center gap-2 bg-white"
+                          >
+                            <Upload className="h-5 w-5" />
+                            <span className="font-semibold text-sm">
+                              {lang === 'sw' ? 'Bofya kupakia nyaraka' : 'Click to upload documents'}
+                            </span>
+                          </button>
+                          {(fieldFiles[field.name] || []).length > 0 && (
+                            <div className="space-y-1">
+                              {fieldFiles[field.name].map((f) => (
+                                <div key={f.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-sm">
+                                  <span className="truncate flex-1 font-medium text-emerald-700">{f.name}</span>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeFieldFile(field.name, f.name)}
+                                    aria-label={lang === 'sw' ? `Ondoa ${f.name}` : `Remove ${f.name}`}
+                                    className="text-red-500 hover:bg-red-50 p-1 rounded-lg transition-colors ml-2"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs text-stone-400">
+                            {lang === 'sw' ? 'PDF, JPG, PNG, DOC zinakubaliwa' : 'PDF, JPG, PNG, DOC accepted'}
+                          </p>
                         </div>
                       );
                     default:
