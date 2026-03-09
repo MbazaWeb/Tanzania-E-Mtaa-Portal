@@ -296,7 +296,7 @@ export default function App() {
             )}
 
             {view === 'admin_dashboard' && user?.role === 'admin' && (
-              <AdminDashboard />
+              <AdminDashboard setView={setView} />
             )}
 
             {view === 'staff_dashboard' && user?.role === 'staff' && (

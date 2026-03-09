@@ -160,24 +160,69 @@ export function VerifyDocuments({
       return;
     }
 
-    // Search Supabase
-    const { data, error } = await supabase
+    // Search Supabase - try multiple search patterns
+    const searchTerm = qrInput.trim().toUpperCase();
+    console.log('VerifyDocuments: Searching for application:', searchTerm);
+    
+    // Try exact match first
+    let { data, error } = await supabase
       .from('applications')
-      .select('*, users(*)')
-      .eq('application_number', qrInput.trim().toUpperCase())
-      .single();
+      .select(`
+        *,
+        users (
+          id, first_name, middle_name, last_name, nida_number, phone, email, region, district, ward, street
+        ),
+        services (
+          id, name, name_en, fee
+        )
+      `)
+      .eq('application_number', searchTerm)
+      .maybeSingle();
 
-    if (error || !data) {
+    // If not found, try case-insensitive search
+    if (!data && !error) {
+      console.log('VerifyDocuments: Exact match not found, trying ilike search...');
+      const result = await supabase
+        .from('applications')
+        .select(`
+          *,
+          users (
+            id, first_name, middle_name, last_name, nida_number, phone, email, region, district, ward, street
+          ),
+          services (
+            id, name, name_en, fee
+          )
+        `)
+        .ilike('application_number', `%${searchTerm}%`)
+        .limit(1)
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
+    }
+
+    console.log('VerifyDocuments: Query result:', { data, error });
+
+    if (error) {
+      console.error('VerifyDocuments: Error searching application:', error);
+      setVerificationStatus("invalid");
+      setVerifiedDocument(null);
+    } else if (!data) {
+      console.log('VerifyDocuments: No application found');
       setVerificationStatus("invalid");
       setVerifiedDocument(null);
     } else {
       const user = data.users;
+      const service = data.services;
+      // Get service name from service relation or service_name column
+      const serviceName = service?.name || data.service_name || 'Unknown Service';
+      
       setVerificationStatus("verified");
       setVerifiedDocument({
         documentType: 'application',
         id: data.id,
-        type: data.service_name,
-        name: data.service_name,
+        type: serviceName,
+        name: serviceName,
         issueDate: new Date(data.updated_at || data.created_at).toLocaleDateString(),
         issuedAt: data.issued_at,
         verificationCode: data.application_number,
@@ -195,7 +240,7 @@ export function VerifyDocuments({
         street: data.street || user?.street,
         formData: data.form_data,
         paidAt: data.paid_at,
-        serviceFee: data.service_fee
+        serviceFee: service?.fee || data.service_fee
       });
     }
   };
