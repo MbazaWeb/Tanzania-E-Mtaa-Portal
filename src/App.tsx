@@ -115,7 +115,11 @@ export default function App() {
       service_name: selectedService.name 
     });
 
-    const applicationNumber = `EMT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    // Generate application number in format TZ-YYYYMMDD-XXXX
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const applicationNumber = `TZ-${dateStr}-${randomNum}`;
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');

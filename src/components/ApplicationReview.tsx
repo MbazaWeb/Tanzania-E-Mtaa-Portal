@@ -254,20 +254,13 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
     if (selectedApp.status === 'submitted' || selectedApp.status === 'pending_review') {
       // First approval - send to payment
       nextStatus = 'pending_payment';
-    } else if (selectedApp.status === 'paid') {
-      // Application is paid - verify and approve in one step
-      nextStatus = 'approved';
-    } else if (selectedApp.status === 'verified') {
-      // Already verified - final approval
-      nextStatus = 'approved';
+    } else if (selectedApp.status === 'paid' || selectedApp.status === 'verified' || selectedApp.status === 'approved') {
+      // Application is paid/verified/approved - go directly to ISSUED (complete)
+      nextStatus = 'issued';
     }
 
     console.log('handleApprove: Changing status to', nextStatus);
     await updateStatus(selectedApp.id, nextStatus);
-    
-    if (nextStatus === 'approved') {
-      showToast(lang === 'sw' ? 'Maombi yameidhinishwa! Tayari kutoa hati.' : 'Application approved! Ready to issue document.', 'success');
-    }
   };
 
   const handleReject = async () => {
@@ -557,23 +550,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                                 <CheckCircle size={16} />
                               </button>
                             )}
-                            {['paid', 'verified'].includes(app.status) && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedApp(app);
-                                  setTimeout(() => {
-                                    updateStatus(app.id, 'approved');
-                                    showToast(lang === 'sw' ? 'Maombi yameidhinishwa!' : 'Application approved!', 'success');
-                                  }, 100);
-                                }}
-                                title={lang === 'sw' ? 'Idhinisha Maombi' : 'Approve'}
-                                className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-all"
-                              >
-                                <CheckCircle size={16} />
-                              </button>
-                            )}
-                            {app.status === 'approved' && (
+                            {['paid', 'verified', 'approved'].includes(app.status) && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -583,10 +560,10 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                                     showToast(lang === 'sw' ? 'Hati imetolewa!' : 'Document issued!', 'success');
                                   }, 100);
                                 }}
-                                title={lang === 'sw' ? 'Toa Hati' : 'Issue'}
-                                className="h-8 w-8 rounded-lg bg-stone-900 text-white hover:bg-black flex items-center justify-center transition-all"
+                                title={lang === 'sw' ? 'Idhinisha na Toa Hati' : 'Approve & Issue'}
+                                className="h-8 w-8 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center transition-all"
                               >
-                                <FileText size={14} />
+                                <CheckCircle size={16} />
                               </button>
                             )}
                             {/* View Details Button */}
@@ -716,24 +693,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                           {lang === 'sw' ? 'Inasubiri Malipo' : 'Awaiting Payment'}
                         </div>
                       )}
-                      {['paid', 'verified'].includes(selectedApp.status) && (
+                      {['paid', 'verified', 'approved'].includes(selectedApp.status) && (
                         <button 
                           disabled={processing}
                           onClick={handleApprove}
                           className="col-span-2 h-12 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
                         >
                           {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                          {lang === 'sw' ? 'Idhinisha Maombi' : 'Approve Application'}
-                        </button>
-                      )}
-                      {selectedApp.status === 'approved' && (
-                        <button 
-                          disabled={processing}
-                          onClick={() => updateStatus(selectedApp.id, 'issued')}
-                          className="col-span-2 h-12 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
-                        >
-                          {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                          {lang === 'sw' ? 'Toa Hati' : 'Issue Document'}
+                          {lang === 'sw' ? 'Idhinisha na Toa Hati' : 'Approve & Issue Document'}
                         </button>
                       )}
                     </div>
@@ -888,7 +855,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                               className="w-full h-14 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
                             >
                               {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Shield className="h-5 w-5" />}
-                              {lang === 'sw' ? '✓ THIBITISHA MALIPO' : '✓ VERIFY PAYMENT'}
+                              {lang === 'sw' ? '✓ THIBITISHA MALIPO PEKEE' : '✓ VERIFY PAYMENT ONLY'}
                             </button>
                             <button 
                               disabled={processing}
@@ -896,12 +863,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                               className="w-full h-14 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
                             >
                               {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
-                              {lang === 'sw' ? '✓ IDHINISHA MOJA KWA MOJA' : '✓ APPROVE DIRECTLY'}
+                              {lang === 'sw' ? '✓ IDHINISHA NA TOA HATI' : '✓ APPROVE & ISSUE DOCUMENT'}
                             </button>
                           </>
                         )}
 
-                        {/* 4. VERIFIED → Final Approve */}
+                        {/* 4. VERIFIED → Final Approve & Issue */}
                         {selectedApp.status === 'verified' && (
                           <button 
                             disabled={processing}
@@ -909,15 +876,15 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                             className="w-full h-14 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
                           >
                             {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
-                            {lang === 'sw' ? '✓ IDHINISHA MAOMBI' : '✓ APPROVE APPLICATION'}
+                            {lang === 'sw' ? '✓ IDHINISHA NA TOA HATI' : '✓ APPROVE & ISSUE DOCUMENT'}
                           </button>
                         )}
 
-                        {/* 5. APPROVED → Issue Document */}
+                        {/* 5. APPROVED → Issue Document (if somehow still at approved) */}
                         {selectedApp.status === 'approved' && (
                           <button 
                             disabled={processing}
-                            onClick={() => updateStatus(selectedApp.id, 'issued')}
+                            onClick={handleApprove}
                             className="w-full h-14 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-stone-300"
                           >
                             {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}
