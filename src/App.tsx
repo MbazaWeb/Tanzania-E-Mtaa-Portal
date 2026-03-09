@@ -115,11 +115,25 @@ export default function App() {
       service_name: selectedService.name 
     });
 
-    // Generate application number in format TZ-YYYYMMDD-XXXX
+    // Generate service code from service name
+    const getServiceCode = (name: string): string => {
+      const uppercaseName = name.toUpperCase();
+      if (uppercaseName.includes('MKAZI')) return 'MKZ';
+      if (uppercaseName.includes('UTAMBULISHO')) return 'UTB';
+      if (uppercaseName.includes('TUKIO')) return 'KIB';
+      if (uppercaseName.includes('MAZISHI')) return 'MAZ';
+      if (uppercaseName.includes('MAUZIANO')) return 'MUZ';
+      if (uppercaseName.includes('PANGISHA') || uppercaseName.includes('PANGO')) return 'PNG';
+      // Fallback: first 3 characters
+      return name.replace(/[^A-Z]/gi, '').substring(0, 3).toUpperCase() || 'APP';
+    };
+
+    // Generate application number in format TZ-SERVICE-YYYYMMDD-XXXX
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const applicationNumber = `TZ-${dateStr}-${randomNum}`;
+    const serviceCode = getServiceCode(selectedService.name);
+    const applicationNumber = `TZ-${serviceCode}-${dateStr}-${randomNum}`;
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const isConfigured = supabaseUrl && !supabaseUrl.includes('YOUR_SUPABASE_URL') && !supabaseUrl.includes('bqxevbmjqvogebmlbidx');

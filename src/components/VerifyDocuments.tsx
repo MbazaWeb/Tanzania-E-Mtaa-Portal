@@ -35,7 +35,7 @@ import { cn } from "@/src/lib/utils";
 
 // Document types for verification
 const DOCUMENT_TYPES = [
-  { id: 'application', name: 'E-Mtaa Application', nameSw: 'Maombi ya E-Mtaa', icon: FileText, placeholder: 'TZ-20240115-XXXX' },
+  { id: 'application', name: 'E-Mtaa Application', nameSw: 'Maombi ya E-Mtaa', icon: FileText, placeholder: 'TZ-KIB-20260309-1234' },
   { id: 'nida', name: 'NIDA (National ID)', nameSw: 'NIDA (Kitambulisho cha Taifa)', icon: Fingerprint, placeholder: '19850101-12345-00001-00' },
   { id: 'birth_certificate', name: 'Birth Certificate', nameSw: 'Cheti cha Kuzaliwa', icon: Baby, placeholder: 'BC-2024-123456' },
   { id: 'passport', name: 'Passport', nameSw: 'Pasipoti', icon: Plane, placeholder: 'AB1234567' },
