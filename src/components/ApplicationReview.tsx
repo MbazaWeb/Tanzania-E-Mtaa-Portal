@@ -841,28 +841,16 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                     <div className="space-y-3 pt-4 border-t border-stone-100">
                       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{lang === 'sw' ? 'Hatua za Uhakiki' : 'Verification Actions'}</p>
                       
+                      {/* Current Status Display */}
+                      <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                        <p className="text-[10px] font-bold text-stone-400 uppercase mb-1">{lang === 'sw' ? 'Hali ya Sasa' : 'Current Status'}</p>
+                        <p className="text-sm font-bold text-stone-800 capitalize">{selectedApp.status.replace(/_/g, ' ')}</p>
+                      </div>
+                      
                       <div className="grid grid-cols-1 gap-2">
-                        {/* Verify button - only for paid status */}
-                        {selectedApp.status === 'paid' && (
-                          <button 
-                            disabled={processing}
-                            onClick={() => updateStatus(selectedApp.id, 'verified')}
-                            className="w-full h-12 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
-                          >
-                            {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
-                            {lang === 'sw' ? 'Thibitisha Malipo' : 'Verify Payment'}
-                          </button>
-                        )}
-
-                        {/* Pending Payment Info */}
-                        {selectedApp.status === 'pending_payment' && (
-                          <div className="w-full h-12 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            {lang === 'sw' ? 'Inasubiri Malipo ya Mwananchi' : 'Awaiting Citizen Payment'}
-                          </div>
-                        )}
-
-                        {/* Approve to Payment - for submitted/pending_review */}
+                        {/* MAIN ACTION BUTTONS - Based on Status */}
+                        
+                        {/* 1. SUBMITTED/PENDING_REVIEW → Approve to Payment */}
                         {['submitted', 'pending_review'].includes(selectedApp.status) && (
                           <button 
                             disabled={processing || 
@@ -871,40 +859,97 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                             }
                             onClick={handleApprove}
                             className={cn(
-                              "w-full h-12 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg",
+                              "w-full h-14 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg",
                               (((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
                                ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
                                 ? "bg-stone-300 cursor-not-allowed shadow-none"
                                 : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
                             )}
                           >
-                            {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                            {lang === 'sw' ? 'Idhinisha → Malipo' : 'Approve → Payment'}
+                            {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
+                            {lang === 'sw' ? '✓ IDHINISHA MAOMBI → MALIPO' : '✓ APPROVE → PAYMENT'}
                           </button>
                         )}
 
-                        {/* Final Approval - for paid/verified */}
-                        {['paid', 'verified'].includes(selectedApp.status) && (
+                        {/* 2. PENDING_PAYMENT → Awaiting */}
+                        {selectedApp.status === 'pending_payment' && (
+                          <div className="w-full h-14 bg-amber-50 border-2 border-amber-300 text-amber-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            <Clock className="h-5 w-5 animate-pulse" />
+                            {lang === 'sw' ? '⏳ INASUBIRI MALIPO YA MWANANCHI' : '⏳ AWAITING CITIZEN PAYMENT'}
+                          </div>
+                        )}
+
+                        {/* 3. PAID → Verify & Approve */}
+                        {selectedApp.status === 'paid' && (
+                          <>
+                            <button 
+                              disabled={processing}
+                              onClick={() => updateStatus(selectedApp.id, 'verified')}
+                              className="w-full h-14 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
+                            >
+                              {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Shield className="h-5 w-5" />}
+                              {lang === 'sw' ? '✓ THIBITISHA MALIPO' : '✓ VERIFY PAYMENT'}
+                            </button>
+                            <button 
+                              disabled={processing}
+                              onClick={handleApprove}
+                              className="w-full h-14 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+                            >
+                              {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
+                              {lang === 'sw' ? '✓ IDHINISHA MOJA KWA MOJA' : '✓ APPROVE DIRECTLY'}
+                            </button>
+                          </>
+                        )}
+
+                        {/* 4. VERIFIED → Final Approve */}
+                        {selectedApp.status === 'verified' && (
                           <button 
-                            disabled={processing || 
-                              ((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                              ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
-                            }
+                            disabled={processing}
                             onClick={handleApprove}
-                            className={cn(
-                              "w-full h-12 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg",
-                              (((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                               ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
-                                ? "bg-stone-300 cursor-not-allowed shadow-none"
-                                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
-                            )}
+                            className="w-full h-14 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
                           >
-                            {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                            {lang === 'sw' ? 'Idhinisha Maombi' : 'Approve Application'}
+                            {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
+                            {lang === 'sw' ? '✓ IDHINISHA MAOMBI' : '✓ APPROVE APPLICATION'}
                           </button>
                         )}
 
-                        {/* Return/Reject buttons */}
+                        {/* 5. APPROVED → Issue Document */}
+                        {selectedApp.status === 'approved' && (
+                          <button 
+                            disabled={processing}
+                            onClick={() => updateStatus(selectedApp.id, 'issued')}
+                            className="w-full h-14 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-stone-300"
+                          >
+                            {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5" />}
+                            {lang === 'sw' ? '📄 TOA HATI RASMI' : '📄 ISSUE DOCUMENT'}
+                          </button>
+                        )}
+
+                        {/* 6. ISSUED → Done! */}
+                        {selectedApp.status === 'issued' && (
+                          <div className="w-full h-14 bg-emerald-50 border-2 border-emerald-300 text-emerald-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            <CheckCircle2 className="h-5 w-5" />
+                            {lang === 'sw' ? '✅ HATI IMETOLEWA - IMEKAMILIKA' : '✅ DOCUMENT ISSUED - COMPLETED'}
+                          </div>
+                        )}
+
+                        {/* 7. REJECTED → Already rejected */}
+                        {selectedApp.status === 'rejected' && (
+                          <div className="w-full h-14 bg-red-50 border-2 border-red-300 text-red-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            <XCircle className="h-5 w-5" />
+                            {lang === 'sw' ? '❌ MAOMBI YAMEKATALIWA' : '❌ APPLICATION REJECTED'}
+                          </div>
+                        )}
+
+                        {/* 8. RETURNED → Awaiting correction */}
+                        {selectedApp.status === 'returned' && (
+                          <div className="w-full h-14 bg-amber-50 border-2 border-amber-300 text-amber-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            <RefreshCw className="h-5 w-5" />
+                            {lang === 'sw' ? '🔄 IMERUDISHWA - INASUBIRI MAREKEBISHO' : '🔄 RETURNED - AWAITING CORRECTION'}
+                          </div>
+                        )}
+                        
+                        {/* RETURN/REJECT BUTTONS - for actionable statuses */}
                         {['submitted', 'paid', 'verified', 'pending_review', 'pending_payment'].includes(selectedApp.status) && (
                           <div className="space-y-2">
                             {showFeedbackInput ? (
@@ -1003,17 +1048,6 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                           <p className="text-[10px] text-amber-600 font-bold text-center">
                             {lang === 'sw' ? 'Inasubiri mpangaji akubali kwanza' : 'Awaiting tenant acceptance first'}
                           </p>
-                        )}
-
-                        {selectedApp.status === 'approved' && (
-                          <button 
-                            disabled={processing}
-                            onClick={() => updateStatus(selectedApp.id, 'issued')}
-                            className="w-full h-12 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-stone-200"
-                          >
-                            {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                            {lang === 'sw' ? 'Toa Hati (Issue)' : 'Issue Document'}
-                          </button>
                         )}
                       </div>
                     </div>
