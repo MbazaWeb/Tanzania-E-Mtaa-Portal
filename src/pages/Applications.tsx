@@ -132,8 +132,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
     if (!user) return;
     setProcessingId(app.id);
     try {
-      const isBuyer = (app as any).services?.name.includes('Mauziano') && app.form_data.buyer_nida === user.nida_number;
-      const isTenant = (app as any).services?.name.includes('PANGISHA') && app.form_data.tenant_nida === user.nida_number;
+      const isBuyer = (app as any).services?.name?.includes('Mauziano') && app.form_data.buyer_nida === user.nida_number;
+      const isTenant = (app as any).services?.name?.includes('PANGISHA') && app.form_data.tenant_nida === user.nida_number;
 
       const updateData: any = {};
       if (isBuyer) updateData.buyer_accepted = true;
@@ -331,8 +331,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
                     {/* Acceptance Logic for Buyer/Tenant */}
                     {user && (
                       (() => {
-                        const isBuyer = (app as any).services?.name.includes('Mauziano') && app.form_data.buyer_nida === user.nida_number;
-                        const isTenant = (app as any).services?.name.includes('PANGISHA') && app.form_data.tenant_nida === user.nida_number;
+                        const isBuyer = (app as any).services?.name?.includes('Mauziano') && app.form_data.buyer_nida === user.nida_number;
+                        const isTenant = (app as any).services?.name?.includes('PANGISHA') && app.form_data.tenant_nida === user.nida_number;
                         const alreadyAccepted = isBuyer ? app.buyer_accepted : isTenant ? app.tenant_accepted : false;
 
                         if ((isBuyer || isTenant) && !alreadyAccepted && app.status !== 'rejected') {
@@ -456,8 +456,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
               <div className="pt-2 border-t border-stone-50 flex flex-wrap gap-2 justify-end">
                 {user && (
                   (() => {
-                    const isBuyer = (app as any).services?.name.includes('Mauziano') && app.form_data.buyer_nida === user.nida_number;
-                    const isTenant = (app as any).services?.name.includes('PANGISHA') && app.form_data.tenant_nida === user.nida_number;
+                    const isBuyer = (app as any).services?.name?.includes('Mauziano') && app.form_data.buyer_nida === user.nida_number;
+                    const isTenant = (app as any).services?.name?.includes('PANGISHA') && app.form_data.tenant_nida === user.nida_number;
                     const alreadyAccepted = isBuyer ? app.buyer_accepted : isTenant ? app.tenant_accepted : false;
 
                     if ((isBuyer || isTenant) && !alreadyAccepted && app.status !== 'rejected') {
@@ -691,8 +691,8 @@ export function Applications({ applications, onPay, onRefresh }: ApplicationsPro
               <div className="border-t border-stone-100 p-4 bg-stone-50">
                 {/* Accept Button for Buyer/Tenant */}
                 {user && (() => {
-                  const isBuyer = (selectedApp as any).services?.name.includes('Mauziano') && selectedApp.form_data.buyer_nida === user.nida_number;
-                  const isTenant = (selectedApp as any).services?.name.includes('PANGISHA') && selectedApp.form_data.tenant_nida === user.nida_number;
+                  const isBuyer = (selectedApp as any).services?.name?.includes('Mauziano') && selectedApp.form_data.buyer_nida === user.nida_number;
+                  const isTenant = (selectedApp as any).services?.name?.includes('PANGISHA') && selectedApp.form_data.tenant_nida === user.nida_number;
                   const alreadyAccepted = isBuyer ? selectedApp.buyer_accepted : isTenant ? selectedApp.tenant_accepted : false;
 
                   if ((isBuyer || isTenant) && !alreadyAccepted && selectedApp.status !== 'rejected') {
