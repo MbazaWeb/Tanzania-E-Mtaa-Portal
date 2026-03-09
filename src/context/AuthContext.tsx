@@ -19,6 +19,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (userId: string) => {
+    console.log('AuthContext: fetchUserProfile called for userId:', userId);
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .rpc('get_user_profile', { user_id: userId });
@@ -27,20 +29,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('RPC error:', error);
         throw error;
       } else if (data && Array.isArray(data) && data.length > 0) {
-        console.log('User profile fetched:', data[0]);
+        console.log('User profile fetched successfully:', data[0]);
         setUser(data[0] as UserProfile);
       } else if (data && !Array.isArray(data)) {
         // In case RPC returns a single object instead of array
         console.log('User profile fetched (single object):', data);
         setUser(data as UserProfile);
       } else {
-        console.log('No user profile found');
+        console.log('No user profile found in database');
         setUser(null);
       }
     } catch (err: any) {
       console.error('Exception in fetchUserProfile:', err);
       setUser(null);
     } finally {
+      console.log('AuthContext: fetchUserProfile completed, setting loading to false');
       setLoading(false);
     }
   };

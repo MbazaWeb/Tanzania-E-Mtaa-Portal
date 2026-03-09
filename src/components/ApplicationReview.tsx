@@ -208,7 +208,12 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
   };
 
   const handleApprove = async () => {
-    if (!selectedApp) return;
+    if (!selectedApp) {
+      console.log('handleApprove: No selected app');
+      return;
+    }
+
+    console.log('handleApprove: Processing app', selectedApp.id, 'status:', selectedApp.status);
 
     const serviceName = (selectedApp as any).services?.name || '';
     const buyerAccepted = (selectedApp as any).buyer_accepted;
@@ -236,6 +241,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
       nextStatus = 'approved';
     }
 
+    console.log('handleApprove: Changing status to', nextStatus);
     await updateStatus(selectedApp.id, nextStatus);
     
     if (nextStatus === 'approved') {
@@ -784,7 +790,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                         </div>
                       )}
 
-                      {(selectedApp as any).buyer_accepted !== undefined && (selectedApp as any).services?.name.includes('Mauziano') && (
+                      {(selectedApp as any).buyer_accepted !== undefined && (selectedApp as any).services?.name?.includes('Mauziano') && (
                         <div className="flex justify-between gap-4 border-b border-stone-200 pb-2 last:border-0 last:pb-0 pt-2">
                           <span className="text-xs font-bold text-purple-600 uppercase tracking-tighter">{lang === 'sw' ? 'Mnunuzi Amekubali?' : 'Buyer Accepted?'}</span>
                           <span className={cn(
@@ -795,7 +801,7 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                           </span>
                         </div>
                       )}
-                      {(selectedApp as any).tenant_accepted !== undefined && (selectedApp as any).services?.name.includes('PANGISHA') && (
+                      {(selectedApp as any).tenant_accepted !== undefined && (selectedApp as any).services?.name?.includes('PANGISHA') && (
                         <div className="flex justify-between gap-4 border-b border-stone-200 pb-2 last:border-0 last:pb-0 pt-2">
                           <span className="text-xs font-bold text-purple-600 uppercase tracking-tighter">{lang === 'sw' ? 'Mpangaji Amekubali?' : 'Tenant Accepted?'}</span>
                           <span className={cn(
@@ -839,14 +845,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                         {['submitted', 'pending_review'].includes(selectedApp.status) && (
                           <button 
                             disabled={processing || 
-                              ((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                              ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
+                              ((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                              ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
                             }
                             onClick={handleApprove}
                             className={cn(
                               "w-full h-12 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg",
-                              (((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                               ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
+                              (((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                               ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
                                 ? "bg-stone-300 cursor-not-allowed shadow-none"
                                 : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
                             )}
@@ -860,14 +866,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                         {['paid', 'verified'].includes(selectedApp.status) && (
                           <button 
                             disabled={processing || 
-                              ((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                              ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
+                              ((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                              ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
                             }
                             onClick={handleApprove}
                             className={cn(
                               "w-full h-12 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg",
-                              (((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                               ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
+                              (((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                               ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
                                 ? "bg-stone-300 cursor-not-allowed shadow-none"
                                 : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
                             )}
@@ -966,13 +972,13 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                           )}
                         </PDFDownloadLink>
                         
-                        {((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) && (
+                        {((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) && (
                           <p className="text-[10px] text-amber-600 font-bold text-center">
                             {lang === 'sw' ? 'Inasubiri mnunuzi akubali kwanza' : 'Awaiting buyer acceptance first'}
                           </p>
                         )}
 
-                        {((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted) && (
+                        {((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted) && (
                           <p className="text-[10px] text-amber-600 font-bold text-center">
                             {lang === 'sw' ? 'Inasubiri mpangaji akubali kwanza' : 'Awaiting tenant acceptance first'}
                           </p>
@@ -1355,14 +1361,14 @@ export const ApplicationReview: React.FC<ApplicationReviewProps> = ({ lang, user
                     <>
                       <button 
                         disabled={processing || 
-                          ((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                          ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
+                          ((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                          ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted)
                         }
                         onClick={handleApprove}
                         className={cn(
                           "px-8 py-4 text-white rounded-2xl font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-xl",
-                          (((selectedApp as any).services?.name.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
-                           ((selectedApp as any).services?.name.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
+                          (((selectedApp as any).services?.name?.includes('Mauziano') && !(selectedApp as any).buyer_accepted) ||
+                           ((selectedApp as any).services?.name?.includes('PANGISHA') && !(selectedApp as any).tenant_accepted))
                             ? "bg-stone-300 cursor-not-allowed shadow-none"
                             : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
                         )}

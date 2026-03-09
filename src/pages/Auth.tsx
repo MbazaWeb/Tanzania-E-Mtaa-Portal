@@ -192,10 +192,15 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
         }
 
         // Fetch profile again after creation/update
+        console.log('Fetching user profile before close...');
         await fetchUserProfile(data.user.id);
+        console.log('Profile fetched, closing auth modal');
       }
       
-      onClose();
+      // Small delay to ensure state propagates
+      setTimeout(() => {
+        onClose();
+      }, 100);
     } catch (err: any) {
       console.error('Login error caught:', err);
       if (err.message === 'Failed to fetch' || err.name === 'TypeError' || err.message?.includes('NetworkError')) {
