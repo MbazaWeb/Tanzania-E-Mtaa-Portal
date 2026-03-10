@@ -2,67 +2,144 @@
  * Utambulisho wa Mkazi (Barua ya Utambulisho) Form
  * Residency Certificate / Identification Letter
  * 
- * Service: Utambulisho wa Mkazi
+ * Service: Utambulisho wa Mkazi - Kujitambulisha Mkazi
  * Fee: 5,000 TZS
  * 
  * Features:
  * - Book-style layout with sections
  * - Progress tracking
- * - Review step before submission
+ * - Preview as PDF before submission
+ * - Auto-fill from user profile
+ * - Council: Serikali ya Mtaa only
+ * - Purpose: Kujitambulisha Mkazi only
+ * - Added sensitive information: utility bills, family members, residency status
  */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, CheckCircle, ArrowLeft, ArrowRight, Eye, FileCheck } from 'lucide-react';
+import { 
+  Loader2, CheckCircle, ArrowLeft, ArrowRight, Eye, FileCheck, 
+  User, MapPin, Phone, Mail, Calendar, Users, Heart, Briefcase,
+  FileText, Download, Printer, Home, Zap, Droplet, Globe, AlertCircle,
+  Shield, Info, CreditCard, CheckSquare
+} from 'lucide-react';
 import { FormProps, labels } from './types';
 
-// Council options
+// Council options - Serikali ya Mtaa only (all wards)
 const COUNCILS = [
-  { label: 'HALMASHAURI YA MANISPAA YA ARUSHA', value: 'ARUSHA' },
-  { label: 'HALMASHAURI YA MANISPAA YA KINONDONI', value: 'KINONDONI' },
-  { label: 'HALMASHAURI YA MANISPAA YA DODOMA', value: 'DODOMA' },
-  { label: 'HALMASHAURI YA MANISPAA YA MBEYA', value: 'MBEYA' },
-  { label: 'HALMASHAURI YA MANISPAA YA MWANZA', value: 'MWANZA' },
+  { label: 'SERIKALI YA MTAA - ARUSHA', value: 'ARUSHA_MTAA' },
+  { label: 'SERIKALI YA MTAA - DAR ES SALAAM', value: 'DAR_MTAA' },
+  { label: 'SERIKALI YA MTAA - DODOMA', value: 'DODOMA_MTAA' },
+  { label: 'SERIKALI YA MTAA - GEITA', value: 'GEITA_MTAA' },
+  { label: 'SERIKALI YA MTAA - IRINGA', value: 'IRINGA_MTAA' },
+  { label: 'SERIKALI YA MTAA - KAGERA', value: 'KAGERA_MTAA' },
+  { label: 'SERIKALI YA MTAA - KATAVI', value: 'KATAVI_MTAA' },
+  { label: 'SERIKALI YA MTAA - KIGOMA', value: 'KIGOMA_MTAA' },
+  { label: 'SERIKALI YA MTAA - KILIMANJARO', value: 'KILIMANJARO_MTAA' },
+  { label: 'SERIKALI YA MTAA - LINDI', value: 'LINDI_MTAA' },
+  { label: 'SERIKALI YA MTAA - MANYARA', value: 'MANYARA_MTAA' },
+  { label: 'SERIKALI YA MTAA - MARA', value: 'MARA_MTAA' },
+  { label: 'SERIKALI YA MTAA - MBEYA', value: 'MBEYA_MTAA' },
+  { label: 'SERIKALI YA MTAA - MOROGORO', value: 'MOROGORO_MTAA' },
+  { label: 'SERIKALI YA MTAA - MTWARA', value: 'MTWARA_MTAA' },
+  { label: 'SERIKALI YA MTAA - MWANZA', value: 'MWANZA_MTAA' },
+  { label: 'SERIKALI YA MTAA - NJOMBE', value: 'NJOMBE_MTAA' },
+  { label: 'SERIKALI YA MTAA - PWANI', value: 'PWANI_MTAA' },
+  { label: 'SERIKALI YA MTAA - RUKWA', value: 'RUKWA_MTAA' },
+  { label: 'SERIKALI YA MTAA - RUVUMA', value: 'RUVUMA_MTAA' },
+  { label: 'SERIKALI YA MTAA - SHINYANGA', value: 'SHINYANGA_MTAA' },
+  { label: 'SERIKALI YA MTAA - SIMIYU', value: 'SIMIYU_MTAA' },
+  { label: 'SERIKALI YA MTAA - SINGIDA', value: 'SINGIDA_MTAA' },
+  { label: 'SERIKALI YA MTAA - SONGWE', value: 'SONGWE_MTAA' },
+  { label: 'SERIKALI YA MTAA - TABORA', value: 'TABORA_MTAA' },
+  { label: 'SERIKALI YA MTAA - TANGA', value: 'TANGA_MTAA' },
 ];
 
 // Marital status options
 const MARITAL_STATUS = [
-  { label: 'NDOA', value: 'NDOA' },
-  { label: 'HAJAOLEWA', value: 'HAJAOLEWA' },
-  { label: 'TALAKA', value: 'TALAKA' },
-  { label: 'MJANE', value: 'MJANE' },
+  { label: 'Ndoa (Married)', value: 'MARRIED' },
+  { label: 'Hajaoa / Hajaolewa (Single)', value: 'SINGLE' },
+  { label: 'Talaka (Divorced)', value: 'DIVORCED' },
+  { label: 'Mjane (Widowed)', value: 'WIDOWED' },
 ];
 
-// Purpose options
-const PURPOSE_OPTIONS = [
-  { label: 'KUSOMA', value: 'KUSOMA' },
-  { label: 'AJIRA', value: 'AJIRA' },
-  { label: 'BIASHARA', value: 'BIASHARA' },
-  { label: 'HUDUMA YA AFYA', value: 'HUDUMA_YA_AFYA' },
-  { label: 'HATI YA KUSAFIRI', value: 'HATI_YA_KUSAFIRI' },
-  { label: 'NYINGINEZO', value: 'NYINGINEZO' },
+// Residency status options
+const RESIDENCY_STATUS = [
+  { label: 'Mkazi wa Kawaida (Regular Resident)', value: 'REGULAR' },
+  { label: 'Mgeni (Foreigner)', value: 'FOREIGNER' },
+  { label: 'Diaspora (Tanzanian Living Abroad)', value: 'DIASPORA' },
 ];
 
-// Institution type options
-const INSTITUTION_TYPES = [
-  { label: 'OFISI YA SERIKALI', value: 'OFISI_YA_SERIKALI' },
-  { label: 'HOSPITALI', value: 'HOSPITALI' },
-  { label: 'BENKI', value: 'BENKI' },
-  { label: 'SHULE/CHUO', value: 'SHULE_CHUO' },
+// Work permit options
+const WORK_PERMIT_OPTIONS = [
+  { label: 'Ndiyo - Nina Work Permit', value: 'YES' },
+  { label: 'Hapana - Sina Work Permit', value: 'NO' },
+  { label: 'Sihitaji (Not Applicable)', value: 'NA' },
 ];
+
+// Ownership status options
+const OWNERSHIP_STATUS = [
+  { label: 'Namiliki Nyumba (I Own the House)', value: 'OWN' },
+  { label: 'Nakodi (I Rent)', value: 'RENT' },
+  { label: 'Naishi na Familia (Live with Family)', value: 'FAMILY' },
+  { label: 'Naishi Kwa Biashara (Business Stay)', value: 'BUSINESS' },
+];
+
+// Purpose is fixed - only one option
+const PURPOSE_VALUE = 'KUJITAMBULISHA_MKAZI';
+const PURPOSE_LABEL = 'KUJITAMBULISHA MKAZI / RESIDENCY IDENTIFICATION';
+
+// Institution is fixed - Serikali ya Mtaa
+const INSTITUTION_VALUE = 'SERIKALI_YA_MTAA';
+const INSTITUTION_LABEL = 'SERIKALI YA MTAA / LOCAL GOVERNMENT';
 
 interface FormData {
+  // Council info
   council: string;
+  ward: string;
+  village_street: string;
+  
+  // Personal info (auto-filled from profile)
   marital_status: string;
   occupation: string;
+  employer_name: string;
+  
+  // Residence info
   neighborhood: string;
   house_number: string;
   block_number: string;
+  plot_number: string;
+  
+  // Sensitive information
+  electricity_bill_number: string;
+  water_bill_number: string;
+  property_tax_number: string;
+  
+  // Family and dependency
+  family_members_count: number;
+  dependents_count: number;
+  children_under_18: number;
+  elderly_over_60: number;
+  
+  // Residency status
+  residency_status: string;
+  work_permit: string;
+  passport_number: string;
+  country_of_origin: string;
+  
+  // Ownership status
+  ownership_status: string;
+  years_at_residence: number;
+  
+  // Purpose & Institution (fixed)
   purpose: string;
   institution_name: string;
-  institution_type: string;
+  
+  // Terms acceptance
+  terms_accepted: boolean;
+  data_confirmed: boolean;
 }
 
-type Step = 'council' | 'personal' | 'residence' | 'purpose' | 'review';
+type Step = 'council' | 'personal' | 'residence' | 'sensitive' | 'family' | 'status' | 'review';
 
 export const UtambulishoMkaziForm: React.FC<FormProps> = ({
   onSubmit,
@@ -73,15 +150,37 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
   const t = labels[lang];
   const [currentStep, setCurrentStep] = useState<Step>('council');
   const [showReview, setShowReview] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [formData, setFormData] = useState<FormData | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
   
-  const { register, handleSubmit, formState: { errors }, trigger, getValues } = useForm<FormData>();
+  const { register, handleSubmit, formState: { errors }, trigger, getValues, setValue } = useForm<FormData>({
+    defaultValues: {
+      purpose: PURPOSE_VALUE,
+      institution_name: INSTITUTION_VALUE,
+      family_members_count: 0,
+      dependents_count: 0,
+      children_under_18: 0,
+      elderly_over_60: 0,
+      years_at_residence: 0,
+    }
+  });
+
+  // Auto-fill from user profile
+  React.useEffect(() => {
+    if (userProfile) {
+      // Auto-fill any profile data if needed
+      // Most personal info comes from profile display, not form fields
+    }
+  }, [userProfile]);
 
   const steps: { key: Step; label: string; swLabel: string }[] = [
-    { key: 'council', label: 'Council Info', swLabel: 'Halmashauri' },
-    { key: 'personal', label: 'Personal Info', swLabel: 'Taarifa Binafsi' },
+    { key: 'council', label: 'Council', swLabel: 'Serikali ya Mtaa' },
+    { key: 'personal', label: 'Personal', swLabel: 'Binafsi' },
     { key: 'residence', label: 'Residence', swLabel: 'Makazi' },
-    { key: 'purpose', label: 'Purpose', swLabel: 'Sababu' },
+    { key: 'sensitive', label: 'Utilities', swLabel: 'Huduma' },
+    { key: 'family', label: 'Family', swLabel: 'Familia' },
+    { key: 'status', label: 'Status', swLabel: 'Hadhi' },
     { key: 'review', label: 'Review', swLabel: 'Hakiki' },
   ];
 
@@ -93,16 +192,22 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
     
     switch (currentStep) {
       case 'council':
-        fieldsToValidate = ['council'];
+        fieldsToValidate = ['council', 'ward', 'village_street'];
         break;
       case 'personal':
         fieldsToValidate = ['marital_status', 'occupation'];
         break;
       case 'residence':
-        fieldsToValidate = ['neighborhood'];
+        fieldsToValidate = ['neighborhood', 'house_number', 'plot_number'];
         break;
-      case 'purpose':
-        fieldsToValidate = ['purpose', 'institution_name'];
+      case 'sensitive':
+        fieldsToValidate = []; // Optional fields
+        break;
+      case 'family':
+        fieldsToValidate = ['family_members_count', 'dependents_count'];
+        break;
+      case 'status':
+        fieldsToValidate = ['residency_status', 'ownership_status'];
         break;
       default:
         return true;
@@ -116,7 +221,7 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
     const isValid = await validateCurrentStep();
     if (!isValid) return;
 
-    if (currentStep === 'purpose') {
+    if (currentStep === 'status') {
       setCurrentStep('review');
     } else {
       const nextStep = steps[currentStepIndex + 1].key;
@@ -132,7 +237,7 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
 
   const onFormSubmit = (data: FormData) => {
     setFormData(data);
-    setShowReview(true);
+    setShowPdfPreview(true);
   };
 
   const confirmSubmit = () => {
@@ -141,9 +246,14 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const inputClass = "w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white";
   const labelClass = "block text-sm font-semibold text-stone-700 mb-2";
   const sectionClass = "bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border-l-4 border-emerald-500 mb-6 shadow-sm";
+  const cardClass = "bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm";
 
   // Progress Bar Component
   const ProgressBar = () => (
@@ -186,141 +296,168 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
     </div>
   );
 
-  // Review Component
-  const ReviewSection = () => {
+  // PDF Preview Component
+  const PdfPreview = () => {
     const data = getValues();
+    
+    if (!showPdfPreview) return null;
     
     return (
       <div className="space-y-6">
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
-            <Eye className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <FileText className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <h3 className="font-bold text-amber-800">
-                {lang === 'sw' ? 'Hakiki Maombi Yako' : 'Review Your Application'}
+                {lang === 'sw' ? 'Hakiki Hati yako (PDF Preview)' : 'Preview Your Document (PDF Preview)'}
               </h3>
               <p className="text-sm text-amber-700">
                 {lang === 'sw' 
-                  ? 'Tafadhali hakiki taarifa zako kabla ya kuwasilisha. Baada ya kuwasilisha, hutoweza kurekebisha.'
-                  : 'Please review your information before submitting. Once submitted, you cannot make changes.'}
+                  ? 'Hakiki hati yako kabla ya kuwasilisha. Unaweza kuchapisha au kupakua kwa PDF.'
+                  : 'Review your document before submission. You can print or download as PDF.'}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
+        {/* Document Preview - Print-friendly */}
+        <div 
+          ref={printRef}
+          className="bg-white border-2 border-stone-200 rounded-xl p-8 shadow-lg print:shadow-none print:border-0"
+          style={{ fontFamily: 'Arial, sans-serif' }}
+        >
+          {/* Header */}
+          <div className="text-center mb-8 border-b-2 border-emerald-600 pb-4">
+            <h1 className="text-2xl font-bold text-emerald-800 uppercase tracking-wide">
+              JAMHURI YA MUUNGANO WA TANZANIA
+            </h1>
+            <h2 className="text-xl font-semibold text-stone-700 mt-2">
+              BARUA YA UTAMBULISHO WA MKAZI
+            </h2>
+            <h2 className="text-lg text-stone-600">
+              RESIDENCY IDENTIFICATION LETTER
+            </h2>
+          </div>
+
           {/* Council Info */}
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-              <h4 className="font-bold text-emerald-800">{lang === 'sw' ? 'Halmashauri' : 'Council'}</h4>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Halmashauri' : 'Council'}</span>
-                  <p className="font-medium">{COUNCILS.find(c => c.value === data.council)?.label || data.council}</p>
-                </div>
-              </div>
+          <div className="mb-6">
+            <div className="bg-emerald-50 p-3 rounded-lg border-l-4 border-emerald-600">
+              <p className="font-bold text-emerald-800">
+                {COUNCILS.find(c => c.value === data.council)?.label || data.council}
+              </p>
+              <p className="text-sm text-stone-600">Kata / Ward: {data.ward}</p>
+              <p className="text-sm text-stone-600">Kijiji / Mtaa: {data.village_street}</p>
             </div>
           </div>
 
           {/* Personal Info */}
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-              <h4 className="font-bold text-emerald-800">{lang === 'sw' ? 'Taarifa Binafsi' : 'Personal Info'}</h4>
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 className="font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">
+                TAARIFA BINAFSI
+              </h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold text-stone-600">Jina:</span> {userProfile?.first_name} {userProfile?.middle_name} {userProfile?.last_name}</p>
+                <p><span className="font-semibold text-stone-600">NIDA:</span> {userProfile?.nida_number || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Simu:</span> {userProfile?.phone || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Barua Pepe:</span> {userProfile?.email || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Hali ya Ndoa:</span> {MARITAL_STATUS.find(m => m.value === data.marital_status)?.label || data.marital_status}</p>
+                <p><span className="font-semibold text-stone-600">Kazi:</span> {data.occupation}</p>
+                {data.employer_name && <p><span className="font-semibold text-stone-600">Mwajiri:</span> {data.employer_name}</p>}
+              </div>
             </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Jina Kamili' : 'Full Name'}</span>
-                  <p className="font-medium">
-                    {userProfile ? `${userProfile.first_name} ${userProfile.middle_name || ''} ${userProfile.last_name}`.replace(/\s+/g, ' ') : '-'}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">NIDA</span>
-                  <p className="font-medium">{userProfile?.nida_number || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Hali ya Ndoa' : 'Marital Status'}</span>
-                  <p className="font-medium">{MARITAL_STATUS.find(m => m.value === data.marital_status)?.label || data.marital_status}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Kazi' : 'Occupation'}</span>
-                  <p className="font-medium">{data.occupation}</p>
-                </div>
+            
+            <div>
+              <h3 className="font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">
+                MAKAZI / RESIDENCE
+              </h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold text-stone-600">Kitongoji:</span> {data.neighborhood}</p>
+                <p><span className="font-semibold text-stone-600">Namba ya Nyumba:</span> {data.house_number}</p>
+                <p><span className="font-semibold text-stone-600">Namba ya Plot:</span> {data.plot_number || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Block:</span> {data.block_number || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Miaka ya Kukaa:</span> {data.years_at_residence}</p>
+                <p><span className="font-semibold text-stone-600">Hali ya Umiliki:</span> {OWNERSHIP_STATUS.find(o => o.value === data.ownership_status)?.label || data.ownership_status}</p>
               </div>
             </div>
           </div>
 
-          {/* Residence Info */}
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-              <h4 className="font-bold text-emerald-800">{lang === 'sw' ? 'Makazi' : 'Residence'}</h4>
+          {/* Sensitive Information */}
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 className="font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">
+                HUDUMA / UTILITIES
+              </h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold text-stone-600">Namba ya Stima:</span> {data.electricity_bill_number || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Namba ya Maji:</span> {data.water_bill_number || '-'}</p>
+                <p><span className="font-semibold text-stone-600">Namba ya Kodi ya Nyumba:</span> {data.property_tax_number || '-'}</p>
+              </div>
             </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Kitongoji' : 'Neighborhood'}</span>
-                  <p className="font-medium">{data.neighborhood}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Nyumba No.' : 'House No.'}</span>
-                  <p className="font-medium">{data.house_number || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">Block/Area</span>
-                  <p className="font-medium">{data.block_number || '-'}</p>
-                </div>
+            
+            <div>
+              <h3 className="font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">
+                FAMILIA / FAMILY
+              </h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold text-stone-600">Jumla ya Familia:</span> {data.family_members_count}</p>
+                <p><span className="font-semibold text-stone-600">Wategemezi:</span> {data.dependents_count}</p>
+                <p><span className="font-semibold text-stone-600">Watoto chini ya 18:</span> {data.children_under_18 || 0}</p>
+                <p><span className="font-semibold text-stone-600">Wazee zaidi ya 60:</span> {data.elderly_over_60 || 0}</p>
               </div>
             </div>
           </div>
 
-          {/* Purpose Info */}
-          <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-              <h4 className="font-bold text-emerald-800">{lang === 'sw' ? 'Sababu na Taasisi' : 'Purpose & Institution'}</h4>
+          {/* Status Information */}
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 className="font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">
+                HADHI / STATUS
+              </h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold text-stone-600">Hadhi ya Ukazi:</span> {RESIDENCY_STATUS.find(r => r.value === data.residency_status)?.label || data.residency_status}</p>
+                <p><span className="font-semibold text-stone-600">Work Permit:</span> {WORK_PERMIT_OPTIONS.find(w => w.value === data.work_permit)?.label || data.work_permit || '-'}</p>
+                {data.passport_number && <p><span className="font-semibold text-stone-600">Namba ya Pasipoti:</span> {data.passport_number}</p>}
+                {data.country_of_origin && <p><span className="font-semibold text-stone-600">Nchi ya Asili:</span> {data.country_of_origin}</p>}
+              </div>
             </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Sababu' : 'Purpose'}</span>
-                  <p className="font-medium">{PURPOSE_OPTIONS.find(p => p.value === data.purpose)?.label || data.purpose}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Taasisi' : 'Institution'}</span>
-                  <p className="font-medium">{data.institution_name}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Aina ya Taasisi' : 'Institution Type'}</span>
-                  <p className="font-medium">{INSTITUTION_TYPES.find(i => i.value === data.institution_type)?.label || data.institution_type || '-'}</p>
-                </div>
+            
+            <div>
+              <h3 className="font-bold text-emerald-700 border-b border-emerald-200 pb-1 mb-3">
+                MADHUMUNI / PURPOSE
+              </h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold text-stone-600">Sababu:</span> KUJITAMBULISHA MKAZI</p>
+                <p><span className="font-semibold text-stone-600">Taasisi:</span> SERIKALI YA MTAA</p>
               </div>
             </div>
           </div>
 
-          {/* Fee Summary */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-emerald-800">{lang === 'sw' ? 'Ada ya Maombi:' : 'Application Fee:'}</span>
-              <span className="font-bold text-xl text-emerald-600">5,000 TZS</span>
-            </div>
-            <p className="text-xs text-emerald-600 mt-1">
-              {lang === 'sw' 
-                ? 'Utachagua njia ya malipo baada ya kuwasilisha'
-                : 'You will select payment method after submission'}
-            </p>
+          {/* Footer */}
+          <div className="mt-8 pt-4 border-t-2 border-stone-200 text-center text-sm text-stone-500">
+            <p>Hati hii imetolewa kwa njia ya kielektroniki na ni halali kisheria</p>
+            <p>This document is electronically generated and is legally valid</p>
+            <p className="mt-2">Tarehe: {new Date().toLocaleDateString('sw-TZ')}</p>
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex gap-3 pt-4">
           <button
             type="button"
-            onClick={() => setCurrentStep('purpose')}
+            onClick={() => setShowPdfPreview(false)}
             className="flex-1 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
           >
             <ArrowLeft className="h-5 w-5" />
-            {lang === 'sw' ? 'Rudi' : 'Back'}
+            {lang === 'sw' ? 'Rudi kwa Hakiki' : 'Back to Review'}
+          </button>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+          >
+            <Printer className="h-5 w-5" />
+            {lang === 'sw' ? 'Chapisha' : 'Print'}
           </button>
           <button
             type="button"
@@ -342,6 +479,287 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
     );
   };
 
+  // Review Component (before PDF preview)
+  const ReviewSection = () => {
+    const data = getValues();
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Eye className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-amber-800">
+                {lang === 'sw' ? 'Hakiki Taarifa Zako' : 'Review Your Information'}
+              </h3>
+              <p className="text-sm text-amber-700">
+                {lang === 'sw' 
+                  ? 'Tafadhali hakiki taarifa zako kabla ya kuona PDF. Bado unaweza kurekebisha.'
+                  : 'Please review your information before viewing PDF. You can still make changes.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Council Info */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                {lang === 'sw' ? 'Serikali ya Mtaa' : 'Local Government'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Halmashauri' : 'Council'}</span>
+                  <p className="font-medium">{COUNCILS.find(c => c.value === data.council)?.label || data.council}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Kata' : 'Ward'}</span>
+                  <p className="font-medium">{data.ward}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Kijiji/Mtaa' : 'Village/Street'}</span>
+                  <p className="font-medium">{data.village_street}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Personal Info - Auto-filled from profile */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <User className="h-4 w-4" />
+                {lang === 'sw' ? 'Taarifa Binafsi (Kutoka NIDA)' : 'Personal Info (From NIDA)'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Jina Kamili' : 'Full Name'}</span>
+                  <p className="font-medium">
+                    {userProfile ? `${userProfile.first_name} ${userProfile.middle_name || ''} ${userProfile.last_name}`.replace(/\s+/g, ' ') : '-'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">NIDA</span>
+                  <p className="font-medium">{userProfile?.nida_number || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Simu' : 'Phone'}</span>
+                  <p className="font-medium">{userProfile?.phone || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">Email</span>
+                  <p className="font-medium">{userProfile?.email || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Hali ya Ndoa' : 'Marital Status'}</span>
+                  <p className="font-medium">{MARITAL_STATUS.find(m => m.value === data.marital_status)?.label || data.marital_status}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Kazi' : 'Occupation'}</span>
+                  <p className="font-medium">{data.occupation}</p>
+                </div>
+                {data.employer_name && (
+                  <div className="md:col-span-2">
+                    <span className="text-xs text-stone-500">{lang === 'sw' ? 'Mwajiri' : 'Employer'}</span>
+                    <p className="font-medium">{data.employer_name}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Residence Info */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                {lang === 'sw' ? 'Makazi' : 'Residence'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Kitongoji' : 'Neighborhood'}</span>
+                  <p className="font-medium">{data.neighborhood}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Nyumba No.' : 'House No.'}</span>
+                  <p className="font-medium">{data.house_number}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Plot No.' : 'Plot Number'}</span>
+                  <p className="font-medium">{data.plot_number || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">Block</span>
+                  <p className="font-medium">{data.block_number || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Miaka ya Kukaa' : 'Years at Residence'}</span>
+                  <p className="font-medium">{data.years_at_residence}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Umiliki' : 'Ownership'}</span>
+                  <p className="font-medium">{OWNERSHIP_STATUS.find(o => o.value === data.ownership_status)?.label || data.ownership_status}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Utilities */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                {lang === 'sw' ? 'Huduma' : 'Utilities'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Namba ya Stima' : 'Electricity Bill No.'}</span>
+                  <p className="font-medium">{data.electricity_bill_number || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Namba ya Maji' : 'Water Bill No.'}</span>
+                  <p className="font-medium">{data.water_bill_number || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Namba ya Kodi' : 'Property Tax No.'}</span>
+                  <p className="font-medium">{data.property_tax_number || '-'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Family */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {lang === 'sw' ? 'Familia na Wategemezi' : 'Family and Dependents'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Jumla ya Familia' : 'Total Family'}</span>
+                  <p className="font-medium">{data.family_members_count}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Wategemezi' : 'Dependents'}</span>
+                  <p className="font-medium">{data.dependents_count}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Watoto (<18)' : 'Children (<18)'}</span>
+                  <p className="font-medium">{data.children_under_18 || 0}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Wazee (>60)' : 'Elderly (>60)'}</span>
+                  <p className="font-medium">{data.elderly_over_60 || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                {lang === 'sw' ? 'Hadhi ya Ukazi' : 'Residency Status'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Hadhi' : 'Status'}</span>
+                  <p className="font-medium">{RESIDENCY_STATUS.find(r => r.value === data.residency_status)?.label || data.residency_status}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-stone-500">Work Permit</span>
+                  <p className="font-medium">{WORK_PERMIT_OPTIONS.find(w => w.value === data.work_permit)?.label || data.work_permit || '-'}</p>
+                </div>
+                {data.passport_number && (
+                  <div>
+                    <span className="text-xs text-stone-500">{lang === 'sw' ? 'Namba ya Pasipoti' : 'Passport Number'}</span>
+                    <p className="font-medium">{data.passport_number}</p>
+                  </div>
+                )}
+                {data.country_of_origin && (
+                  <div>
+                    <span className="text-xs text-stone-500">{lang === 'sw' ? 'Nchi ya Asili' : 'Country of Origin'}</span>
+                    <p className="font-medium">{data.country_of_origin}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Purpose - Fixed */}
+          <div className={cardClass}>
+            <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+              <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                {lang === 'sw' ? 'Madhumuni' : 'Purpose'}
+              </h4>
+            </div>
+            <div className="p-4">
+              <p className="font-medium">KUJITAMBULISHA MKAZI - SERIKALI YA MTAA</p>
+              <p className="text-xs text-stone-500 mt-1">{lang === 'sw' ? 'Madhumuni pekee yanayokubalika' : 'Only accepted purpose'}</p>
+            </div>
+          </div>
+
+          {/* Fee Summary */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-emerald-800">{lang === 'sw' ? 'Ada ya Maombi:' : 'Application Fee:'}</span>
+              <span className="font-bold text-xl text-emerald-600">5,000 TZS</span>
+            </div>
+            <p className="text-xs text-emerald-600 mt-1">
+              {lang === 'sw' 
+                ? 'Utachagua njia ya malipo baada ya kuwasilisha'
+                : 'You will select payment method after submission'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <button
+            type="button"
+            onClick={() => setCurrentStep('status')}
+            className="flex-1 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            {lang === 'sw' ? 'Rudi' : 'Back'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPdfPreview(true)}
+            className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+          >
+            <Eye className="h-5 w-5" />
+            {lang === 'sw' ? 'Ona PDF na Wasilisha' : 'View PDF & Submit'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  if (showPdfPreview) {
+    return (
+      <form className="space-y-6">
+        <PdfPreview />
+      </form>
+    );
+  }
+
   if (showReview) {
     return (
       <form className="space-y-6">
@@ -354,50 +772,136 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
       <ProgressBar />
 
-      {/* Step 1: Council Info */}
+      {/* Step 1: Council Info - Serikali ya Mtaa only */}
       {currentStep === 'council' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-emerald-800">
-              {lang === 'sw' ? 'TAARIFA ZA HALMASHAURI' : 'COUNCIL INFORMATION'}
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              {lang === 'sw' ? 'SERIKALI YA MTAA' : 'LOCAL GOVERNMENT'}
             </h3>
+            <p className="text-xs text-emerald-600 mt-1">
+              {lang === 'sw' 
+                ? 'Madhumuni pekee: Kujitambulisha Mkazi'
+                : 'Only purpose: Residency Identification'}
+            </p>
           </div>
 
-          <div>
-            <label className={labelClass}>
-              {lang === 'sw' ? 'Halmashauri' : 'Council'} <span className="text-red-500">*</span>
-            </label>
-            <select 
-              {...register('council', { required: true })} 
-              className={inputClass}
-            >
-              <option value="">{t.selectOption}</option>
-              {COUNCILS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            {errors.council && <span className="text-red-500 text-sm">{t.required}</span>}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-3">
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Halmashauri ya Mtaa' : 'Local Council'} <span className="text-red-500">*</span>
+              </label>
+              <select 
+                {...register('council', { required: true })} 
+                className={inputClass}
+              >
+                <option value="">{lang === 'sw' ? 'Chagua Halmashauri' : 'Select Council'}</option>
+                {COUNCILS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {errors.council && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Kata' : 'Ward'} <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                {...register('ward', { required: true })} 
+                className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: Kariakoo' : 'E.g.: Kariakoo'}
+              />
+              {errors.ward && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Kijiji / Mtaa' : 'Village / Street'} <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                {...register('village_street', { required: true })} 
+                className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: Mtaa wa Uhuru' : 'E.g.: Uhuru Street'}
+              />
+              {errors.village_street && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
           </div>
+
+          {/* Purpose fixed display */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              <div>
+                <span className="font-medium text-emerald-800">
+                  {lang === 'sw' ? 'Madhumuni:' : 'Purpose:'} {PURPOSE_LABEL}
+                </span>
+                <p className="text-xs text-emerald-600">
+                  {lang === 'sw' 
+                    ? 'Hakuna madhumuni mengine yanayokubalika'
+                    : 'No other purposes are accepted'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hidden fields for purpose and institution */}
+          <input type="hidden" {...register('purpose')} value={PURPOSE_VALUE} />
+          <input type="hidden" {...register('institution_name')} value={INSTITUTION_VALUE} />
         </div>
       )}
 
-      {/* Step 2: Personal Info */}
+      {/* Step 2: Personal Info - Auto-filled from profile */}
       {currentStep === 'personal' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-emerald-800">
-              {lang === 'sw' ? 'TAARIFA BINAFSI (Zilizohakikiwa na NIDA)' : 'PERSONAL INFO (Verified by NIDA)'}
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {lang === 'sw' ? 'TAARIFA BINAFSI (ZILIZOHIFADHIWA)' : 'PERSONAL INFO (SAVED)'}
             </h3>
           </div>
 
           {/* Verified NIDA info display */}
           {userProfile && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <p className="text-sm text-emerald-700 font-medium mb-2">
-                {lang === 'sw' ? 'Taarifa kutoka NIDA:' : 'Information from NIDA:'}
-              </p>
-              <p className="font-bold">{userProfile.first_name} {userProfile.middle_name} {userProfile.last_name}</p>
-              <p className="text-sm text-stone-600">NIDA: {userProfile.nida_number}</p>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                <span className="font-bold text-emerald-700">
+                  {lang === 'sw' ? 'Taarifa kutoka NIDA (Hazibadilishwi)' : 'Information from NIDA (Cannot be changed)'}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white p-3 rounded-lg">
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Jina Kamili' : 'Full Name'}</span>
+                  <p className="font-bold text-stone-800">
+                    {userProfile.first_name} {userProfile.middle_name || ''} {userProfile.last_name}
+                  </p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <span className="text-xs text-stone-500">NIDA Number</span>
+                  <p className="font-bold text-stone-800">{userProfile.nida_number || '-'}</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Simu' : 'Phone'}</span>
+                  <p className="font-bold text-stone-800">{userProfile.phone || '-'}</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <span className="text-xs text-stone-500">Email</span>
+                  <p className="font-bold text-stone-800">{userProfile.email || '-'}</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Tarehe ya Kuzaliwa' : 'Date of Birth'}</span>
+                  <p className="font-bold text-stone-800">{userProfile.birth_date || '-'}</p>
+                </div>
+                <div className="bg-white p-3 rounded-lg">
+                  <span className="text-xs text-stone-500">{lang === 'sw' ? 'Jinsia' : 'Gender'}</span>
+                  <p className="font-bold text-stone-800">{userProfile.gender || '-'}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -420,7 +924,7 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
 
             <div>
               <label className={labelClass}>
-                {lang === 'sw' ? 'Kazi/Shughuli' : 'Occupation'} <span className="text-red-500">*</span>
+                {lang === 'sw' ? 'Kazi / Shughuli' : 'Occupation'} <span className="text-red-500">*</span>
               </label>
               <input 
                 type="text" 
@@ -430,6 +934,29 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
               />
               {errors.occupation && <span className="text-red-500 text-sm">{t.required}</span>}
             </div>
+
+            <div className="md:col-span-2">
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Jina la Mwajiri (Hiari)' : 'Employer Name (Optional)'}
+              </label>
+              <input 
+                type="text" 
+                {...register('employer_name')} 
+                className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: Serikali, Kampuni XYZ' : 'E.g.: Government, XYZ Company'}
+              />
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-start gap-2">
+              <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-700">
+                {lang === 'sw' 
+                  ? 'Taarifa za NIDA zimehakikiwa na hazibadilishwi. Tafadhali hakikisha ni sahihi.'
+                  : 'NIDA information is verified and cannot be changed. Please ensure it is correct.'}
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -438,12 +965,13 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
       {currentStep === 'residence' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-emerald-800">
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+              <Home className="h-5 w-5" />
               {lang === 'sw' ? 'TAARIFA ZA MAKAZI' : 'RESIDENCE INFORMATION'}
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>
                 {lang === 'sw' ? 'Kitongoji' : 'Neighborhood'} <span className="text-red-500">*</span>
@@ -452,86 +980,351 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
                 type="text" 
                 {...register('neighborhood', { required: true })} 
                 className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: Upanga, Kariakoo' : 'E.g.: Upanga, Kariakoo'}
               />
               {errors.neighborhood && <span className="text-red-500 text-sm">{t.required}</span>}
             </div>
 
             <div>
               <label className={labelClass}>
-                {lang === 'sw' ? 'Nyumba No.' : 'House No.'}
+                {lang === 'sw' ? 'Namba ya Nyumba' : 'House Number'} <span className="text-red-500">*</span>
               </label>
               <input 
                 type="text" 
-                {...register('house_number')} 
+                {...register('house_number', { required: true })} 
                 className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: HN 123' : 'E.g.: HN 123'}
               />
+              {errors.house_number && <span className="text-red-500 text-sm">{t.required}</span>}
             </div>
 
             <div>
               <label className={labelClass}>
-                {lang === 'sw' ? 'Block/Area' : 'Block/Area'}
+                {lang === 'sw' ? 'Namba ya Plot' : 'Plot Number'} <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                {...register('plot_number', { required: true })} 
+                className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: Plot 45' : 'E.g.: Plot 45'}
+              />
+              {errors.plot_number && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Block / Eneo' : 'Block / Area'}
               </label>
               <input 
                 type="text" 
                 {...register('block_number')} 
                 className={inputClass}
+                placeholder={lang === 'sw' ? 'Mfano: Block F' : 'E.g.: Block F'}
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Step 4: Purpose */}
-      {currentStep === 'purpose' && (
+      {/* Step 4: Sensitive Information - Utilities */}
+      {currentStep === 'sensitive' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-emerald-800">
-              {lang === 'sw' ? 'SABABU YA MAOMBI NA TAASISI' : 'PURPOSE AND INSTITUTION'}
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              {lang === 'sw' ? 'HUDUMA NA BILI' : 'UTILITIES AND BILLS'}
+            </h3>
+            <p className="text-xs text-emerald-600 mt-1">
+              {lang === 'sw' 
+                ? 'Taarifa hizi zitasaidia kuthibitisha makazi yako (Hiari)'
+                : 'This information helps verify your residence (Optional)'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Namba ya Stima (TANESCO)' : 'Electricity Bill Number (TANESCO)'}
+              </label>
+              <div className="relative">
+                <Zap className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-stone-400" />
+                <input 
+                  type="text" 
+                  {...register('electricity_bill_number')} 
+                  className={`${inputClass} pl-10`}
+                  placeholder={lang === 'sw' ? 'Mfano: 12345678' : 'E.g.: 12345678'}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Namba ya Maji (DAWASA)' : 'Water Bill Number (DAWASA)'}
+              </label>
+              <div className="relative">
+                <Droplet className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-stone-400" />
+                <input 
+                  type="text" 
+                  {...register('water_bill_number')} 
+                  className={`${inputClass} pl-10`}
+                  placeholder={lang === 'sw' ? 'Mfano: 87654321' : 'E.g.: 87654321'}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Namba ya Kodi ya Nyumba' : 'Property Tax Number'}
+              </label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-stone-400" />
+                <input 
+                  type="text" 
+                  {...register('property_tax_number')} 
+                  className={`${inputClass} pl-10`}
+                  placeholder={lang === 'sw' ? 'Mfano: PT-12345' : 'E.g.: PT-12345'}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div className="flex items-start gap-2">
+              <Shield className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-emerald-700 font-medium">
+                  {lang === 'sw' 
+                    ? 'Taarifa hizi zinalindwa kwa usiri na hazitatumika kwa madhumuni mengine'
+                    : 'This information is protected and will not be used for other purposes'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Family and Dependents */}
+      {currentStep === 'family' && (
+        <div className="space-y-6">
+          <div className={sectionClass}>
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              {lang === 'sw' ? 'FAMILIA NA WATEGEMEZI' : 'FAMILY AND DEPENDENTS'}
             </h3>
           </div>
 
-          <div>
-            <label className={labelClass}>
-              {lang === 'sw' ? 'Sababu ya Maombi' : 'Purpose'} <span className="text-red-500">*</span>
-            </label>
-            <select 
-              {...register('purpose', { required: true })} 
-              className={inputClass}
-            >
-              <option value="">{t.selectOption}</option>
-              {PURPOSE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            {errors.purpose && <span className="text-red-500 text-sm">{t.required}</span>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Jumla ya Wanafamilia' : 'Total Family Members'} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-stone-400" />
+                <input 
+                  type="number" 
+                  {...register('family_members_count', { required: true, min: 0 })} 
+                  className={`${inputClass} pl-10`}
+                  min="0"
+                />
+              </div>
+              {errors.family_members_count && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Idadi ya Wategemezi' : 'Number of Dependents'} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Heart className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-stone-400" />
+                <input 
+                  type="number" 
+                  {...register('dependents_count', { required: true, min: 0 })} 
+                  className={`${inputClass} pl-10`}
+                  min="0"
+                />
+              </div>
+              {errors.dependents_count && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Watoto (Chini ya miaka 18)' : 'Children (Under 18)'}
+              </label>
+              <input 
+                type="number" 
+                {...register('children_under_18', { min: 0 })} 
+                className={inputClass}
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Wazee (Zaidi ya miaka 60)' : 'Elderly (Over 60)'}
+              </label>
+              <input 
+                type="number" 
+                {...register('elderly_over_60', { min: 0 })} 
+                className={inputClass}
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Residency Status */}
+      {currentStep === 'status' && (
+        <div className="space-y-6">
+          <div className={sectionClass}>
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {lang === 'sw' ? 'HADHI YA UKAZI NA UMILIKI' : 'RESIDENCY STATUS AND OWNERSHIP'}
+            </h3>
           </div>
 
-          <div>
-            <label className={labelClass}>
-              {lang === 'sw' ? 'Jina la Taasisi' : 'Institution Name'} <span className="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              {...register('institution_name', { required: true })} 
-              className={inputClass}
-              placeholder={lang === 'sw' ? 'Mfano: Chuo Kikuu cha Dar es Salaam' : 'E.g.: University of Dar es Salaam'}
-            />
-            {errors.institution_name && <span className="text-red-500 text-sm">{t.required}</span>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Hadhi ya Ukazi' : 'Residency Status'} <span className="text-red-500">*</span>
+              </label>
+              <select 
+                {...register('residency_status', { required: true })} 
+                className={inputClass}
+              >
+                <option value="">{t.selectOption}</option>
+                {RESIDENCY_STATUS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {errors.residency_status && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Umiliki wa Nyumba' : 'House Ownership'} <span className="text-red-500">*</span>
+              </label>
+              <select 
+                {...register('ownership_status', { required: true })} 
+                className={inputClass}
+              >
+                <option value="">{t.selectOption}</option>
+                {OWNERSHIP_STATUS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {errors.ownership_status && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Miaka ya Kukaa hapa' : 'Years at this residence'} <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="number" 
+                {...register('years_at_residence', { required: true, min: 0 })} 
+                className={inputClass}
+                min="0"
+              />
+              {errors.years_at_residence && <span className="text-red-500 text-sm">{t.required}</span>}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                {lang === 'sw' ? 'Work Permit' : 'Work Permit'}
+              </label>
+              <select 
+                {...register('work_permit')} 
+                className={inputClass}
+              >
+                <option value="">{t.selectOption}</option>
+                {WORK_PERMIT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Conditional fields for foreigners/diaspora */}
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>
+                  {lang === 'sw' ? 'Namba ya Pasipoti (kwa wageni)' : 'Passport Number (for foreigners)'}
+                </label>
+                <input 
+                  type="text" 
+                  {...register('passport_number')} 
+                  className={inputClass}
+                  placeholder={lang === 'sw' ? 'Mfano: AB123456' : 'E.g.: AB123456'}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  {lang === 'sw' ? 'Nchi ya Asili' : 'Country of Origin'}
+                </label>
+                <input 
+                  type="text" 
+                  {...register('country_of_origin')} 
+                  className={inputClass}
+                  placeholder={lang === 'sw' ? 'Mfano: Kenya, India' : 'E.g.: Kenya, India'}
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className={labelClass}>
-              {lang === 'sw' ? 'Aina ya Taasisi' : 'Institution Type'}
+          {/* Terms Acceptance */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mt-6">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                {...register('terms_accepted', { required: true })} 
+                className="w-5 h-5 mt-0.5 text-emerald-600 rounded focus:ring-emerald-500"
+              />
+              <div>
+                <span className="font-medium text-emerald-800">
+                  {lang === 'sw' 
+                    ? 'Nathibitisha kuwa taarifa nilizotoa ni sahihi na za kweli' 
+                    : 'I confirm that the information provided is correct and true'}
+                </span>
+                <p className="text-xs text-emerald-600 mt-1">
+                  {lang === 'sw' 
+                    ? 'Kwa kuthibitisha, unakubali kuwajibika kwa usahihi wa taarifa hizi.'
+                    : 'By confirming, you accept responsibility for the accuracy of this information.'}
+                </p>
+              </div>
             </label>
-            <select 
-              {...register('institution_type')} 
-              className={inputClass}
-            >
-              <option value="">{t.selectOption}</option>
-              {INSTITUTION_TYPES.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            {errors.terms_accepted && (
+              <span className="text-red-500 text-sm block mt-2">
+                {lang === 'sw' ? 'Lazima uthibitishe taarifa zako' : 'You must confirm your information'}
+              </span>
+            )}
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                {...register('data_confirmed', { required: true })} 
+                className="w-5 h-5 mt-0.5 text-emerald-600 rounded focus:ring-emerald-500"
+              />
+              <div>
+                <span className="font-medium text-emerald-800">
+                  {lang === 'sw' 
+                    ? 'Nakubali kutoa taarifa hizi kwa Serikali ya Mtaa' 
+                    : 'I consent to provide this information to the Local Government'}
+                </span>
+                <p className="text-xs text-emerald-600 mt-1">
+                  {lang === 'sw' 
+                    ? 'Taarifa zako zitatumika kwa madhumuni ya utambulisho pekee.'
+                    : 'Your information will be used for identification purposes only.'}
+                </p>
+              </div>
+            </label>
+            {errors.data_confirmed && (
+              <span className="text-red-500 text-sm block mt-2">
+                {lang === 'sw' ? 'Lazima ukubali kutoa taarifa' : 'You must consent to provide information'}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -557,7 +1350,7 @@ export const UtambulishoMkaziForm: React.FC<FormProps> = ({
               currentStepIndex === 0 ? 'w-full' : ''
             }`}
           >
-            {currentStep === 'purpose' ? (
+            {currentStep === 'status' ? (
               <>
                 {lang === 'sw' ? 'Hakiki Maombi' : 'Review Application'}
                 <Eye className="h-5 w-5" />

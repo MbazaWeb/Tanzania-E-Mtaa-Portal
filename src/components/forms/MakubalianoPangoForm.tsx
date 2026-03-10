@@ -5,12 +5,13 @@
  * Service: PANGISHA - Makubaliano ya Pango
  * Fee: 3% of total rent + VAT
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   Loader2, CheckCircle, ArrowLeft, ArrowRight, Eye, FileCheck, 
   Home, User, Users, Search, MapPin, DollarSign, Calendar, 
-  Phone, Mail, Bell, Shield, Info, Calculator, Building, Key
+  Phone, Mail, Bell, Shield, Info, Calculator, Building, Key,
+  CheckSquare, Grid, Bed, Bath, Wifi, Zap, Droplet, Shield as ShieldIcon
 } from 'lucide-react';
 import { FormProps, labels } from './types';
 import { supabase } from '../../lib/supabase';
@@ -76,6 +77,441 @@ const SUBMITTER_ROLES = [
   { label: 'Mimi ni Mpangaji (Tenant)', value: 'TENANT' },
 ];
 
+// Tanzania Regions
+const TANZANIA_REGIONS = [
+  { label: 'Arusha', value: 'ARUSHA' },
+  { label: 'Dar es Salaam', value: 'DAR_ES_SALAAM' },
+  { label: 'Dodoma', value: 'DODOMA' },
+  { label: 'Geita', value: 'GEITA' },
+  { label: 'Iringa', value: 'IRINGA' },
+  { label: 'Kagera', value: 'KAGERA' },
+  { label: 'Katavi', value: 'KATAVI' },
+  { label: 'Kigoma', value: 'KIGOMA' },
+  { label: 'Kilimanjaro', value: 'KILIMANJARO' },
+  { label: 'Lindi', value: 'LINDI' },
+  { label: 'Manyara', value: 'MANYARA' },
+  { label: 'Mara', value: 'MARA' },
+  { label: 'Mbeya', value: 'MBEYA' },
+  { label: 'Morogoro', value: 'MOROGORO' },
+  { label: 'Mtwara', value: 'MTWARA' },
+  { label: 'Mwanza', value: 'MWANZA' },
+  { label: 'Njombe', value: 'NJOMBE' },
+  { label: 'Pwani', value: 'PWANI' },
+  { label: 'Rukwa', value: 'RUKWA' },
+  { label: 'Ruvuma', value: 'RUVUMA' },
+  { label: 'Shinyanga', value: 'SHINYANGA' },
+  { label: 'Simiyu', value: 'SIMIYU' },
+  { label: 'Singida', value: 'SINGIDA' },
+  { label: 'Songwe', value: 'SONGWE' },
+  { label: 'Tabora', value: 'TABORA' },
+  { label: 'Tanga', value: 'TANGA' },
+];
+
+// Districts by Region
+const DISTRICTS_BY_REGION: Record<string, { label: string; value: string }[]> = {
+  ARUSHA: [
+    { label: 'Arusha City', value: 'ARUSHA_CITY' },
+    { label: 'Arusha Rural', value: 'ARUSHA_RURAL' },
+    { label: 'Karatu', value: 'KARATU' },
+    { label: 'Longido', value: 'LONGIDO' },
+    { label: 'Monduli', value: 'MONDULI' },
+    { label: 'Ngorongoro', value: 'NGORONGORO' },
+  ],
+  DAR_ES_SALAAM: [
+    { label: 'Ilala', value: 'ILALA' },
+    { label: 'Kinondoni', value: 'KINONDONI' },
+    { label: 'Ubungo', value: 'UBUNGO' },
+    { label: 'Kigamboni', value: 'KIGAMBONI' },
+    { label: 'Temeke', value: 'TEMEKE' },
+  ],
+  DODOMA: [
+    { label: 'Dodoma City', value: 'DODOMA_CITY' },
+    { label: 'Bahi', value: 'BAHI' },
+    { label: 'Chamwino', value: 'CHAMWINO' },
+    { label: 'Chemba', value: 'CHEMBA' },
+    { label: 'Kondoa', value: 'KONDOA' },
+    { label: 'Kongwa', value: 'KONGWA' },
+    { label: 'Mpwapwa', value: 'MPWAPWA' },
+  ],
+  GEITA: [
+    { label: 'Geita Town', value: 'GEITA_TOWN' },
+    { label: 'Bukombe', value: 'BUKOMBE' },
+    { label: 'Chato', value: 'CHATO' },
+    { label: 'Mbogwe', value: 'MBOGWE' },
+    { label: 'Nyang\'hwale', value: 'NYANG_HWALE' },
+  ],
+  IRINGA: [
+    { label: 'Iringa City', value: 'IRINGA_CITY' },
+    { label: 'Iringa Rural', value: 'IRINGA_RURAL' },
+    { label: 'Kilolo', value: 'KILOLO' },
+    { label: 'Mafinga', value: 'MAFINGA' },
+  ],
+  KAGERA: [
+    { label: 'Bukoba Urban', value: 'BUKOBA_URBAN' },
+    { label: 'Bukoba Rural', value: 'BUKOBA_RURAL' },
+    { label: 'Biharamulo', value: 'BIHARAMULO' },
+    { label: 'Karagwe', value: 'KARAGWE' },
+    { label: 'Kyerwa', value: 'KYERWA' },
+    { label: 'Missenyi', value: 'MISSENYI' },
+    { label: 'Muleba', value: 'MULEBA' },
+    { label: 'Ngara', value: 'NGARA' },
+  ],
+  KATAVI: [
+    { label: 'Mpanda Town', value: 'MPANDA_TOWN' },
+    { label: 'Mpanda Rural', value: 'MPANDA_RURAL' },
+    { label: 'Mlele', value: 'MLELE' },
+    { label: 'Tanganyika', value: 'TANGANYIKA' },
+  ],
+  KIGOMA: [
+    { label: 'Kigoma Urban', value: 'KIGOMA_URBAN' },
+    { label: 'Kigoma Rural', value: 'KIGOMA_RURAL' },
+    { label: 'Buhigwe', value: 'BUHIGWE' },
+    { label: 'Kakonko', value: 'KAKONKO' },
+    { label: 'Kasulu Town', value: 'KASULU_TOWN' },
+    { label: 'Kasulu Rural', value: 'KASULU_RURAL' },
+    { label: 'Kibondo', value: 'KIBONDO' },
+    { label: 'Uvinza', value: 'UVINZA' },
+  ],
+  KILIMANJARO: [
+    { label: 'Moshi Urban', value: 'MOSHI_URBAN' },
+    { label: 'Moshi Rural', value: 'MOSHI_RURAL' },
+    { label: 'Hai', value: 'HAI' },
+    { label: 'Mwanga', value: 'MWANGA' },
+    { label: 'Rombo', value: 'ROMBO' },
+    { label: 'Same', value: 'SAME' },
+    { label: 'Siha', value: 'SIHA' },
+  ],
+  LINDI: [
+    { label: 'Lindi Urban', value: 'LINDI_URBAN' },
+    { label: 'Lindi Rural', value: 'LINDI_RURAL' },
+    { label: 'Kilwa', value: 'KILWA' },
+    { label: 'Liwale', value: 'LIWALE' },
+    { label: 'Nachingwea', value: 'NACHINGWEA' },
+    { label: 'Ruangwa', value: 'RUANGWA' },
+  ],
+  MANYARA: [
+    { label: 'Babati Urban', value: 'BABATI_URBAN' },
+    { label: 'Babati Rural', value: 'BABATI_RURAL' },
+    { label: 'Hanang', value: 'HANANG' },
+    { label: 'Kiteto', value: 'KITETO' },
+    { label: 'Mbulu', value: 'MBULU' },
+    { label: 'Simanjiro', value: 'SIMANJIRO' },
+  ],
+  MARA: [
+    { label: 'Musoma Urban', value: 'MUSOMA_URBAN' },
+    { label: 'Musoma Rural', value: 'MUSOMA_RURAL' },
+    { label: 'Bunda', value: 'BUNDA' },
+    { label: 'Butiama', value: 'BUTIAMA' },
+    { label: 'Rorya', value: 'RORYA' },
+    { label: 'Serengeti', value: 'SERENGETI' },
+    { label: 'Tarime', value: 'TARIME' },
+  ],
+  MBEYA: [
+    { label: 'Mbeya City', value: 'MBEYA_CITY' },
+    { label: 'Mbeya Rural', value: 'MBEYA_RURAL' },
+    { label: 'Busokelo', value: 'BUSOKELO' },
+    { label: 'Chunya', value: 'CHUNYA' },
+    { label: 'Kyela', value: 'KYELA' },
+    { label: 'Mbarali', value: 'MBARALI' },
+    { label: 'Rungwe', value: 'RUNGWE' },
+  ],
+  MOROGORO: [
+    { label: 'Morogoro Urban', value: 'MOROGORO_URBAN' },
+    { label: 'Morogoro Rural', value: 'MOROGORO_RURAL' },
+    { label: 'Gairo', value: 'GAIRO' },
+    { label: 'Kilosa', value: 'KILOSA' },
+    { label: 'Malinyi', value: 'MALINYI' },
+    { label: 'Mlimba', value: 'MLIMBA' },
+    { label: 'Mvomero', value: 'MVOMERO' },
+    { label: 'Ulanga', value: 'ULANGA' },
+  ],
+  MTWARA: [
+    { label: 'Mtwara Urban', value: 'MTWARA_URBAN' },
+    { label: 'Mtwara Rural', value: 'MTWARA_RURAL' },
+    { label: 'Masasi Town', value: 'MASASI_TOWN' },
+    { label: 'Masasi Rural', value: 'MASASI_RURAL' },
+    { label: 'Nanyumbu', value: 'NANYUMBU' },
+    { label: 'Newala', value: 'NEWALA' },
+    { label: 'Tandahimba', value: 'TANDAHIMBA' },
+  ],
+  MWANZA: [
+    { label: 'Mwanza City', value: 'MWANZA_CITY' },
+    { label: 'Ilemela', value: 'ILEMELA' },
+    { label: 'Kwimba', value: 'KWIMBA' },
+    { label: 'Magu', value: 'MAGU' },
+    { label: 'Misungwi', value: 'MISUNGWI' },
+    { label: 'Nyamagana', value: 'NYAMAGANA' },
+    { label: 'Sengerema', value: 'SENGEREMA' },
+    { label: 'Ukerewe', value: 'UKEREWE' },
+  ],
+  NJOMBE: [
+    { label: 'Njombe Town', value: 'NJOMBE_TOWN' },
+    { label: 'Njombe Rural', value: 'NJOMBE_RURAL' },
+    { label: 'Ludewa', value: 'LUDEWA' },
+    { label: 'Makambako', value: 'MAKAMBAKO' },
+    { label: 'Makete', value: 'MAKETE' },
+    { label: 'Wanging\'ombe', value: 'WANGING_OMBE' },
+  ],
+  PWANI: [
+    { label: 'Kibaha Town', value: 'KIBAHA_TOWN' },
+    { label: 'Kibaha Rural', value: 'KIBAHA_RURAL' },
+    { label: 'Bagamoyo', value: 'BAGAMOYO' },
+    { label: 'Chalinze', value: 'CHALINZE' },
+    { label: 'Kibiti', value: 'KIBITI' },
+    { label: 'Kisarawe', value: 'KISARAWE' },
+    { label: 'Mafia', value: 'MAFIA' },
+    { label: 'Mkuranga', value: 'MKURANGA' },
+    { label: 'Rufiji', value: 'RUFIJI' },
+  ],
+  RUKWA: [
+    { label: 'Sumbawanga Urban', value: 'SUMBAWANGA_URBAN' },
+    { label: 'Sumbawanga Rural', value: 'SUMBAWANGA_RURAL' },
+    { label: 'Kalambo', value: 'KALAMBO' },
+    { label: 'Nkasi', value: 'NKASI' },
+  ],
+  RUVUMA: [
+    { label: 'Songea Urban', value: 'SONGEA_URBAN' },
+    { label: 'Songea Rural', value: 'SONGEA_RURAL' },
+    { label: 'Mbinga', value: 'MBINGA' },
+    { label: 'Namtumbo', value: 'NAMTUMBO' },
+    { label: 'Nyasa', value: 'NYASA' },
+    { label: 'Tunduru', value: 'TUNDURU' },
+  ],
+  SHINYANGA: [
+    { label: 'Shinyanga Urban', value: 'SHINYANGA_URBAN' },
+    { label: 'Shinyanga Rural', value: 'SHINYANGA_RURAL' },
+    { label: 'Kahama Town', value: 'KAHAMA_TOWN' },
+    { label: 'Kahama Rural', value: 'KAHAMA_RURAL' },
+    { label: 'Kishapu', value: 'KISHAPU' },
+    { label: 'Msalala', value: 'MSALALA' },
+    { label: 'Ushetu', value: 'USHETU' },
+  ],
+  SIMIYU: [
+    { label: 'Bariadi Town', value: 'BARIADI_TOWN' },
+    { label: 'Bariadi Rural', value: 'BARIADI_RURAL' },
+    { label: 'Busega', value: 'BUSEGA' },
+    { label: 'Itilima', value: 'ITILIMA' },
+    { label: 'Maswa', value: 'MASWA' },
+    { label: 'Meatu', value: 'MEATU' },
+  ],
+  SINGIDA: [
+    { label: 'Singida Urban', value: 'SINGIDA_URBAN' },
+    { label: 'Singida Rural', value: 'SINGIDA_RURAL' },
+    { label: 'Ikungi', value: 'IKUNGI' },
+    { label: 'Iramba', value: 'IRAMBA' },
+    { label: 'Manyoni', value: 'MANYONI' },
+    { label: 'Mkalama', value: 'MKALAMA' },
+  ],
+  SONGWE: [
+    { label: 'Vwawa', value: 'VWAWA' },
+    { label: 'Ileje', value: 'ILEJE' },
+    { label: 'Mbozi', value: 'MBOZI' },
+    { label: 'Momba', value: 'MOMBA' },
+    { label: 'Songwe', value: 'SONGWE' },
+    { label: 'Tunduma', value: 'TUNDUMA' },
+  ],
+  TABORA: [
+    { label: 'Tabora Urban', value: 'TABORA_URBAN' },
+    { label: 'Tabora Rural', value: 'TABORA_RURAL' },
+    { label: 'Igunga', value: 'IGUNGA' },
+    { label: 'Kaliua', value: 'KALIUA' },
+    { label: 'Nzega', value: 'NZEGA' },
+    { label: 'Sikonge', value: 'SIKONGE' },
+    { label: 'Urambo', value: 'URAMBO' },
+  ],
+  TANGA: [
+    { label: 'Tanga City', value: 'TANGA_CITY' },
+    { label: 'Handeni Town', value: 'HANDENI_TOWN' },
+    { label: 'Handeni Rural', value: 'HANDENI_RURAL' },
+    { label: 'Kilindi', value: 'KILINDI' },
+    { label: 'Korogwe Town', value: 'KOROGWE_TOWN' },
+    { label: 'Korogwe Rural', value: 'KOROGWE_RURAL' },
+    { label: 'Lushoto', value: 'LUSHOTO' },
+    { label: 'Mkinga', value: 'Mkinga' },
+    { label: 'Muheza', value: 'MUHEZA' },
+    { label: 'Pangani', value: 'PANGANI' },
+  ],
+};
+
+// Wards by District (simplified - add more as needed)
+const WARDS_BY_DISTRICT: Record<string, { label: string; value: string }[]> = {
+  // Dar es Salaam - Ilala
+  ILALA: [
+    { label: 'Buguruni', value: 'BUGURUNI' },
+    { label: 'Chanika', value: 'CHANIKA' },
+    { label: 'Gerezani', value: 'GEREZANI' },
+    { label: 'Ilala', value: 'ILALA' },
+    { label: 'Jangwani', value: 'JANGWANI' },
+    { label: 'Kariakoo', value: 'KARIAKOO' },
+    { label: 'Kipawa', value: 'KIPAWA' },
+    { label: 'Kitunda', value: 'KITUNDA' },
+    { label: 'Kisutu', value: 'KISUTU' },
+    { label: 'Mchafukoge', value: 'MCHAFUKOGE' },
+    { label: 'Mchikichini', value: 'MCHIKICHINI' },
+    { label: 'Msongola', value: 'MSONGOLA' },
+    { label: 'Pugu', value: 'PUGU' },
+    { label: 'Tabata', value: 'TABATA' },
+    { label: 'Upanga Magharibi', value: 'UPANGA_MAGHARIBI' },
+    { label: 'Upanga Mashariki', value: 'UPANGA_MASHARIKI' },
+    { label: 'Vingunguti', value: 'VINGUNGUTI' },
+  ],
+  KINONDONI: [
+    { label: 'Bunju', value: 'BUNJU' },
+    { label: 'Hananasif', value: 'HANANASIF' },
+    { label: 'Kawe', value: 'KAWE' },
+    { label: 'Kibamba', value: 'KIBAMBA' },
+    { label: 'Kijitonyama', value: 'KIJITONYAMA' },
+    { label: 'Kunduchi', value: 'KUNDUCHI' },
+    { label: 'Mabibo', value: 'MABIBO' },
+    { label: 'Magogoni', value: 'MAGOGONI' },
+    { label: 'Makongo', value: 'MAKONGO' },
+    { label: 'Makumbusho', value: 'MAKUMBUSHO' },
+    { label: 'Manzese', value: 'MANZESE' },
+    { label: 'Mbezi', value: 'MBEZI' },
+    { label: 'Mikocheni', value: 'MIKOCHENI' },
+    { label: 'Msasani', value: 'MSASANI' },
+    { label: 'Mwananyamala', value: 'MWANANYAMALA' },
+    { label: 'Ndugumbi', value: 'NDUGUMBI' },
+    { label: 'Sinza', value: 'SINZA' },
+    { label: 'Tandale', value: 'TANDALE' },
+  ],
+  UBUNGO: [
+    { label: 'Goba', value: 'GOBA' },
+    { label: 'Kimara', value: 'KIMARA' },
+    { label: 'Kibamba', value: 'KIBAMBA' },
+    { label: 'Kwembe', value: 'KWEMBE' },
+    { label: 'Makuburi', value: 'MAKUBURI' },
+    { label: 'Mbezi Juu', value: 'MBEZI_JUU' },
+    { label: 'Msigani', value: 'MSIGANI' },
+    { label: 'Saranga', value: 'SARANGA' },
+    { label: 'Sinza', value: 'SINZA' },
+    { label: 'Ubungo', value: 'UBUNGO' },
+  ],
+  TEMEKE: [
+    { label: 'Azimio', value: 'AZIMIO' },
+    { label: 'Chamazi', value: 'CHAMAZI' },
+    { label: 'Keko', value: 'KEKO' },
+    { label: 'Kiburugwa', value: 'KIBURUGWA' },
+    { label: 'Kijichi', value: 'KIJICHI' },
+    { label: 'Makangarawe', value: 'MAKANGARAWE' },
+    { label: 'Mbagala', value: 'MBAGALA' },
+    { label: 'Mbagala Kuu', value: 'MBAGALA_KUU' },
+    { label: 'Mianzini', value: 'MIANZINI' },
+    { label: 'Miburani', value: 'MIBURANI' },
+    { label: 'Mjimwema', value: 'MJIMWEMA' },
+    { label: 'Mtoni', value: 'MTONI' },
+    { label: 'Sandali', value: 'SANDALI' },
+    { label: 'Tandika', value: 'TANDIKA' },
+    { label: 'Temeke', value: 'TEMEKE' },
+    { label: 'Toangoma', value: 'TOANGOMA' },
+    { label: 'Yombo Vituka', value: 'YOMBO_VITUKA' },
+  ],
+  KIGAMBONI: [
+    { label: 'Kigamboni', value: 'KIGAMBONI' },
+    { label: 'Kimbiji', value: 'KIMBIJI' },
+    { label: 'Pemba Mnazi', value: 'PEMBA_MNAZI' },
+    { label: 'Somangila', value: 'SOMANGILA' },
+    { label: 'Vijibweni', value: 'VIJIBWENI' },
+  ],
+  
+  // Arusha - Arusha City
+  ARUSHA_CITY: [
+    { label: 'Baraa', value: 'BARAA' },
+    { label: 'Daraja Mbili', value: 'DARAJA_MBILI' },
+    { label: 'Elerai', value: 'ELERAI' },
+    { label: 'Kaloleni', value: 'KALOLENI' },
+    { label: 'Kati', value: 'KATI' },
+    { label: 'Kimandolu', value: 'KIMANDOLU' },
+    { label: 'Lemara', value: 'LEMARA' },
+    { label: 'Levolosi', value: 'LEVOLOSI' },
+    { label: 'Ngarenaro', value: 'NGARENARO' },
+    { label: 'Olorien', value: 'OLORIEN' },
+    { label: 'Sakina', value: 'SAKINA' },
+    { label: 'Sombetini', value: 'SOMBETINI' },
+    { label: 'Terrat', value: 'TERRAT' },
+    { label: 'Themi', value: 'THEMI' },
+  ],
+  
+  // Mwanza - Mwanza City
+  MWANZA_CITY: [
+    { label: 'Buhongwa', value: 'BUHONGWA' },
+    { label: 'Butimba', value: 'BUTIMBA' },
+    { label: 'Igoma', value: 'IGOMA' },
+    { label: 'Isamilo', value: 'ISAMILO' },
+    { label: 'Mahina', value: 'MAHINA' },
+    { label: 'Mbugani', value: 'MBUGANI' },
+    { label: 'Mikuyuni', value: 'MIKUYUNI' },
+    { label: 'Mirongo', value: 'MIRONGO' },
+    { label: 'Mkolani', value: 'MKOLANI' },
+    { label: 'Nyakato', value: 'NYAKATO' },
+    { label: 'Nyamanoro', value: 'NYAMANORO' },
+    { label: 'Pasiansi', value: 'PASIASI' },
+    { label: 'Pamba', value: 'PAMBA' },
+  ],
+  
+  // Mbeya - Mbeya City
+  MBEYA_CITY: [
+    { label: 'Iganjo', value: 'IGANJO' },
+    { label: 'Igawilo', value: 'IGAWILO' },
+    { label: 'Iyela', value: 'IYELA' },
+    { label: 'Itezi', value: 'ITEZI' },
+    { label: 'Itagano', value: 'ITAGANO' },
+    { label: 'Mwansekwa', value: 'MWANSEKWA' },
+    { label: 'Mwasanga', value: 'MWASANGA' },
+    { label: 'Nonde', value: 'NONDE' },
+    { label: 'Ruanda', value: 'RUANDA' },
+    { label: 'Sinde', value: 'SINDE' },
+    { label: 'Tembela', value: 'TEMBELA' },
+  ],
+  
+  // Tanga - Tanga City
+  TANGA_CITY: [
+    { label: 'Central', value: 'CENTRAL' },
+    { label: 'Chongoleani', value: 'CHONGOLEANI' },
+    { label: 'Kigoda', value: 'KIGODA' },
+    { label: 'Kijima', value: 'KIJIMA' },
+    { label: 'Kiomoni', value: 'KIOMONI' },
+    { label: 'Mabawa', value: 'MABAWA' },
+    { label: 'Majengo', value: 'MAJENGO' },
+    { label: 'Makorora', value: 'MAKORORA' },
+    { label: 'Marungu', value: 'MARUNGU' },
+    { label: 'Maweni', value: 'MAWENI' },
+    { label: 'Msambweni', value: 'MSAMBWENI' },
+    { label: 'Mzingani', value: 'MZINGANI' },
+    { label: 'Nguvumali', value: 'NGUVUMALI' },
+    { label: 'Pongwe', value: 'PONGWE' },
+    { label: 'Ras Kazone', value: 'RAS_KAZONE' },
+    { label: 'Tanga', value: 'TANGA' },
+    { label: 'Tongoni', value: 'TONGONI' },
+  ],
+};
+
+// Property features for quick selection
+const PROPERTY_FEATURES = [
+  { label: 'Vyumba 2', value: 'BEDROOMS_2', icon: 'bed' },
+  { label: 'Vyumba 3', value: 'BEDROOMS_3', icon: 'bed' },
+  { label: 'Vyumba 4+', value: 'BEDROOMS_4', icon: 'bed' },
+  { label: 'Sebule', value: 'LIVING_ROOM', icon: 'home' },
+  { label: 'Jiko la Ndani', value: 'INDOOR_KITCHEN', icon: 'zap' },
+  { label: 'Bafu ya Ndani', value: 'INDOOR_BATHROOM', icon: 'droplet' },
+  { label: 'Choo cha Ndani', value: 'INDOOR_TOILET', icon: 'droplet' },
+  { label: 'Maji', value: 'WATER', icon: 'droplet' },
+  { label: 'Umeme', value: 'ELECTRICITY', icon: 'zap' },
+  { label: 'Wifi', value: 'WIFI', icon: 'wifi' },
+  { label: 'Garage', value: 'GARAGE', icon: 'home' },
+  { label: 'Bustani', value: 'GARDEN', icon: 'home' },
+  { label: 'Ua', value: 'COMPOUND', icon: 'home' },
+  { label: 'Majiko', value: 'WATER_HEATER', icon: 'zap' },
+  { label: 'Fencing', value: 'FENCING', icon: 'shield' },
+  { label: 'Security', value: 'SECURITY', icon: 'shield' },
+  { label: 'CCTV', value: 'CCTV', icon: 'shield' },
+  { label: 'Askari', value: 'GUARD', icon: 'shield' },
+  { label: 'Furniture', value: 'FURNITURE', icon: 'home' },
+  { label: 'Air Conditioner', value: 'AC', icon: 'zap' },
+  { label: 'Ceiling Fan', value: 'FAN', icon: 'zap' },
+  { label: 'Mosquito Nets', value: 'MOSQUITO_NETS', icon: 'shield' },
+];
+
 interface FormData {
   property_type: string;
   living_space_type: string;
@@ -107,6 +543,7 @@ interface FormData {
   target_user_nida: string;
   approval_note: string;
   agreement_accepted: boolean;
+  selected_features: string[];
 }
 
 interface LookupResult {
@@ -134,6 +571,15 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
   const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [lookupError, setLookupError] = useState('');
+  
+  // Location state
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedWard, setSelectedWard] = useState('');
+  
+  // Property features state
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [customDescription, setCustomDescription] = useState('');
   
   const { register, handleSubmit, formState: { errors }, trigger, getValues, watch, setValue } = useForm<FormData>({
     defaultValues: {
@@ -164,6 +610,12 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
   const tenantLivingArrangement = watch('tenant_living_arrangement');
   const sendForApproval = watch('send_for_approval');
 
+  // Get available districts based on selected region
+  const availableDistricts = selectedRegion ? DISTRICTS_BY_REGION[selectedRegion] || [] : [];
+  
+  // Get available wards based on selected district
+  const availableWards = selectedDistrict ? WARDS_BY_DISTRICT[selectedDistrict] || [] : [];
+
   // Calculate fees
   const feeBreakdown = useMemo(() => {
     const totalRent = monthlyRent * paymentPeriod;
@@ -181,10 +633,45 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
     };
   }, [monthlyRent, paymentPeriod]);
 
+  // Toggle feature selection
+  const toggleFeature = (feature: string) => {
+    setSelectedFeatures(prev => {
+      if (prev.includes(feature)) {
+        return prev.filter(f => f !== feature);
+      } else {
+        return [...prev, feature];
+      }
+    });
+  };
+
+  // Generate property description from selected features and custom description
+  const generatePropertyDescription = () => {
+    const featureLabels = selectedFeatures.map(f => {
+      const feature = PROPERTY_FEATURES.find(opt => opt.value === f);
+      return feature ? feature.label : f;
+    });
+    
+    const featuresText = featureLabels.join(', ');
+    
+    if (featuresText && customDescription) {
+      return `${featuresText}. ${customDescription}`;
+    } else if (featuresText) {
+      return featuresText;
+    } else {
+      return customDescription;
+    }
+  };
+
+  // Update form value when features or custom description change
+  useEffect(() => {
+    const description = generatePropertyDescription();
+    setValue('house_description', description);
+  }, [selectedFeatures, customDescription]);
+
   // Citizen lookup handler
   const handleCitizenLookup = async () => {
     if (!targetCitizenId.trim()) {
-      setLookupError(lang === 'sw' ? 'Tafadhali ingiza Namba ya Raia (CT ID)' : 'Please enter Citizen ID');
+      setLookupError(lang === 'sw' ? 'Tafadhali ingiza Namba ya NIDA' : 'Please enter NIDA number');
       return;
     }
 
@@ -193,25 +680,11 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
     setLookupResult(null);
 
     try {
-      const searchTerm = targetCitizenId.trim().toUpperCase();
-      
-      // Search by citizen_id (CT ID format: CT2026A00001)
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('id, citizen_id, first_name, middle_name, last_name, phone, email')
-        .eq('citizen_id', searchTerm)
+        .eq('citizen_id', targetCitizenId.trim().toUpperCase())
         .single();
-
-      // If not found by exact match, try ilike for case-insensitive search
-      if (!data && !error?.message?.includes('multiple')) {
-        const result = await supabase
-          .from('users')
-          .select('id, citizen_id, first_name, middle_name, last_name, phone, email')
-          .ilike('citizen_id', searchTerm)
-          .single();
-        data = result.data;
-        error = result.error;
-      }
 
       if (error || !data) {
         setLookupError(lang === 'sw' 
@@ -290,6 +763,7 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
       total_rent: feeBreakdown.grandTotal,
       target_user_id: lookupResult?.id || null,
       target_user_name: lookupResult?.full_name || null,
+      selected_features: selectedFeatures,
     };
 
     onSubmit(submitData);
@@ -376,6 +850,10 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
             <div className="col-span-2">
               <span className="text-stone-500">{lang === 'sw' ? 'Mahali:' : 'Location:'}</span>
               <p className="font-medium">{data.street}, {data.ward}, {data.district}, {data.region}</p>
+            </div>
+            <div className="col-span-2">
+              <span className="text-stone-500">{lang === 'sw' ? 'Maelezo:' : 'Description:'}</span>
+              <p className="font-medium">{data.house_description}</p>
             </div>
           </div>
         </div>
@@ -577,17 +1055,61 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
             </>
           )}
 
+          {/* Property Features Quick Selection */}
+          <div className="space-y-3">
+            <label className={labelClass}>
+              {lang === 'sw' ? 'Vipengele vya Nyumba (Bofya kuchagua)' : 'Property Features (Click to select)'}
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {PROPERTY_FEATURES.map(feature => {
+                let Icon = CheckSquare;
+                if (feature.icon === 'bed') Icon = Bed;
+                else if (feature.icon === 'bath') Icon = Bath;
+                else if (feature.icon === 'wifi') Icon = Wifi;
+                else if (feature.icon === 'zap') Icon = Zap;
+                else if (feature.icon === 'droplet') Icon = Droplet;
+                else if (feature.icon === 'shield') Icon = ShieldIcon;
+                else if (feature.icon === 'home') Icon = Home;
+                
+                return (
+                  <button
+                    key={feature.value}
+                    type="button"
+                    onClick={() => toggleFeature(feature.value)}
+                    className={`p-2 text-xs rounded-lg border transition-all flex items-center gap-1 ${
+                      selectedFeatures.includes(feature.value)
+                        ? 'bg-emerald-100 border-emerald-500 text-emerald-700'
+                        : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                    }`}
+                  >
+                    <Icon className={`h-3 w-3 ${
+                      selectedFeatures.includes(feature.value) ? 'text-emerald-600' : 'text-stone-400'
+                    }`} />
+                    {feature.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label className={labelClass}>
-              {lang === 'sw' ? 'Maelezo ya Nyumba' : 'Property Description'}
+              {lang === 'sw' ? 'Maelezo ya Ziada (Hiari)' : 'Additional Description (Optional)'}
             </label>
             <textarea 
-              {...register('house_description')} 
+              value={customDescription}
+              onChange={(e) => setCustomDescription(e.target.value)}
               className={inputClass}
               rows={3}
               placeholder={lang === 'sw' ? 'Mfano: Vyumba 3, Sebule, Jiko, Bafu...' : 'e.g., 3 bedrooms, living room, kitchen, bathroom...'}
             />
           </div>
+
+          {/* Hidden field for house_description */}
+          <input 
+            type="hidden" 
+            {...register('house_description')} 
+          />
         </div>
       )}
 
@@ -606,7 +1128,24 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
               <label className={labelClass}>
                 {lang === 'sw' ? 'Mkoa' : 'Region'} <span className="text-red-500">*</span>
               </label>
-              <input {...register('region', { required: true })} className={inputClass} />
+              <select 
+                {...register('region', { required: true })}
+                className={inputClass}
+                value={selectedRegion}
+                onChange={(e) => {
+                  setSelectedRegion(e.target.value);
+                  setSelectedDistrict('');
+                  setSelectedWard('');
+                  setValue('region', e.target.value);
+                  setValue('district', '');
+                  setValue('ward', '');
+                }}
+              >
+                <option value="">{lang === 'sw' ? 'Chagua Mkoa' : 'Select Region'}</option>
+                {TANZANIA_REGIONS.map(region => (
+                  <option key={region.value} value={region.value}>{region.label}</option>
+                ))}
+              </select>
               {errors.region && <span className="text-red-500 text-sm">{t.required}</span>}
             </div>
 
@@ -614,7 +1153,23 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
               <label className={labelClass}>
                 {lang === 'sw' ? 'Wilaya' : 'District'} <span className="text-red-500">*</span>
               </label>
-              <input {...register('district', { required: true })} className={inputClass} />
+              <select 
+                {...register('district', { required: true })}
+                className={inputClass}
+                value={selectedDistrict}
+                onChange={(e) => {
+                  setSelectedDistrict(e.target.value);
+                  setSelectedWard('');
+                  setValue('district', e.target.value);
+                  setValue('ward', '');
+                }}
+                disabled={!selectedRegion}
+              >
+                <option value="">{lang === 'sw' ? 'Chagua Wilaya' : 'Select District'}</option>
+                {availableDistricts.map(district => (
+                  <option key={district.value} value={district.value}>{district.label}</option>
+                ))}
+              </select>
               {errors.district && <span className="text-red-500 text-sm">{t.required}</span>}
             </div>
 
@@ -622,7 +1177,21 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
               <label className={labelClass}>
                 {lang === 'sw' ? 'Kata' : 'Ward'} <span className="text-red-500">*</span>
               </label>
-              <input {...register('ward', { required: true })} className={inputClass} />
+              <select 
+                {...register('ward', { required: true })}
+                className={inputClass}
+                value={selectedWard}
+                onChange={(e) => {
+                  setSelectedWard(e.target.value);
+                  setValue('ward', e.target.value);
+                }}
+                disabled={!selectedDistrict}
+              >
+                <option value="">{lang === 'sw' ? 'Chagua Kata' : 'Select Ward'}</option>
+                {availableWards.map(ward => (
+                  <option key={ward.value} value={ward.value}>{ward.label}</option>
+                ))}
+              </select>
               {errors.ward && <span className="text-red-500 text-sm">{t.required}</span>}
             </div>
 
@@ -968,7 +1537,7 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
                     type="text"
                     value={targetCitizenId}
                     onChange={(e) => setTargetCitizenId(e.target.value)}
-                    placeholder={lang === 'sw' ? 'CT ID ya upande mwingine (mfano: CT2026A00001)' : 'Other party CT ID (e.g., CT2026A00001)'}
+                    placeholder={lang === 'sw' ? 'NIDA ya upande mwingine' : 'Other party NIDA'}
                     className={`${inputClass} pl-10`}
                   />
                 </div>
