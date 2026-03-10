@@ -1,61 +1,450 @@
-                    <div className="border-t border-amber-200 my-2"></div>
-                    <div className="flex justify-between text-amber-600">
-                      <span>{lang === 'sw' ? 'Kiwango cha Chini:' : 'Minimum Fee:'}</span>
-                      <span>{feeBreakdown.minFee.toLocaleString()} TZS</span>
-                    </div>
-                    <div className="flex justify-between text-amber-600">
-                      <span>{lang === 'sw' ? 'Kiwango cha Juu:' : 'Maximum Fee:'}</span>
-                      <span>{feeBreakdown.maxFee.toLocaleString()} TZS</span>
-                    </div>
-                  </>
-                )}
-                
-                <div className="border-t border-amber-200 my-2"></div>
-                <div className="flex justify-between font-bold text-lg">
-                  <span className="text-amber-800">{lang === 'sw' ? 'Ada ya Mwisho:' : 'Final Fee:'}</span>
-                  <span className="text-amber-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
-                </div>
-              </div>
-              
-              <p className="text-xs text-amber-600 mt-3">
-                {lang === 'sw' 
-                  ? 'Ada ni 3% ya thamani ya mauziano (kiwango cha chini 5,000 TZS, kiwango cha juu 500,000 TZS). Malipo yatakamilishwa baada ya kuwasilisha.'
-                  : 'Fee is 3% of the transaction value (minimum 5,000 TZS, maximum 500,000 TZS). Payment will be completed after submission.'}
+/**
+ * Makubaliano ya Mauziano Form
+ * Sale/Lease Agreement Form
+ * 
+ * Service: Makubaliano ya Mauziano
+ * Fee: 3% of transaction value (min 5,000 TZS, max 500,000 TZS)
+ */
+import React, { useState, useRef, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { 
+  Loader2, CheckCircle, ArrowLeft, ArrowRight, Eye, FileCheck, 
+  Home, User, Users, FileSignature, Search, Upload, FileText, X,
+  MapPin, DollarSign, Calendar, CreditCard, Phone, Mail, Bell, 
+  Shield, Info, TrendingUp, AlertCircle
+} from 'lucide-react';
+import { FormProps, labels } from './types';
+import { supabase } from '../../lib/supabase';
+
+// Fee constants
+const MIN_FEE = 5000;
+const MAX_FEE = 500000;
+const FEE_PERCENTAGE = 0.03;
+
+// Asset type options
+const ASSET_TYPES = [
+  { label: 'Nyumba / House', value: 'HOUSE' },
+  { label: 'Gari / Vehicle', value: 'VEHICLE' },
+  { label: 'Ardhi / Land', value: 'LAND' },
+  { label: 'Biashara / Business', value: 'BUSINESS' },
+  { label: 'Vifaa / Equipment', value: 'EQUIPMENT' },
+  { label: 'Nyingine / Other', value: 'OTHER' },
+];
+
+// Currency options
+const CURRENCY_OPTIONS = [
+  { label: 'TZS - Shilingi ya Tanzania', value: 'TZS' },
+  { label: 'USD - Dola ya Marekani', value: 'USD' },
+  { label: 'EUR - Euro', value: 'EUR' },
+];
+
+// Payment terms
+const PAYMENT_TERMS = [
+  { label: 'Malipo Kamili / Full Payment', value: 'FULL' },
+  { label: 'Awamu / Installments', value: 'INSTALLMENTS' },
+  { label: 'Kodi ya Mwezi / Monthly Rent', value: 'MONTHLY_RENT' },
+  { label: 'Kodi ya Mwaka / Annual Rent', value: 'ANNUAL_RENT' },
+];
+
+interface FormData {
+  asset_type: string;
+  asset_description: string;
+  asset_location: string;
+  currency: string;
+  sale_price: number;
+  payment_terms: string;
+  effective_date: string;
+  expiry_date: string;
+  seller_tin: string;
+  seller_additional_contact: string;
+  special_conditions: string;
+  witness_name: string;
+  witness_phone: string;
+  witness_address: string;
+  terms_accepted: boolean;
+}
+
+interface LookupResult {
+  id: string;
+  citizen_id: string;
+  full_name: string;
+  phone?: string;
+  email?: string;
+  region?: string;
+  district?: string;
+}
+
+type Step = 'asset' | 'seller' | 'buyer' | 'terms' | 'review';
+
+export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
+  onSubmit,
+  isLoading,
+  lang = 'sw',
+  userProfile
+}) => {
+  const t = labels[lang];
+  const [currentStep, setCurrentStep] = useState<Step>('asset');
+  const [showReview, setShowReview] = useState(false);
+  
+  // Citizen lookup state
+  const [citizenId, setCitizenId] = useState('');
+  const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [lookupError, setLookupError] = useState('');
+  
+  // File upload state
+  const [agreementFile, setAgreementFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { register, handleSubmit, formState: { errors }, trigger, getValues, watch } = useForm<FormData>();
+
+  const steps: { key: Step; label: string; swLabel: string }[] = [
+    { key: 'asset', label: 'Asset Details', swLabel: 'Taarifa za Mali' },
+    { key: 'seller', label: 'Seller Info', swLabel: 'Muuzaji' },
+    { key: 'buyer', label: 'Buyer Lookup', swLabel: 'Tafuta Mnunuji' },
+    { key: 'terms', label: 'Terms', swLabel: 'Masharti' },
+    { key: 'review', label: 'Review', swLabel: 'Hakiki' },
+  ];
+
+  const currentStepIndex = steps.findIndex(s => s.key === currentStep);
+  const progress = ((currentStepIndex + 1) / steps.length) * 100;
+
+  // Watch sale price for fee calculation
+  const salePrice = watch('sale_price') || 0;
+  const currency = watch('currency');
+
+  // Calculate fee based on transaction value
+  const feeBreakdown = useMemo(() => {
+    if (salePrice <= 0) return null;
+    
+    const calculated = Math.round(salePrice * FEE_PERCENTAGE);
+    const finalFee = Math.max(MIN_FEE, Math.min(MAX_FEE, calculated));
+    
+    return {
+      calculated,
+      finalFee,
+      minFee: MIN_FEE,
+      maxFee: MAX_FEE,
+      percentage: FEE_PERCENTAGE * 100
+    };
+  }, [salePrice]);
+
+  // Citizen lookup handler
+  const handleCitizenLookup = async () => {
+    if (!citizenId.trim()) {
+      setLookupError(lang === 'sw' ? 'Tafadhali ingiza Namba ya Raia' : 'Please enter Citizen ID');
+      return;
+    }
+
+    setSearching(true);
+    setLookupError('');
+    setLookupResult(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, citizen_id, first_name, middle_name, last_name, phone, email, region, district')
+        .eq('citizen_id', citizenId.trim().toUpperCase())
+        .single();
+
+      if (error || !data) {
+        setLookupError(lang === 'sw' 
+          ? 'Mtumiaji hajapatikana. Hakikisha namba ni sahihi.' 
+          : 'User not found. Please verify the ID.');
+        return;
+      }
+
+      // Prevent selecting self
+      if (userProfile && data.id === userProfile.id) {
+        setLookupError(lang === 'sw' 
+          ? 'Huwezi kuchagua wewe mwenyewe kama mhusika wa pili.' 
+          : 'You cannot select yourself as the second party.');
+        return;
+      }
+
+      setLookupResult({
+        id: data.id,
+        citizen_id: data.citizen_id,
+        full_name: `${data.first_name} ${data.middle_name || ''} ${data.last_name}`.trim(),
+        phone: data.phone,
+        email: data.email,
+        region: data.region,
+        district: data.district
+      });
+    } catch {
+      setLookupError(lang === 'sw' ? 'Hitilafu ya mtandao' : 'Network error');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // File upload handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert(lang === 'sw' ? 'Faili kubwa sana. Upeo ni 10MB.' : 'File too large. Maximum is 10MB.');
+      return;
+    }
+
+    setAgreementFile(file);
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `agreements/${Date.now()}_${userProfile?.id || 'unknown'}.${fileExt}`;
+
+      const { error } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName);
+
+      setUploadedUrl(urlData.publicUrl);
+    } catch {
+      alert(lang === 'sw' ? 'Imeshindikana kupakia faili' : 'Failed to upload file');
+      setAgreementFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Step validation
+  const validateCurrentStep = async (): Promise<boolean> => {
+    let fieldsToValidate: (keyof FormData)[] = [];
+    
+    switch (currentStep) {
+      case 'asset':
+        fieldsToValidate = ['asset_type', 'asset_description', 'sale_price', 'currency', 'effective_date'];
+        break;
+      case 'seller':
+        return true; // Optional fields
+      case 'buyer':
+        return !!lookupResult;
+      case 'terms':
+        fieldsToValidate = ['terms_accepted'];
+        return !!uploadedUrl && await trigger(fieldsToValidate);
+    }
+    
+    return trigger(fieldsToValidate);
+  };
+
+  const handleNext = async () => {
+    const isValid = await validateCurrentStep();
+    if (isValid) {
+      const nextIndex = currentStepIndex + 1;
+      if (nextIndex < steps.length) {
+        setCurrentStep(steps[nextIndex].key);
+      }
+      if (currentStep === 'terms') {
+        setShowReview(true);
+      }
+    }
+  };
+
+  const handlePrevious = () => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) {
+      setCurrentStep(steps[prevIndex].key);
+    }
+  };
+
+  const onFormSubmit = async (data: FormData) => {
+    if (!lookupResult || !feeBreakdown) return;
+
+    const submitData = {
+      ...data,
+      service_fee: feeBreakdown.finalFee,
+      buyer_id: lookupResult.id,
+      buyer_citizen_id: lookupResult.citizen_id,
+      buyer_name: lookupResult.full_name,
+      agreement_document_url: uploadedUrl,
+      seller_name: userProfile ? `${userProfile.first_name} ${userProfile.middle_name || ''} ${userProfile.last_name}`.trim() : '',
+      seller_citizen_id: userProfile?.citizen_id || '',
+    };
+
+    onSubmit(submitData);
+  };
+
+  const confirmSubmit = () => {
+    handleSubmit(onFormSubmit)();
+  };
+
+  // Styling classes
+  const inputClass = "w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all";
+  const labelClass = "block text-sm font-semibold text-stone-700 mb-1";
+  const sectionClass = "bg-gradient-to-r from-amber-100 to-orange-100 p-4 rounded-xl border border-amber-200";
+
+  // Progress bar component
+  const ProgressBar = () => (
+    <div className="mb-6">
+      <div className="flex justify-between mb-2">
+        {steps.map((step, index) => (
+          <div 
+            key={step.key}
+            className={`flex items-center gap-1 text-xs font-medium ${
+              index <= currentStepIndex ? 'text-amber-600' : 'text-stone-400'
+            }`}
+          >
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+              index < currentStepIndex 
+                ? 'bg-amber-600 text-white' 
+                : index === currentStepIndex 
+                  ? 'bg-amber-500 text-white' 
+                  : 'bg-stone-200 text-stone-500'
+            }`}>
+              {index < currentStepIndex ? <CheckCircle className="h-4 w-4" /> : index + 1}
+            </span>
+            <span className="hidden md:inline">{lang === 'sw' ? step.swLabel : step.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="bg-stone-200 h-2 rounded-full overflow-hidden">
+        <div
+          className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+
+  // Review section component
+  const ReviewSection = () => {
+    const data = getValues();
+    
+    return (
+      <div className="space-y-6">
+        <div className={sectionClass}>
+          <h3 className="font-bold text-amber-800 flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            {lang === 'sw' ? 'HAKIKI MAKUBALIANO' : 'REVIEW AGREEMENT'}
+          </h3>
+        </div>
+
+        {/* Asset Summary */}
+        <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
+          <h4 className="font-bold text-stone-800 flex items-center gap-2">
+            <Home className="h-4 w-4" />
+            {lang === 'sw' ? 'Taarifa za Mali' : 'Asset Details'}
+          </h4>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-stone-500">{lang === 'sw' ? 'Aina:' : 'Type:'}</span>
+              <p className="font-medium">{ASSET_TYPES.find(a => a.value === data.asset_type)?.label || data.asset_type}</p>
+            </div>
+            <div>
+              <span className="text-stone-500">{lang === 'sw' ? 'Bei:' : 'Price:'}</span>
+              <p className="font-medium">{Number(data.sale_price).toLocaleString()} {data.currency}</p>
+            </div>
+            <div className="col-span-2">
+              <span className="text-stone-500">{lang === 'sw' ? 'Maelezo:' : 'Description:'}</span>
+              <p className="font-medium">{data.asset_description}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Parties Summary */}
+        <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-3">
+          <h4 className="font-bold text-stone-800 flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            {lang === 'sw' ? 'Pande za Makubaliano' : 'Agreement Parties'}
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-emerald-50 p-3 rounded-lg">
+              <span className="text-xs text-emerald-600 font-medium">{lang === 'sw' ? 'MUUZAJI / MPANGISHAJI' : 'SELLER / LANDLORD'}</span>
+              <p className="font-bold text-emerald-800">
+                {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : '-'}
               </p>
+              <p className="text-sm text-emerald-600">{userProfile?.citizen_id || ''}</p>
             </div>
-          )}
+            <div className="bg-amber-50 p-3 rounded-lg">
+              <span className="text-xs text-amber-600 font-medium">{lang === 'sw' ? 'MNUNUZI / MPANGAJI' : 'BUYER / TENANT'}</span>
+              <p className="font-bold text-amber-800">{lookupResult?.full_name || '-'}</p>
+              <p className="text-sm text-amber-600">{lookupResult?.citizen_id || ''}</p>
+            </div>
+          </div>
+        </div>
 
-          {/* Important Notices */}
-          <div className="space-y-3">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Bell className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-blue-800 mb-1">
-                    {lang === 'sw' ? 'Arifa kwa Mhusika' : 'Notification to Second Party'}
-                  </h4>
-                  <p className="text-sm text-blue-700">
-                    {lang === 'sw' 
-                      ? 'Baada ya kuwasilisha, mnunuzi/mpangaji atapokea arifa ya kukagua na kuidhinisha makubaliano haya. Makubaliano hayatakamilika mpaka wakubali.'
-                      : 'After submission, the buyer/tenant will receive a notification to review and approve this agreement. The agreement will not be finalized until they accept.'}
-                  </p>
-                </div>
+        {/* Fee Summary */}
+        {feeBreakdown && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+            <h4 className="font-bold text-amber-800 mb-3">{lang === 'sw' ? 'Muhtasari wa Ada' : 'Fee Summary'}</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-700">{lang === 'sw' ? 'Thamani ya Mauziano:' : 'Transaction Value:'}</span>
+                <span className="font-medium">{Number(data.sale_price).toLocaleString()} {data.currency}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-700">{lang === 'sw' ? 'Ada (3%):' : 'Fee (3%):'}</span>
+                <span className="font-medium">{feeBreakdown.calculated.toLocaleString()} TZS</span>
+              </div>
+              {feeBreakdown.calculated !== feeBreakdown.finalFee && (
+                <>
+                  <div className="border-t border-amber-200 my-2"></div>
+                  <div className="flex justify-between text-amber-600">
+                    <span>{lang === 'sw' ? 'Kiwango cha Chini:' : 'Minimum Fee:'}</span>
+                    <span>{feeBreakdown.minFee.toLocaleString()} TZS</span>
+                  </div>
+                  <div className="flex justify-between text-amber-600">
+                    <span>{lang === 'sw' ? 'Kiwango cha Juu:' : 'Maximum Fee:'}</span>
+                    <span>{feeBreakdown.maxFee.toLocaleString()} TZS</span>
+                  </div>
+                </>
+              )}
+              
+              <div className="border-t border-amber-200 my-2"></div>
+              <div className="flex justify-between font-bold text-lg">
+                <span className="text-amber-800">{lang === 'sw' ? 'Ada ya Mwisho:' : 'Final Fee:'}</span>
+                <span className="text-amber-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
               </div>
             </div>
+            
+            <p className="text-xs text-amber-600 mt-3">
+              {lang === 'sw' 
+                ? 'Ada ni 3% ya thamani ya mauziano (kiwango cha chini 5,000 TZS, kiwango cha juu 500,000 TZS). Malipo yatakamilishwa baada ya kuwasilisha.'
+                : 'Fee is 3% of the transaction value (minimum 5,000 TZS, maximum 500,000 TZS). Payment will be completed after submission.'}
+            </p>
+          </div>
+        )}
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-amber-800 mb-1">
-                    {lang === 'sw' ? 'Uhalali wa Makubaliano' : 'Agreement Validity'}
-                  </h4>
-                  <p className="text-sm text-amber-700">
-                    {lang === 'sw' 
-                      ? 'Makubaliano haya yatakuwa na nguvu ya kisheria baada ya pande zote mbili kukubali. Hakikisha umesoma na kuelewa masharti yote.'
-                      : 'This agreement will be legally binding after both parties accept. Ensure you have read and understood all terms.'}
-                  </p>
-                </div>
+        {/* Important Notices */}
+        <div className="space-y-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <Bell className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-blue-800 mb-1">
+                  {lang === 'sw' ? 'Arifa kwa Mhusika' : 'Notification to Second Party'}
+                </h4>
+                <p className="text-sm text-blue-700">
+                  {lang === 'sw' 
+                    ? 'Baada ya kuwasilisha, mnunuzi/mpangaji atapokea arifa ya kukagua na kuidhinisha makubaliano haya. Makubaliano hayatakamilika mpaka wakubali.'
+                    : 'After submission, the buyer/tenant will receive a notification to review and approve this agreement. The agreement will not be finalized until they accept.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-amber-800 mb-1">
+                  {lang === 'sw' ? 'Uhalali wa Makubaliano' : 'Agreement Validity'}
+                </h4>
+                <p className="text-sm text-amber-700">
+                  {lang === 'sw' 
+                    ? 'Makubaliano haya yatakuwa na nguvu ya kisheria baada ya pande zote mbili kukubali. Hakikisha umesoma na kuelewa masharti yote.'
+                    : 'This agreement will be legally binding after both parties accept. Ensure you have read and understood all terms.'}
+                </p>
               </div>
             </div>
           </div>
@@ -64,7 +453,7 @@
         <div className="flex gap-3 pt-4">
           <button
             type="button"
-            onClick={() => setCurrentStep('terms')}
+            onClick={() => setShowReview(false)}
             className="flex-1 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
           >
             <ArrowLeft className="h-5 w-5" />
