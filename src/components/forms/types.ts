@@ -1,53 +1,81 @@
 /**
- * Forms Index
- * 
- * Export all service-specific forms for easy import
- * Each form is a standalone component that handles its own validation and submission
+ * Shared Types for Service Forms
  */
+import { UserProfile } from '@/src/lib/supabase';
 
-// Form Types
-export * from './types';
+/**
+ * Common props for all service form components
+ */
+export interface FormProps {
+  onSubmit: (data: any) => void;
+  lang: 'sw' | 'en';
+  userProfile: UserProfile | null;
+}
 
-// Individual Service Forms
-export { UtambulishoMkaziForm } from './UtambulishoMkaziForm';
-export { KibariMazishiForm } from './KibariMazishiForm';
-export { MakubalianoMauzianoForm } from './MakubalianoMauzianoForm';
-export { KibaliUjenziForm } from './KibaliUjenziForm';
-export { LeseniaBiasharaForm } from './LeseniaBiasharaForm';
-export { BaruaShouriForm } from './BaruaShouriForm';
-export { KibariShereheForm } from './KibariShereheForm';
-export { BaruaUtambulishoForm } from './BaruaUtambulishoForm'; // New form
+/**
+ * Applicant type for forms involving multiple parties
+ */
+export type ApplicantType = 'SELLER' | 'BUYER' | 'LANDLORD' | 'TENANT';
 
-// Service name to form component mapping
-import { UtambulishoMkaziForm } from './UtambulishoMkaziForm';
-import { KibariMazishiForm } from './KibariMazishiForm';
-import { MakubalianoMauzianoForm } from './MakubalianoMauzianoForm';
-import { KibaliUjenziForm } from './KibaliUjenziForm';
-import { LeseniaBiasharaForm } from './LeseniaBiasharaForm';
-import { BaruaShouriForm } from './BaruaShouriForm';
-import { KibariShereheForm } from './KibariShereheForm';
-import { BaruaUtambulishoForm } from './BaruaUtambulishoForm'; // New form
-import React from 'react';
-import { FormProps } from './types';
-
-// Map service names to their form components
-export const SERVICE_FORMS: Record<string, React.FC<FormProps>> = {
-  'Utambulisho wa Mkazi': UtambulishoMkaziForm,
-  'Barua ya Utambulisho': BaruaUtambulishoForm, // New service
-  'Kibari cha Mazishi': KibariMazishiForm,
-  'Makubaliano ya Mauziano': MakubalianoMauzianoForm,
-  'Kibali cha Ujenzi (Maboresho)': KibaliUjenziForm,
-  'Leseni ya Biashara Ndogondogo': LeseniaBiasharaForm,
-  'Barua ya Kufungua Shauri': BaruaShouriForm,
-  'Kibari cha Matukio / Sherehe': KibariShereheForm,
+/**
+ * Common labels used across forms
+ */
+export const labels = {
+  sw: {
+    submit: 'Wasilisha Maombi',
+    submitting: 'Inawasilisha...',
+    next: 'Endelea',
+    back: 'Rudi',
+    required: 'Inahitajika',
+    optional: 'Si lazima',
+    yes: 'Ndiyo',
+    no: 'Hapana',
+    select: 'Chagua',
+    loading: 'Inapakia...',
+    error: 'Kosa',
+    success: 'Imefanikiwa',
+    cancel: 'Ghairi',
+    save: 'Hifadhi',
+    review: 'Hakiki',
+    confirm: 'Thibitisha',
+    step: 'Hatua',
+    of: 'kati ya',
+    personalInfo: 'Taarifa Binafsi',
+    contactInfo: 'Mawasiliano',
+    addressInfo: 'Anwani',
+    documents: 'Nyaraka',
+    declaration: 'Tamko',
+    terms: 'Masharti',
+    fee: 'Ada ya Huduma',
+  },
+  en: {
+    submit: 'Submit Application',
+    submitting: 'Submitting...',
+    next: 'Continue',
+    back: 'Back',
+    required: 'Required',
+    optional: 'Optional',
+    yes: 'Yes',
+    no: 'No',
+    select: 'Select',
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    cancel: 'Cancel',
+    save: 'Save',
+    review: 'Review',
+    confirm: 'Confirm',
+    step: 'Step',
+    of: 'of',
+    personalInfo: 'Personal Information',
+    contactInfo: 'Contact Information',
+    addressInfo: 'Address',
+    documents: 'Documents',
+    declaration: 'Declaration',
+    terms: 'Terms',
+    fee: 'Service Fee',
+  }
 };
-
-// Helper function to get form component by service name
-export const getServiceForm = (serviceName: string): React.FC<FormProps> | null => {
-  return SERVICE_FORMS[serviceName] || null;
-};
-
-// Check if a service has a dedicated form
 export const hasServiceForm = (serviceName: string): boolean => {
   return serviceName in SERVICE_FORMS;
 };
