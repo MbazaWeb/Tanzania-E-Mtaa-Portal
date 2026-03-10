@@ -58,6 +58,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showAuth, setShowAuth] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [showPublicVerify, setShowPublicVerify] = useState(false);
 
   const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -329,9 +330,24 @@ export default function App() {
   }
 
   if (!user) {
+    // Show public verify documents page if requested
+    if (showPublicVerify) {
+      return (
+        <div className="min-h-screen bg-stone-50">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="py-8 px-4 max-w-5xl mx-auto"
+          >
+            <VerifyDocuments lang={lang} onBack={() => setShowPublicVerify(false)} userRole="citizen" />
+          </motion.div>
+        </div>
+      );
+    }
+
     return (
       <>
-        <Landing onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }} />
+        <Landing onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }} onShowVerify={() => setShowPublicVerify(true)} />
         <AnimatePresence>
           {showAuth && (
             <Auth 

@@ -7,7 +7,8 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Building2,
-  RefreshCw
+  RefreshCw,
+  Search
 } from 'lucide-react';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
@@ -119,6 +120,40 @@ export function Dashboard({ applications, setView, onRefresh }: DashboardProps) 
       {user?.role === 'citizen' && (
         <PendingApprovals lang={lang} />
       )}
+
+      {/* Verify Documents Card */}
+      <div 
+        onClick={() => setView('verify_documents')}
+        className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl shadow-blue-200 cursor-pointer hover:shadow-2xl hover:scale-[1.01] transition-all group"
+      >
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                <Search size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-heading font-extrabold">
+                  {lang === 'sw' ? 'Hakiki Hati' : 'Verify Documents'}
+                </h3>
+                <p className="text-blue-100 opacity-90 font-medium text-sm">
+                  {lang === 'sw' 
+                    ? 'Thibitisha uhalali wa hati za serikali'
+                    : 'Verify authenticity of government documents'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            className="bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-xl font-bold hover:bg-white/30 transition-all flex items-center gap-2 group-hover:gap-3"
+          >
+            {lang === 'sw' ? 'Hakiki Sasa' : 'Verify Now'}
+            <Search size={18} className="group-hover:scale-110 transition-transform" />
+          </button>
+        </div>
+        <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
+      </div>
 
       <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-stone-200 flex items-center justify-between">

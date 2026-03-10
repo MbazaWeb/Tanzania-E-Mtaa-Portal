@@ -10,16 +10,18 @@ import {
   Smartphone, 
   MapPin, 
   Clock, 
-  CheckCircle2 
+  CheckCircle2,
+  Search
 } from 'lucide-react';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { TANZANIA_LOGO_URL } from '@/src/constants/services';
 
 interface LandingProps {
   onShowAuth: (mode: 'login' | 'signup') => void;
+  onShowVerify?: () => void;
 }
 
-export function Landing({ onShowAuth }: LandingProps) {
+export function Landing({ onShowAuth, onShowVerify }: LandingProps) {
   const { lang, t } = useLanguage();
 
   return (
@@ -41,6 +43,15 @@ export function Landing({ onShowAuth }: LandingProps) {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
+            {onShowVerify && (
+              <button 
+                onClick={onShowVerify}
+                className="text-xs sm:text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors px-2 sm:px-4 py-2 flex items-center gap-1.5"
+              >
+                <Search size={16} />
+                {lang === 'sw' ? 'Hakiki Hati' : 'Verify Doc'}
+              </button>
+            )}
             <button 
               onClick={() => onShowAuth('login')}
               className="text-xs sm:text-sm font-bold text-stone-600 hover:text-stone-900 transition-colors px-2 sm:px-4 py-2"
@@ -91,9 +102,15 @@ export function Landing({ onShowAuth }: LandingProps) {
                   {lang === 'sw' ? 'Anza Sasa' : 'Get Started'}
                   <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button className="bg-white text-stone-900 border border-stone-200 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-stone-50 transition-all flex items-center justify-center gap-3">
-                  {lang === 'sw' ? 'Jifunze Zaidi' : 'Learn More'}
-                </button>
+                {onShowVerify && (
+                  <button 
+                    onClick={onShowVerify}
+                    className="bg-white text-emerald-700 border-2 border-emerald-600 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-bold text-base sm:text-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-3"
+                  >
+                    <Search size={20} />
+                    {lang === 'sw' ? 'Hakiki Hati' : 'Verify Document'}
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-6 pt-4">
