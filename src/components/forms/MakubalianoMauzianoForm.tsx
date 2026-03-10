@@ -279,9 +279,9 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
   };
 
   // Styling classes
-  const inputClass = "w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all";
+  const inputClass = "w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all";
   const labelClass = "block text-sm font-semibold text-stone-700 mb-1";
-  const sectionClass = "bg-gradient-to-r from-amber-100 to-orange-100 p-4 rounded-xl border border-amber-200";
+  const sectionClass = "bg-gradient-to-r from-emerald-100 to-teal-50 p-4 rounded-xl border border-emerald-200";
 
   // Progress bar component
   const ProgressBar = () => (
@@ -291,14 +291,14 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
           <div 
             key={step.key}
             className={`flex items-center gap-1 text-xs font-medium ${
-              index <= currentStepIndex ? 'text-amber-600' : 'text-stone-400'
+              index <= currentStepIndex ? 'text-emerald-600' : 'text-stone-400'
             }`}
           >
             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
               index < currentStepIndex 
-                ? 'bg-amber-600 text-white' 
+                ? 'bg-emerald-600 text-white' 
                 : index === currentStepIndex 
-                  ? 'bg-amber-500 text-white' 
+                  ? 'bg-emerald-500 text-white' 
                   : 'bg-stone-200 text-stone-500'
             }`}>
               {index < currentStepIndex ? <CheckCircle className="h-4 w-4" /> : index + 1}
@@ -309,7 +309,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
       </div>
       <div className="bg-stone-200 h-2 rounded-full overflow-hidden">
         <div
-          className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-300"
+          className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -323,7 +323,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
     return (
       <div className="space-y-6">
         <div className={sectionClass}>
-          <h3 className="font-bold text-amber-800 flex items-center gap-2">
+          <h3 className="font-bold text-emerald-800 flex items-center gap-2">
             <Eye className="h-5 w-5" />
             {lang === 'sw' ? 'HAKIKI MAKUBALIANO' : 'REVIEW AGREEMENT'}
           </h3>
@@ -365,49 +365,49 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
               </p>
               <p className="text-sm text-emerald-600">{userProfile?.citizen_id || ''}</p>
             </div>
-            <div className="bg-amber-50 p-3 rounded-lg">
-              <span className="text-xs text-amber-600 font-medium">{lang === 'sw' ? 'MNUNUZI / MPANGAJI' : 'BUYER / TENANT'}</span>
-              <p className="font-bold text-amber-800">{lookupResult?.full_name || '-'}</p>
-              <p className="text-sm text-amber-600">{lookupResult?.citizen_id || ''}</p>
+            <div className="bg-emerald-50 p-3 rounded-lg">
+              <span className="text-xs text-emerald-600 font-medium">{lang === 'sw' ? 'MNUNUZI / MPANGAJI' : 'BUYER / TENANT'}</span>
+              <p className="font-bold text-emerald-800">{lookupResult?.full_name || '-'}</p>
+              <p className="text-sm text-emerald-600">{lookupResult?.citizen_id || ''}</p>
             </div>
           </div>
         </div>
 
         {/* Fee Summary */}
         {feeBreakdown && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
-            <h4 className="font-bold text-amber-800 mb-3">{lang === 'sw' ? 'Muhtasari wa Ada' : 'Fee Summary'}</h4>
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
+            <h4 className="font-bold text-emerald-800 mb-3">{lang === 'sw' ? 'Muhtasari wa Ada' : 'Fee Summary'}</h4>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-amber-700">{lang === 'sw' ? 'Thamani ya Mauziano:' : 'Transaction Value:'}</span>
+                <span className="text-emerald-700">{lang === 'sw' ? 'Thamani ya Mauziano:' : 'Transaction Value:'}</span>
                 <span className="font-medium">{Number(data.sale_price).toLocaleString()} {data.currency}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-amber-700">{lang === 'sw' ? 'Ada (3%):' : 'Fee (3%):'}</span>
+                <span className="text-emerald-700">{lang === 'sw' ? 'Ada (3%):' : 'Fee (3%):'}</span>
                 <span className="font-medium">{feeBreakdown.calculated.toLocaleString()} TZS</span>
               </div>
               {feeBreakdown.calculated !== feeBreakdown.finalFee && (
                 <>
-                  <div className="border-t border-amber-200 my-2"></div>
-                  <div className="flex justify-between text-amber-600">
+                  <div className="border-t border-emerald-200 my-2"></div>
+                  <div className="flex justify-between text-emerald-600">
                     <span>{lang === 'sw' ? 'Kiwango cha Chini:' : 'Minimum Fee:'}</span>
                     <span>{feeBreakdown.minFee.toLocaleString()} TZS</span>
                   </div>
-                  <div className="flex justify-between text-amber-600">
+                  <div className="flex justify-between text-emerald-600">
                     <span>{lang === 'sw' ? 'Kiwango cha Juu:' : 'Maximum Fee:'}</span>
                     <span>{feeBreakdown.maxFee.toLocaleString()} TZS</span>
                   </div>
                 </>
               )}
               
-              <div className="border-t border-amber-200 my-2"></div>
+              <div className="border-t border-emerald-200 my-2"></div>
               <div className="flex justify-between font-bold text-lg">
-                <span className="text-amber-800">{lang === 'sw' ? 'Ada ya Mwisho:' : 'Final Fee:'}</span>
-                <span className="text-amber-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
+                <span className="text-emerald-800">{lang === 'sw' ? 'Ada ya Mwisho:' : 'Final Fee:'}</span>
+                <span className="text-emerald-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
               </div>
             </div>
             
-            <p className="text-xs text-amber-600 mt-3">
+            <p className="text-xs text-emerald-600 mt-3">
               {lang === 'sw' 
                 ? 'Ada ni 3% ya thamani ya mauziano (kiwango cha chini 5,000 TZS, kiwango cha juu 500,000 TZS). Malipo yatakamilishwa baada ya kuwasilisha.'
                 : 'Fee is 3% of the transaction value (minimum 5,000 TZS, maximum 500,000 TZS). Payment will be completed after submission.'}
@@ -433,14 +433,14 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <Shield className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-bold text-amber-800 mb-1">
+                <h4 className="font-bold text-emerald-800 mb-1">
                   {lang === 'sw' ? 'Uhalali wa Makubaliano' : 'Agreement Validity'}
                 </h4>
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-emerald-700">
                   {lang === 'sw' 
                     ? 'Makubaliano haya yatakuwa na nguvu ya kisheria baada ya pande zote mbili kukubali. Hakikisha umesoma na kuelewa masharti yote.'
                     : 'This agreement will be legally binding after both parties accept. Ensure you have read and understood all terms.'}
@@ -463,7 +463,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
             type="button"
             onClick={confirmSubmit}
             disabled={isLoading || !lookupResult || !uploadedUrl || !feeBreakdown}
-            className="flex-1 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -495,7 +495,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
       {currentStep === 'asset' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-amber-800 flex items-center gap-2">
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
               <Home className="h-5 w-5" />
               {lang === 'sw' ? 'TAARIFA ZA MALI' : 'ASSET DETAILS'}
             </h3>
@@ -644,15 +644,15 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
 
           {/* Live Fee Preview */}
           {salePrice > 0 && feeBreakdown && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-amber-800 flex items-center gap-2">
+                <span className="font-semibold text-emerald-800 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   {lang === 'sw' ? 'Ada ya Makadirio:' : 'Estimated Fee:'}
                 </span>
-                <span className="font-bold text-lg text-amber-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
+                <span className="font-bold text-lg text-emerald-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
               </div>
-              <div className="text-xs text-amber-600 flex items-center gap-1">
+              <div className="text-xs text-emerald-600 flex items-center gap-1">
                 <Info className="h-3 w-3" />
                 <span>
                   {lang === 'sw' 
@@ -661,7 +661,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
                 </span>
               </div>
               {(feeBreakdown.calculated < MIN_FEE || feeBreakdown.calculated > MAX_FEE) && (
-                <div className="text-xs text-amber-600 mt-1">
+                <div className="text-xs text-emerald-600 mt-1">
                   {feeBreakdown.calculated < MIN_FEE && (
                     <span>{lang === 'sw' ? `Ada ya chini ${MIN_FEE.toLocaleString()} TZS imetumika` : `Minimum fee of ${MIN_FEE.toLocaleString()} TZS applied`}</span>
                   )}
@@ -679,7 +679,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
       {currentStep === 'seller' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-amber-800 flex items-center gap-2">
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
               <User className="h-5 w-5" />
               {lang === 'sw' ? 'TAARIFA ZA MUUZAJI / MPANGISHAJI' : 'SELLER / LANDLORD INFORMATION'}
             </h3>
@@ -764,7 +764,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
       {currentStep === 'buyer' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-amber-800 flex items-center gap-2">
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
               <Users className="h-5 w-5" />
               {lang === 'sw' ? 'TAFUTA MNUNUZI / MPANGAJI' : 'FIND BUYER / TENANT'}
             </h3>
@@ -792,14 +792,14 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
                 value={citizenId}
                 onChange={(e) => setCitizenId(e.target.value.toUpperCase())}
                 placeholder="CT2026A12345"
-                className="w-full p-3 pl-10 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all font-mono uppercase tracking-wider"
+                className="w-full p-3 pl-10 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono uppercase tracking-wider"
               />
             </div>
             <button
               type="button"
               onClick={handleCitizenLookup}
               disabled={searching}
-              className="px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-400 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
             >
               {searching ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -832,7 +832,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-stone-400" />
                   <span className="font-semibold text-stone-600 w-24">{lang === 'sw' ? 'Namba:' : 'ID:'}</span>
-                  <span className="font-mono text-amber-700 bg-amber-50 px-2 py-1 rounded">{lookupResult.citizen_id}</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-1 rounded">{lookupResult.citizen_id}</span>
                 </div>
                 
                 {lookupResult.phone && (
@@ -860,8 +860,8 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
                 )}
               </div>
 
-              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-700 font-medium flex items-center gap-1">
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-xs text-emerald-700 font-medium flex items-center gap-1">
                   <Bell className="h-4 w-4" />
                   {lang === 'sw' 
                     ? 'Baada ya kutuma ombi, mtumiaji huyu atapokea arifa ya kuidhinisha makubaliano haya.'
@@ -889,12 +889,12 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
           )}
 
           {/* Tip for finding ID */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <h4 className="font-bold text-emerald-800 mb-2 flex items-center gap-2">
               <Info className="h-4 w-4" />
               {lang === 'sw' ? 'Jinsi ya Kupata Namba ya Raia' : 'How to Find Citizen ID'}
             </h4>
-            <p className="text-sm text-amber-700">
+            <p className="text-sm text-emerald-700">
               {lang === 'sw' 
                 ? 'Namba ya Raia inapatikana kwenye wasifu wa mtumiaji. Mfano: CT2026A12345. Hakikisha unaandika kwa usahihi.'
                 : 'Citizen ID is found on the user\'s profile. Example: CT2026A12345. Make sure you type it correctly.'}
@@ -907,7 +907,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
       {currentStep === 'terms' && (
         <div className="space-y-6">
           <div className={sectionClass}>
-            <h3 className="font-bold text-amber-800 flex items-center gap-2">
+            <h3 className="font-bold text-emerald-800 flex items-center gap-2">
               <FileSignature className="h-5 w-5" />
               {lang === 'sw' ? 'MASHARTI NA NYARAKA' : 'TERMS AND DOCUMENTS'}
             </h3>
@@ -991,10 +991,10 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 aria-label="Upload agreement document"
-                className="w-full p-8 border-2 border-dashed border-stone-300 rounded-xl hover:border-amber-500 hover:bg-amber-50 transition-all flex flex-col items-center gap-3"
+                className="w-full p-8 border-2 border-dashed border-stone-300 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition-all flex flex-col items-center gap-3"
               >
                 {uploading ? (
-                  <Loader2 className="h-10 w-10 text-amber-500 animate-spin" />
+                  <Loader2 className="h-10 w-10 text-emerald-500 animate-spin" />
                 ) : (
                   <>
                     <Upload className="h-10 w-10 text-stone-400" />
@@ -1049,20 +1049,20 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
           )}
 
           {/* Terms Acceptance Checkbox */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input 
                 type="checkbox" 
                 {...register('terms_accepted', { required: true })} 
-                className="w-5 h-5 mt-0.5 text-amber-600 rounded focus:ring-amber-500"
+                className="w-5 h-5 mt-0.5 text-emerald-600 rounded focus:ring-emerald-500"
               />
               <div>
-                <span className="font-medium text-amber-800">
+                <span className="font-medium text-emerald-800">
                   {lang === 'sw' 
                     ? 'Nakubali masharti na kanuni za makubaliano' 
                     : 'I accept the terms and conditions of this agreement'}
                 </span>
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-emerald-600 mt-1">
                   {lang === 'sw' 
                     ? 'Kwa kukubali, unathibitisha kuwa taarifa ulizotoa ni sahihi na unaelewa kuwa makubaliano haya yatakuwa na nguvu ya kisheria baada ya pande zote mbili kukubali.'
                     : 'By accepting, you confirm that the information provided is correct and you understand that this agreement will be legally binding after both parties accept.'}
@@ -1100,11 +1100,11 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
 
           {/* Fee Summary in Terms Step */}
           {feeBreakdown && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
-              <h4 className="font-bold text-amber-800 mb-2">{lang === 'sw' ? 'Ada ya Usindikaji' : 'Processing Fee'}</h4>
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
+              <h4 className="font-bold text-emerald-800 mb-2">{lang === 'sw' ? 'Ada ya Usindikaji' : 'Processing Fee'}</h4>
               <div className="flex justify-between items-center">
-                <span className="text-amber-700">{lang === 'sw' ? 'Jumla ya Ada:' : 'Total Fee:'}</span>
-                <span className="font-bold text-xl text-amber-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
+                <span className="text-emerald-700">{lang === 'sw' ? 'Jumla ya Ada:' : 'Total Fee:'}</span>
+                <span className="font-bold text-xl text-emerald-600">{feeBreakdown.finalFee.toLocaleString()} TZS</span>
               </div>
             </div>
           )}
@@ -1128,7 +1128,7 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
           <button
             type="button"
             onClick={handleNext}
-            className={`flex-1 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 ${
               currentStepIndex === 0 ? 'w-full' : ''
             }`}
           >

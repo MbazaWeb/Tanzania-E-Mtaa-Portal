@@ -13,6 +13,7 @@ export { UtambulishoMkaziForm } from './UtambulishoMkaziForm';
 export { BaruaUtambulishoForm } from './BaruaUtambulishoForm';
 export { KibariMazishiForm } from './KibariMazishiForm';
 export { MakubalianoMauzianoForm } from './MakubalianoMauzianoForm';
+export { MakubalianoPangoForm } from './MakubalianoPangoForm';
 export { KibaliUjenziForm } from './KibaliUjenziForm';
 export { LeseniaBiasharaForm } from './LeseniaBiasharaForm';
 export { BaruaShauriForm } from './BaruaShauriForm';
@@ -23,6 +24,7 @@ import { UtambulishoMkaziForm } from './UtambulishoMkaziForm';
 import { BaruaUtambulishoForm } from './BaruaUtambulishoForm';
 import { KibariMazishiForm } from './KibariMazishiForm';
 import { MakubalianoMauzianoForm } from './MakubalianoMauzianoForm';
+import { MakubalianoPangoForm } from './MakubalianoPangoForm';
 import { KibaliUjenziForm } from './KibaliUjenziForm';
 import { LeseniaBiasharaForm } from './LeseniaBiasharaForm';
 import { BaruaShauriForm } from './BaruaShauriForm';
@@ -44,6 +46,9 @@ export const SERVICE_FORMS: Record<string, React.FC<FormProps>> = {
   
   // Makubaliano ya Mauziano - Sales Agreement
   'Makubaliano ya Mauziano': MakubalianoMauzianoForm,
+  
+  // PANGISHA - Makubaliano ya Pango - Rent Agreement
+  'PANGISHA - Makubaliano ya Pango': MakubalianoPangoForm,
   
   // Kibali cha Tukio - Event Permit
   'Kibali cha Tukio': KibariShereheForm,
