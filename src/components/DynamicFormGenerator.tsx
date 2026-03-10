@@ -256,7 +256,9 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
 
   // Search for user by NIDA number for approval workflow
   const handleNidaLookup = async (fieldName: string, nidaNumber: string) => {
-    if (!nidaNumber || nidaNumber.length < 10) {
+    // Remove dashes for validation
+    const cleanNida = nidaNumber.replace(/-/g, '').trim();
+    if (!cleanNida || cleanNida.length < 10) {
       setNidaLookupResults(prev => ({
         ...prev,
         [fieldName]: { found: false, searching: false, error: lang === 'sw' ? 'NIDA lazima iwe na angalau tarakimu 10' : 'NIDA must have at least 10 digits' }
@@ -270,11 +272,12 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
     }));
 
     try {
-      // Search for user in database by NIDA
+      // Search for user in database by NIDA (remove dashes for search)
+      const cleanNida = nidaNumber.replace(/-/g, '').trim();
       const { data, error } = await supabase
         .from('users')
         .select('id, first_name, middle_name, last_name, phone, email')
-        .eq('nida_number', nidaNumber.trim())
+        .eq('nida_number', cleanNida)
         .single();
 
       if (error || !data) {

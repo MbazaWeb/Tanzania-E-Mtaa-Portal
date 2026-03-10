@@ -465,7 +465,10 @@ export function Profile() {
                 {user.nida_number ? (
                   <div className="space-y-1 col-span-1 md:col-span-2 lg:col-span-1">
                     <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">{lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'}</p>
-                    <p className="text-stone-800 font-bold text-lg font-mono bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">{user.nida_number}</p>
+                    <p className="text-stone-800 font-bold text-lg font-mono bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                      {/* Format NIDA with dashes for display: XXXX-XXXX-XXXX-XXXX-XXXX */}
+                      {user.nida_number.replace(/-/g, '').match(/.{1,4}/g)?.join('-') || user.nida_number}
+                    </p>
                   </div>
                 ) : user.id_type && user.id_number ? (
                   <div className="space-y-1">

@@ -228,12 +228,13 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
     setLoading(true);
     
     try {
-      // Verify security details against the database
+      // Verify security details against the database (clean NIDA by removing dashes)
+      const cleanNida = forgotPasswordForm.nidaNumber.replace(/-/g, '');
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', forgotPasswordForm.email)
-        .eq('nida_number', forgotPasswordForm.nidaNumber)
+        .eq('nida_number', cleanNida)
         .eq('phone', forgotPasswordForm.phone)
         .eq('first_name', forgotPasswordForm.firstName.toUpperCase())
         .single();
@@ -316,10 +317,11 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
 
       // Check if NIDA already exists (only for Tanzanians with NIDA)
       if (regForm.nationality === 'Mtanzania' && regForm.hasNida && regForm.nidaNumber) {
+        const cleanNida = regForm.nidaNumber.replace(/-/g, '');
         const { data: existingNida } = await supabase
           .from('users')
           .select('id')
-          .eq('nida_number', regForm.nidaNumber)
+          .eq('nida_number', cleanNida)
           .maybeSingle();
 
         if (existingNida) {
@@ -347,7 +349,7 @@ export function Auth({ mode, onClose, setMode }: AuthProps) {
           gender: regForm.sex,
           nationality: regForm.nationality === 'Mtanzania' ? 'Tanzanian' : 'Foreigner',
           country_of_citizenship: regForm.nationality === 'Mtanzania' ? 'Tanzania' : regForm.countryOfCitizenship,
-          nida_number: regForm.hasNida ? regForm.nidaNumber : null,
+          nida_number: regForm.hasNida ? regForm.nidaNumber.replace(/-/g, '') : null,
           id_type: !regForm.hasNida ? regForm.idType : null,
           id_number: !regForm.hasNida ? regForm.idNumber : null,
           region: regForm.region,
