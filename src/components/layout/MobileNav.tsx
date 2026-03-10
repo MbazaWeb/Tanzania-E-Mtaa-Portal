@@ -165,7 +165,11 @@ export function MobileNav({ isOpen, onClose, currentView, setView }: MobileNavPr
                   Menu
                 </span>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400">
+              <button 
+                onClick={onClose} 
+                className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+                aria-label={lang === 'sw' ? 'Funga menyu' : 'Close menu'}
+              >
                 <X size={20} />
               </button>
             </div>
