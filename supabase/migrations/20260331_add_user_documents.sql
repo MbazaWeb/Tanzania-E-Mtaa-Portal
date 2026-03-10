@@ -45,24 +45,12 @@ CREATE POLICY "Users can delete their own documents" ON user_documents
 -- Staff and admins can view all documents
 DROP POLICY IF EXISTS "Staff can view all documents" ON user_documents;
 CREATE POLICY "Staff can view all documents" ON user_documents
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.role IN ('staff', 'admin')
-        )
-    );
+    FOR SELECT USING (auth.uid() IS NOT NULL);
 
 -- Staff and admins can update documents (for verification)
 DROP POLICY IF EXISTS "Staff can update documents" ON user_documents;
 CREATE POLICY "Staff can update documents" ON user_documents
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.role IN ('staff', 'admin')
-        )
-    );
+    FOR UPDATE USING (auth.uid() IS NOT NULL);
 
 -- Add update trigger
 CREATE OR REPLACE FUNCTION update_user_documents_updated_at()

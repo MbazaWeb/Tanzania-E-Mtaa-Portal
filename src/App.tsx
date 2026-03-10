@@ -175,19 +175,33 @@ export default function App() {
       application_number: applicationNumber
     });
 
-    // Extract approval workflow data if present
-    const targetUserId = formData.target_user_id || null;
+    // Extract approval workflow data if present (supports both old and new field names)
+    const targetUserId = formData.target_user_id || formData.second_party_user_id || null;
     const targetUserNida = formData.target_user_nida || null;
+    const targetCitizenId = formData.second_party_citizen_id || null;
+    const targetName = formData.second_party_name || null;
     const submitterRole = formData.submitter_role || null;
-    const sendForApproval = formData.send_for_approval === 'YES';
     
-    // Determine target_user_role based on submitter_role
+    // Auto-detect agreement workflow: if second_party_user_id is set via citizen_id_lookup, enable approval
+    const hasSecondParty = !!formData.second_party_user_id;
+    const sendForApproval = formData.send_for_approval === 'YES' || hasSecondParty;
+    
+    // Determine target_user_role based on submitter_role or asset_type
     let targetUserRole = null;
-    if (sendForApproval && submitterRole) {
-      if (submitterRole === 'LANDLORD') targetUserRole = 'TENANT';
-      else if (submitterRole === 'TENANT') targetUserRole = 'LANDLORD';
-      else if (submitterRole === 'SELLER') targetUserRole = 'BUYER';
-      else if (submitterRole === 'BUYER') targetUserRole = 'SELLER';
+    if (sendForApproval) {
+      if (submitterRole) {
+        if (submitterRole === 'LANDLORD') targetUserRole = 'TENANT';
+        else if (submitterRole === 'TENANT') targetUserRole = 'LANDLORD';
+        else if (submitterRole === 'SELLER') targetUserRole = 'BUYER';
+        else if (submitterRole === 'BUYER') targetUserRole = 'SELLER';
+      } else if (formData.asset_type) {
+        // For Mauziano service, infer roles from asset_type
+        if (formData.asset_type.includes('PANGO')) {
+          targetUserRole = 'TENANT'; // Submitter is landlord
+        } else {
+          targetUserRole = 'BUYER'; // Submitter is seller
+        }
+      }
     }
 
     const { error, data: insertedApp } = await supabase.from('applications').insert({
@@ -217,12 +231,22 @@ export default function App() {
     // Send notification to target user if approval workflow is enabled
     if (sendForApproval && targetUserId && insertedApp) {
       try {
+        // Determine agreement type for notification
+        const assetType = formData.asset_type || '';
+        const isRental = assetType.includes('PANGO');
+        const agreementTypeSwahili = isRental ? 'Makubaliano ya Upangishaji' : 'Makubaliano ya Mauziano';
+        const agreementTypeEnglish = isRental ? 'Rental Agreement' : 'Sales Agreement';
+        const roleSwahili = isRental ? 'Mpangaji' : 'Mnunuzi';
+        const roleEnglish = isRental ? 'Tenant' : 'Buyer';
+        
         await supabase.from('notifications').insert({
           user_id: targetUserId,
-          title: lang === 'sw' ? 'Makubaliano Mapya Yanasubiri Idhini Yako' : 'New Agreement Awaits Your Approval',
+          title: lang === 'sw' 
+            ? `${agreementTypeSwahili} - Idhini Inahitajika` 
+            : `${agreementTypeEnglish} - Approval Required`,
           message: lang === 'sw' 
-            ? `Umepokea makubaliano (${applicationNumber}) kutoka kwa ${user.first_name || 'mtumiaji'}. Tafadhali ingia kwenye mfumo ili kuidhinisha au kukataa.`
-            : `You received an agreement (${applicationNumber}) from ${user.first_name || 'a user'}. Please log in to approve or reject.`,
+            ? `Umechaguliwa kama ${roleSwahili} katika makubaliano (${applicationNumber}) na ${user.first_name || user.email || 'mtumiaji'}. Mali: ${formData.asset_description || assetType}. Tafadhali ingia kwenye mfumo ili kuidhinisha makubaliano haya. Makubaliano hayatakamilika mpaka PANDE ZOTE MBILI zikubali.`
+            : `You have been selected as ${roleEnglish} in an agreement (${applicationNumber}) by ${user.first_name || user.email || 'a user'}. Asset: ${formData.asset_description || assetType}. Please log in to approve this agreement. The agreement will not be finalized until BOTH PARTIES accept.`,
           type: 'info'
         });
       } catch (notifError) {

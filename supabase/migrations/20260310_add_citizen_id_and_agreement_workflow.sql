@@ -1,6 +1,6 @@
 -- Migration: Add unique citizen_id for agreement second party identification
 -- Date: 2026-03-10
--- Format: CT + YEAR + LETTER + 5-DIGIT (e.g., CT2026A12345)
+-- Format: CT + YEAR + LETTER + 5-DIGIT (e.g., CT2026A123456)
 
 -- Add citizen_id column to users table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS citizen_id TEXT UNIQUE;
@@ -9,7 +9,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS citizen_id TEXT UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_users_citizen_id ON users(citizen_id);
 
 -- Create sequence for generating citizen numbers
-CREATE SEQUENCE IF NOT EXISTS citizen_id_seq START WITH 10001;
+CREATE SEQUENCE IF NOT EXISTS citizen_id_seq START WITH 000001;
 
 -- Function to generate unique citizen_id
 CREATE OR REPLACE FUNCTION generate_citizen_id()
@@ -28,10 +28,10 @@ BEGIN
     counter := NEXTVAL('citizen_id_seq');
     
     -- Determine letter based on counter (A-Z, then AA-AZ, etc.)
-    letter_part := CHR(65 + ((counter - 10001) / 99999) % 26);
+    letter_part := CHR(65 + ((counter - 000001) / 999999) % 26);
     
     -- Format number part (5 digits)
-    number_part := LPAD(((counter - 10001) % 99999 + 1)::TEXT, 5, '0');
+    number_part := LPAD(((counter - 000001) % 999999 + 1)::TEXT, 5, '0');
     
     -- Combine: CT + YEAR + LETTER + NUMBER
     new_citizen_id := 'CT' || year_part || letter_part || number_part;
