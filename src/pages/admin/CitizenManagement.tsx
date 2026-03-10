@@ -365,7 +365,8 @@ export function CitizenManagement() {
       c.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.nida_number?.includes(searchQuery);
+      c.nida_number?.includes(searchQuery) ||
+      c.citizen_id?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesFilter = 
       filter === 'all' || 
@@ -564,6 +565,7 @@ export function CitizenManagement() {
                         </div>
                         <div>
                           <p className="font-bold text-stone-900">{citizen.first_name} {citizen.last_name}</p>
+                          <p className="text-xs text-emerald-600 font-bold">CT ID: {citizen.citizen_id || 'N/A'}</p>
                           <p className="text-xs text-stone-500 font-medium">NIDA: {citizen.nida_number || 'N/A'}</p>
                         </div>
                       </div>
@@ -688,17 +690,33 @@ export function CitizenManagement() {
 
               {/* Content */}
               <div className="p-8 space-y-6">
-                {/* NIDA Number */}
-                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                  <div className="flex items-center gap-2 text-amber-600 mb-1">
-                    <IdCard size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      NIDA
-                    </span>
+                {/* CT ID & NIDA Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* CT ID */}
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                      <IdCard size={16} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        CT ID
+                      </span>
+                    </div>
+                    <p className="font-bold text-emerald-800 text-lg">
+                      {selectedCitizen.citizen_id || (lang === 'sw' ? 'Haijatolewa' : 'Not assigned')}
+                    </p>
                   </div>
-                  <p className="font-bold text-amber-800 text-lg">
-                    {selectedCitizen.nida_number || (lang === 'sw' ? 'Haijasajiliwa' : 'Not registered')}
-                  </p>
+
+                  {/* NIDA Number */}
+                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                    <div className="flex items-center gap-2 text-amber-600 mb-1">
+                      <IdCard size={16} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        NIDA
+                      </span>
+                    </div>
+                    <p className="font-bold text-amber-800 text-lg">
+                      {selectedCitizen.nida_number || (lang === 'sw' ? 'Haijasajiliwa' : 'Not registered')}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Citizen Info Grid */}

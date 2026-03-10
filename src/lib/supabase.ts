@@ -33,6 +33,7 @@ export interface VirtualOffice {
 
 export interface UserProfile {
   id: string;
+  citizen_id?: string;
   first_name: string;
   middle_name: string;
   last_name: string;
