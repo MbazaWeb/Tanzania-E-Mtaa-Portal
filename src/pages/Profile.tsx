@@ -1603,6 +1603,7 @@ export function Profile() {
               </h3>
 
               {isEditing ? (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label htmlFor="region" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
@@ -1755,6 +1756,7 @@ export function Profile() {
                     </div>
                   </div>
                 </div>
+                </>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   <InfoItem 
