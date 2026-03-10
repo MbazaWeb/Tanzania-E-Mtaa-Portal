@@ -184,7 +184,7 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
   // Citizen lookup handler
   const handleCitizenLookup = async () => {
     if (!targetCitizenId.trim()) {
-      setLookupError(lang === 'sw' ? 'Tafadhali ingiza Namba ya NIDA' : 'Please enter NIDA number');
+      setLookupError(lang === 'sw' ? 'Tafadhali ingiza Namba ya Raia (CT ID)' : 'Please enter Citizen ID');
       return;
     }
 
@@ -193,16 +193,30 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
     setLookupResult(null);
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const searchTerm = targetCitizenId.trim().toUpperCase();
+      
+      // Search by citizen_id (CT ID format: CT2026A00001)
+      let { data, error } = await supabase
+        .from('users')
         .select('id, citizen_id, first_name, middle_name, last_name, phone, email')
-        .eq('nida_number', targetCitizenId.trim())
+        .eq('citizen_id', searchTerm)
         .single();
+
+      // If not found by exact match, try ilike for case-insensitive search
+      if (!data && !error?.message?.includes('multiple')) {
+        const result = await supabase
+          .from('users')
+          .select('id, citizen_id, first_name, middle_name, last_name, phone, email')
+          .ilike('citizen_id', searchTerm)
+          .single();
+        data = result.data;
+        error = result.error;
+      }
 
       if (error || !data) {
         setLookupError(lang === 'sw' 
-          ? 'Mtumiaji hajapatikana. Hakikisha namba ya NIDA ni sahihi.' 
-          : 'User not found. Please verify the NIDA number.');
+          ? 'Mtumiaji hajapatikana. Hakikisha namba ya CT ID ni sahihi.' 
+          : 'User not found. Please verify the CT ID.');
         return;
       }
 
@@ -954,7 +968,7 @@ export const MakubalianoPangoForm: React.FC<FormProps> = ({
                     type="text"
                     value={targetCitizenId}
                     onChange={(e) => setTargetCitizenId(e.target.value)}
-                    placeholder={lang === 'sw' ? 'NIDA ya upande mwingine' : 'Other party NIDA'}
+                    placeholder={lang === 'sw' ? 'CT ID ya upande mwingine (mfano: CT2026A00001)' : 'Other party CT ID (e.g., CT2026A00001)'}
                     className={`${inputClass} pl-10`}
                   />
                 </div>

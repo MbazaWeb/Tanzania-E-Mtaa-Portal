@@ -143,11 +143,25 @@ export const MakubalianoMauzianoForm: React.FC<FormProps> = ({
     setLookupResult(null);
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const searchTerm = citizenId.trim().toUpperCase();
+      
+      // Search by citizen_id (CT ID format: CT2026A00001)
+      let { data, error } = await supabase
+        .from('users')
         .select('id, citizen_id, first_name, middle_name, last_name, phone, email, region, district')
-        .eq('citizen_id', citizenId.trim().toUpperCase())
+        .eq('citizen_id', searchTerm)
         .single();
+
+      // If not found by exact match, try ilike for case-insensitive search
+      if (!data && !error?.message?.includes('multiple')) {
+        const result = await supabase
+          .from('users')
+          .select('id, citizen_id, first_name, middle_name, last_name, phone, email, region, district')
+          .ilike('citizen_id', searchTerm)
+          .single();
+        data = result.data;
+        error = result.error;
+      }
 
       if (error || !data) {
         setLookupError(lang === 'sw' 
