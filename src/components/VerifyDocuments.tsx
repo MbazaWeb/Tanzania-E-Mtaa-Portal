@@ -38,7 +38,8 @@ import { cn } from "@/src/lib/utils";
 
 // Document types for verification
 const DOCUMENT_TYPES = [
-  { id: 'application', name: 'E-Mtaa Application', nameSw: 'Maombi ya E-Mtaa', icon: FileText, placeholder: 'TZ-KIB-20260309-1234' },
+  { id: 'application', name: 'E-Mtaa Application', nameSw: 'Namba ya Maombi', icon: FileText, placeholder: 'TZ-KIB-20260309-1234' },
+  { id: 'ct_id', name: 'Citizen ID (CT ID)', nameSw: 'Namba ya Raia (CT ID)', icon: BadgeCheck, placeholder: 'CT26A00001' },
   { id: 'nida', name: 'NIDA (National ID)', nameSw: 'NIDA (Kitambulisho cha Taifa)', icon: Fingerprint, placeholder: '19850101-12345-00001-00' },
   { id: 'birth_certificate', name: 'Birth Certificate', nameSw: 'Cheti cha Kuzaliwa', icon: Baby, placeholder: 'BC-2024-123456' },
   { id: 'passport', name: 'Passport', nameSw: 'Pasipoti', icon: Plane, placeholder: 'AB1234567' },
@@ -54,6 +55,9 @@ const DOCUMENT_TYPES = [
   { id: 'marriage_cert', name: 'Marriage Certificate', nameSw: 'Cheti cha Ndoa', icon: Users, placeholder: 'MC-2024-00001234' },
   { id: 'death_cert', name: 'Death Certificate', nameSw: 'Cheti cha Kifo', icon: FileText, placeholder: 'DC-2024-00001234' },
 ];
+
+// Public document types (limited options for non-staff/admin users)
+const PUBLIC_DOCUMENT_TYPES = DOCUMENT_TYPES.filter(d => d.id === 'application' || d.id === 'ct_id');
 
 // Helper functions for masking sensitive data (partial view for citizens)
 const maskName = (firstName?: string, lastName?: string): string => {
@@ -94,7 +98,10 @@ export function VerifyDocuments({
   
   // Check if user has elevated privileges (admin or staff)
   const hasFullAccess = userRole === 'admin' || userRole === 'staff';
-  const selectedDocument = DOCUMENT_TYPES.find(d => d.id === selectedDocType) || DOCUMENT_TYPES[0];
+  
+  // Use filtered document types for public/citizen users
+  const availableDocTypes = hasFullAccess ? DOCUMENT_TYPES : PUBLIC_DOCUMENT_TYPES;
+  const selectedDocument = availableDocTypes.find(d => d.id === selectedDocType) || availableDocTypes[0];
   const [verificationStatus, setVerificationStatus] = useState<
     "pending" | "verified" | "invalid" | null
   >(null);
@@ -111,6 +118,9 @@ export function VerifyDocuments({
       if (selectedDocType === 'application') {
         // Original E-Mtaa application verification
         await verifyEMtaaApplication();
+      } else if (selectedDocType === 'ct_id') {
+        // CT ID verification
+        await verifyCTID();
       } else if (selectedDocType === 'nida') {
         // NIDA verification - search by NIDA number
         await verifyNIDA();
@@ -266,6 +276,72 @@ export function VerifyDocuments({
         formData: data.form_data,
         paidAt: data.paid_at,
         serviceFee: service?.fee || data.service_fee
+      });
+    }
+  };
+
+  // Verify CT ID (Citizen ID)
+  const verifyCTID = async () => {
+    const searchTerm = qrInput.trim().toUpperCase();
+    
+    // First check demo user
+    const demoUser = JSON.parse(localStorage.getItem('demo_user') || '{}');
+    if (demoUser.citizen_id && demoUser.citizen_id.toUpperCase() === searchTerm) {
+      setVerificationStatus("verified");
+      setVerifiedDocument({
+        documentType: 'ct_id',
+        type: lang === 'sw' ? 'Namba ya Raia (CT ID)' : 'Citizen ID (CT ID)',
+        name: 'CT ID',
+        issueDate: new Date(demoUser.created_at || Date.now()).toLocaleDateString(),
+        verificationCode: demoUser.citizen_id,
+        status: demoUser.is_verified ? 'verified' : 'pending',
+        applicantMasked: maskName(demoUser.first_name, demoUser.last_name),
+        applicantFull: `${demoUser.first_name || ''} ${demoUser.middle_name || ''} ${demoUser.last_name || ''}`.trim(),
+        nidaNumber: demoUser.nida_number,
+        nidaMasked: maskNida(demoUser.nida_number),
+        phone: demoUser.phone,
+        phoneMasked: maskPhone(demoUser.phone),
+        email: demoUser.email,
+        region: demoUser.region,
+        district: demoUser.district,
+        ward: demoUser.ward,
+        street: demoUser.street,
+        citizenId: demoUser.citizen_id
+      });
+      return;
+    }
+
+    // Search Supabase users by citizen_id
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('citizen_id', searchTerm)
+      .single();
+
+    if (error || !data) {
+      setVerificationStatus("invalid");
+      setVerifiedDocument(null);
+    } else {
+      setVerificationStatus("verified");
+      setVerifiedDocument({
+        documentType: 'ct_id',
+        type: lang === 'sw' ? 'Namba ya Raia (CT ID)' : 'Citizen ID (CT ID)',
+        name: 'CT ID',
+        issueDate: new Date(data.created_at).toLocaleDateString(),
+        verificationCode: data.citizen_id,
+        status: data.is_verified ? 'verified' : 'pending',
+        applicantMasked: maskName(data.first_name, data.last_name),
+        applicantFull: `${data.first_name || ''} ${data.middle_name || ''} ${data.last_name || ''}`.trim(),
+        nidaNumber: data.nida_number,
+        nidaMasked: maskNida(data.nida_number),
+        phone: data.phone,
+        phoneMasked: maskPhone(data.phone),
+        email: data.email,
+        region: data.region,
+        district: data.district,
+        ward: data.ward,
+        street: data.street,
+        citizenId: data.citizen_id
       });
     }
   };
@@ -447,7 +523,7 @@ export function VerifyDocuments({
                 
                 {showDocTypeDropdown && (
                   <div className="absolute z-50 mt-2 w-full bg-white rounded-2xl border border-stone-200 shadow-xl max-h-80 overflow-auto">
-                    {DOCUMENT_TYPES.map((doc) => (
+                    {availableDocTypes.map((doc) => (
                       <button
                         key={doc.id}
                         type="button"

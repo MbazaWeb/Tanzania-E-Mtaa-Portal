@@ -10,7 +10,8 @@ import {
   HelpCircle,
   Building2,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Search
 } from 'lucide-react';
 import { supabase, Application } from '@/src/lib/supabase';
 import { useAuth } from '@/src/context/AuthContext';
@@ -258,6 +259,18 @@ export function StaffDashboard({ setView }: StaffDashboardProps) {
                 <div className="text-left">
                   <p className="text-sm font-bold">{lang === 'sw' ? 'Uhakiki wa Mwongozo' : 'Manual Verification'}</p>
                   <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold">{lang === 'sw' ? 'Thibitisha Raia' : 'Verify Citizen'}</p>
+                </div>
+              </button>
+              <button 
+                onClick={() => setView('verify_documents')}
+                className="w-full p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <Search size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold">{lang === 'sw' ? 'Hakiki Hati' : 'Verify Documents'}</p>
+                  <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold">{lang === 'sw' ? 'Thibitisha Uhalali' : 'Verify Authenticity'}</p>
                 </div>
               </button>
             </div>
