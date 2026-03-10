@@ -438,13 +438,51 @@ export function Profile() {
                     className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
                   />
                 </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label htmlFor="nida_number" className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+                    {lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'}
+                    <Shield size={10} className="text-amber-500" />
+                  </label>
+                  <input 
+                    id="nida_number"
+                    type="text"
+                    value={formData.nida_number}
+                    onChange={(e) => setFormData({...formData, nida_number: e.target.value})}
+                    placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
+                    className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all font-medium font-mono"
+                  />
+                  <p className="text-xs text-stone-400">
+                    {lang === 'sw' ? 'Mabadiliko ya NIDA yanahitaji idhini ya mtumishi' : 'NIDA changes require staff approval'}
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <InfoItem label={lang === 'sw' ? 'Jina Kamili' : 'Full Name'} value={`${user.first_name} ${user.middle_name || ''} ${user.last_name}`} />
                 <InfoItem label={lang === 'sw' ? 'Jinsia' : 'Gender'} value={user.gender ? (user.gender === 'Me' ? (lang === 'sw' ? 'Mwanaume' : 'Male') : (lang === 'sw' ? 'Mwanamke' : 'Female')) : '-'} />
                 <InfoItem label={lang === 'sw' ? 'Uraia' : 'Nationality'} value={user.nationality || '-'} />
-                <InfoItem label={lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'} value={user.nida_number || '-'} />
+                {/* Show NIDA or Alternative ID */}
+                {user.nida_number ? (
+                  <div className="space-y-1 col-span-1 md:col-span-2 lg:col-span-1">
+                    <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">{lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'}</p>
+                    <p className="text-stone-800 font-bold text-lg font-mono bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">{user.nida_number}</p>
+                  </div>
+                ) : user.id_type && user.id_number ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                      {user.id_type === 'birth_certificate' ? (lang === 'sw' ? 'Cheti cha Kuzaliwa' : 'Birth Certificate') :
+                       user.id_type === 'voter_id' ? (lang === 'sw' ? 'Kadi ya Mpiga Kura' : 'Voter ID') :
+                       user.id_type === 'driving_license' ? (lang === 'sw' ? 'Leseni ya Udereva' : 'Driving License') :
+                       user.id_type === 'zanzibar_id' ? (lang === 'sw' ? 'Kitambulisho cha Zanzibar' : 'Zanzibar ID') :
+                       user.id_type === 'student_id' ? (lang === 'sw' ? 'Kitambulisho cha Mwanafunzi' : 'Student ID') :
+                       user.id_type === 'employer_id' ? (lang === 'sw' ? 'Kitambulisho cha Mwajiri' : 'Employer ID') :
+                       user.id_type}
+                    </p>
+                    <p className="text-stone-800 font-bold text-lg font-mono bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">{user.id_number}</p>
+                  </div>
+                ) : (
+                  <InfoItem label={lang === 'sw' ? 'Namba ya NIDA' : 'NIDA Number'} value="-" />
+                )}
                 <InfoItem label={lang === 'sw' ? 'Barua Pepe' : 'Email Address'} value={user.email || '-'} />
                 <InfoItem label={lang === 'sw' ? 'Namba ya Simu' : 'Phone Number'} value={user.phone || '-'} />
               </div>

@@ -25,6 +25,8 @@ export interface UserProfile {
   nationality?: string;
   country_of_citizenship?: string;
   nida_number?: string;
+  id_type?: string;
+  id_number?: string;
   phone: string;
   email: string;
   photo_url?: string;

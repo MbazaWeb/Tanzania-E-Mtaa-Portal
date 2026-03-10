@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   setUser: (user: UserProfile | null) => void;
   fetchUserProfile: (userId: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -73,8 +74,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
+  // Refresh the current user's profile from the database
+  const refreshProfile = async () => {
+    if (session?.user?.id) {
+      await fetchUserProfile(session.user.id);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, setUser, fetchUserProfile, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, setUser, fetchUserProfile, refreshProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   );
