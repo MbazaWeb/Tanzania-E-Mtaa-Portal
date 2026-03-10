@@ -250,15 +250,75 @@ export const ReceiptPDF: React.FC<ReceiptPDFProps> = ({ application, paymentData
 
         <View style={styles.divider} />
 
-        {/* Amount */}
+        {/* Amount Breakdown */}
         <View style={styles.section}>
-          <View style={styles.row}>
-            <Text style={styles.label}>{lang === 'sw' ? 'Ada ya Huduma' : 'Service Fee'}</Text>
-            <Text style={styles.value}>{formatCurrencyPDF(paymentData.amount)}</Text>
-          </View>
+          <Text style={styles.sectionTitle}>
+            {lang === 'sw' ? 'Mgawanyiko wa Malipo' : 'Payment Breakdown'}
+          </Text>
+          
+          {/* For PANGISHA (Rent Agreement) */}
+          {application.form_data?.monthly_rent && (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.label}>{lang === 'sw' ? 'Kodi ya Mwezi' : 'Monthly Rent'}</Text>
+                <Text style={styles.value}>{formatCurrencyPDF(Number(application.form_data.monthly_rent) || 0)}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>{lang === 'sw' ? 'Muda (Miezi)' : 'Period (Months)'}</Text>
+                <Text style={styles.value}>{application.form_data.payment_period || 1}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>{lang === 'sw' ? 'Jumla ya Kodi' : 'Total Rent'}</Text>
+                <Text style={styles.value}>{formatCurrencyPDF((Number(application.form_data.monthly_rent) || 0) * (Number(application.form_data.payment_period) || 1))}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>VAT (18%)</Text>
+                <Text style={styles.value}>{formatCurrencyPDF(Number(application.form_data.vat_amount) || 0)}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>{lang === 'sw' ? 'Ada ya Huduma (3%)' : 'Service Fee (3%)'}</Text>
+                <Text style={styles.value}>{formatCurrencyPDF(Number(application.form_data.service_fee) || 0)}</Text>
+              </View>
+            </>
+          )}
+          
+          {/* For MAUZIANO (Sales Agreement) */}
+          {application.form_data?.sale_price && !application.form_data?.monthly_rent && (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.label}>{lang === 'sw' ? 'Bei ya Mauziano' : 'Sale Price'}</Text>
+                <Text style={styles.value}>{formatCurrencyPDF(Number(application.form_data.sale_price) || 0)}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>VAT (18%)</Text>
+                <Text style={styles.value}>{formatCurrencyPDF(Number(application.form_data.vat_amount) || 0)}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>{lang === 'sw' ? 'Ada ya Huduma (5%)' : 'Service Fee (5%)'}</Text>
+                <Text style={styles.value}>{formatCurrencyPDF(Number(application.form_data.service_fee) || 0)}</Text>
+              </View>
+            </>
+          )}
+          
+          {/* For other services with fixed fee */}
+          {!application.form_data?.monthly_rent && !application.form_data?.sale_price && (
+            <View style={styles.row}>
+              <Text style={styles.label}>{lang === 'sw' ? 'Ada ya Huduma' : 'Service Fee'}</Text>
+              <Text style={styles.value}>{formatCurrencyPDF(paymentData.amount)}</Text>
+            </View>
+          )}
+          
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{lang === 'sw' ? 'JUMLA' : 'TOTAL'}</Text>
-            <Text style={styles.totalValue}>{formatCurrencyPDF(paymentData.amount)}</Text>
+            <Text style={styles.totalLabel}>{lang === 'sw' ? 'JUMLA KUU' : 'GRAND TOTAL'}</Text>
+            <Text style={styles.totalValue}>
+              {formatCurrencyPDF(
+                application.form_data?.total_rent 
+                  ? Number(application.form_data.total_rent) 
+                  : application.form_data?.total_amount 
+                    ? Number(application.form_data.total_amount)
+                    : paymentData.amount
+              )}
+            </Text>
           </View>
         </View>
 
