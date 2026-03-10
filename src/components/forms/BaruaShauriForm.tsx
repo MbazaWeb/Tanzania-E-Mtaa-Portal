@@ -47,7 +47,7 @@ interface FormData {
 
 type Step = 'dispute' | 'respondent' | 'details' | 'review';
 
-export const BaruaShouriForm: React.FC<FormProps> = ({
+export const BaruaShauriForm: React.FC<FormProps> = ({
   onSubmit,
   isLoading,
   lang = 'sw',
