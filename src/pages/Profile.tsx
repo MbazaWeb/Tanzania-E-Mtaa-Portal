@@ -41,7 +41,12 @@ import {
   Church,
   Info,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Trash2,
+  Download,
+  Plus,
+  FileImage,
+  FileBadge
 } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/context/AuthContext';
@@ -153,10 +158,51 @@ interface PendingChange {
 interface Document {
   id: string;
   document_type: string;
+  document_category: 'id' | 'certificate' | 'support';
+  document_name: string;
   document_url: string;
+  file_type: string;
   verified: boolean;
   uploaded_at: string;
 }
+
+// Document type options by category
+const DOCUMENT_TYPES = {
+  id: [
+    { value: 'nida_card', label: { en: 'NIDA Card', sw: 'Kadi ya NIDA' } },
+    { value: 'passport', label: { en: 'Passport', sw: 'Pasipoti' } },
+    { value: 'voter_id', label: { en: 'Voter ID', sw: 'Kadi ya Mpiga Kura' } },
+    { value: 'driving_license', label: { en: 'Driving License', sw: 'Leseni ya Udereva' } },
+    { value: 'zanzibar_id', label: { en: 'Zanzibar ID', sw: 'Kitambulisho cha Zanzibar' } },
+    { value: 'birth_certificate', label: { en: 'Birth Certificate', sw: 'Cheti cha Kuzaliwa' } },
+  ],
+  certificate: [
+    { value: 'education_certificate', label: { en: 'Education Certificate', sw: 'Cheti cha Elimu' } },
+    { value: 'professional_certificate', label: { en: 'Professional Certificate', sw: 'Cheti cha Kitaalamu' } },
+    { value: 'marriage_certificate', label: { en: 'Marriage Certificate', sw: 'Cheti cha Ndoa' } },
+    { value: 'death_certificate', label: { en: 'Death Certificate', sw: 'Cheti cha Kifo' } },
+    { value: 'award_certificate', label: { en: 'Award/Achievement', sw: 'Cheti cha Tuzo' } },
+    { value: 'other_certificate', label: { en: 'Other Certificate', sw: 'Cheti Kingine' } },
+  ],
+  support: [
+    { value: 'proof_of_residence', label: { en: 'Proof of Residence', sw: 'Uthibitisho wa Makazi' } },
+    { value: 'employment_letter', label: { en: 'Employment Letter', sw: 'Barua ya Ajira' } },
+    { value: 'bank_statement', label: { en: 'Bank Statement', sw: 'Taarifa ya Benki' } },
+    { value: 'utility_bill', label: { en: 'Utility Bill', sw: 'Bili ya Huduma' } },
+    { value: 'recommendation_letter', label: { en: 'Recommendation Letter', sw: 'Barua ya Pendekezo' } },
+    { value: 'police_clearance', label: { en: 'Police Clearance', sw: 'Barua ya Polisi' } },
+    { value: 'other_document', label: { en: 'Other Document', sw: 'Nyaraka Nyingine' } },
+  ],
+};
+
+const DOCUMENT_CATEGORIES = [
+  { value: 'id', label: { en: 'ID Documents', sw: 'Vitambulisho' }, icon: 'IdCard' },
+  { value: 'certificate', label: { en: 'Certificates', sw: 'Vyeti' }, icon: 'Award' },
+  { value: 'support', label: { en: 'Support Documents', sw: 'Nyaraka za Msaada' }, icon: 'FileText' },
+];
+
+const ALLOWED_DOCUMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10MB
 
 interface FormData {
   // Personal Information
@@ -337,7 +383,17 @@ export function Profile() {
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(true);
   
+  // Document upload state
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [selectedDocCategory, setSelectedDocCategory] = useState<'id' | 'certificate' | 'support'>('id');
+  const [selectedDocType, setSelectedDocType] = useState('');
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  
+  // Citizen ID (auto-generated, read-only)
+  const [citizenId, setCitizenId] = useState<string>('');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
   
   // Form state - initialize with all signup fields
   const [formData, setFormData] = useState<FormData>({
@@ -423,6 +479,9 @@ export function Profile() {
       if (error) throw error;
 
       if (data) {
+        // Set citizen_id (read-only, auto-generated)
+        setCitizenId(data.citizen_id || '');
+        
         setFormData({
           // Personal Information
           first_name: data.first_name || '',
@@ -655,6 +714,128 @@ export function Profile() {
     } finally {
       setUploading(false);
     }
+  };
+
+  // Handle document upload
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedDocType) {
+      showToast(
+        lang === 'sw' ? 'Tafadhali chagua aina ya nyaraka' : 'Please select document type',
+        'error'
+      );
+      return;
+    }
+
+    if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+      showToast(
+        lang === 'sw' ? 'Aina ya faili haikubaliki. Tumia JPG, PNG, WEBP, au PDF' : 'File type not allowed. Use JPG, PNG, WEBP, or PDF',
+        'error'
+      );
+      return;
+    }
+
+    if (file.size > MAX_DOCUMENT_SIZE) {
+      showToast(
+        lang === 'sw' ? 'Faili ni kubwa sana. Maximum 10MB' : 'File too large. Maximum 10MB',
+        'error'
+      );
+      return;
+    }
+
+    setDocumentUploading(true);
+    try {
+      const reader = new FileReader();
+      
+      const base64data = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Find the label for the selected document type
+      const docTypeOption = DOCUMENT_TYPES[selectedDocCategory].find(t => t.value === selectedDocType);
+      const documentName = docTypeOption ? docTypeOption.label[lang === 'sw' ? 'sw' : 'en'] : selectedDocType;
+
+      const { error } = await supabase
+        .from('user_documents')
+        .insert({
+          user_id: user?.id,
+          document_type: selectedDocType,
+          document_category: selectedDocCategory,
+          document_name: documentName,
+          document_url: base64data,
+          file_type: file.type,
+          file_size: file.size,
+          verified: false,
+        });
+
+      if (error) throw error;
+
+      showToast(
+        lang === 'sw' ? 'Nyaraka imepakiwa kikamilifu!' : 'Document uploaded successfully!',
+        'success'
+      );
+      
+      // Reset form and refresh documents
+      setSelectedDocType('');
+      setShowDocumentUpload(false);
+      if (documentInputRef.current) {
+        documentInputRef.current.value = '';
+      }
+      await fetchDocuments();
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      showToast(
+        lang === 'sw' ? 'Hitilafu imetokea wakati wa kupakia nyaraka.' : 'Error occurred during document upload.',
+        'error'
+      );
+    } finally {
+      setDocumentUploading(false);
+    }
+  };
+
+  // Handle document delete
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm(lang === 'sw' ? 'Una uhakika unataka kufuta nyaraka hii?' : 'Are you sure you want to delete this document?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_documents')
+        .delete()
+        .eq('id', documentId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      showToast(
+        lang === 'sw' ? 'Nyaraka imefutwa kikamilifu!' : 'Document deleted successfully!',
+        'success'
+      );
+      
+      await fetchDocuments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      showToast(
+        lang === 'sw' ? 'Hitilafu imetokea wakati wa kufuta nyaraka.' : 'Error occurred while deleting document.',
+        'error'
+      );
+    }
+  };
+
+  // Get document type label
+  const getDocumentTypeLabel = (docType: string, category: string) => {
+    const categoryTypes = DOCUMENT_TYPES[category as keyof typeof DOCUMENT_TYPES] || [];
+    const typeOption = categoryTypes.find(t => t.value === docType);
+    return typeOption ? typeOption.label[lang === 'sw' ? 'sw' : 'en'] : docType;
+  };
+
+  // Get category label
+  const getCategoryLabel = (category: string) => {
+    const cat = DOCUMENT_CATEGORIES.find(c => c.value === category);
+    return cat ? cat.label[lang === 'sw' ? 'sw' : 'en'] : category;
   };
 
   // Form validation
@@ -1318,6 +1499,35 @@ export function Profile() {
                   {lang === 'sw' ? 'Taarifa za Utambulisho' : 'Identity Information'}
                 </h3>
               </div>
+
+              {/* Citizen ID Card - Prominent Display */}
+              {citizenId && (
+                <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-6 text-white shadow-xl">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-emerald-100 text-sm font-medium mb-1">
+                        {lang === 'sw' ? 'Namba Yako ya Raia (Citizen ID)' : 'Your Citizen ID Number'}
+                      </p>
+                      <p className="text-3xl font-mono font-bold tracking-wider">{citizenId}</p>
+                      <p className="text-emerald-100 text-xs mt-3">
+                        {lang === 'sw' 
+                          ? '🔒 Namba hii ni ya kipekee kwako. Itumie kwa makubaliano na wengine.'
+                          : '🔒 This number is unique to you. Use it for agreements with others.'}
+                      </p>
+                    </div>
+                    <div className="bg-white/20 rounded-xl p-3">
+                      <Users size={32} className="text-white" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-white/20">
+                    <p className="text-xs text-emerald-100">
+                      {lang === 'sw' 
+                        ? '💡 Mpe mtu unayeomba huduma pamoja naye namba hii ili aweze kukuingiza kwenye makubaliano.'
+                        : '💡 Share this number with someone you want to enter into an agreement with.'}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {isEditing ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2128,45 +2338,239 @@ export function Profile() {
               animate={{ opacity: 1 }}
               className="space-y-6"
             >
-              <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-                <FileText size={20} className="text-emerald-600" />
-                {lang === 'sw' ? 'Nyaraka Zangu' : 'My Documents'}
-              </h3>
+              {/* Header with Upload Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                  <FileText size={20} className="text-emerald-600" />
+                  {lang === 'sw' ? 'Nyaraka Zangu' : 'My Documents'}
+                </h3>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowDocumentUpload(!showDocumentUpload)}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-emerald-700 transition-all flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  {lang === 'sw' ? 'Pakia Nyaraka' : 'Upload Document'}
+                </motion.button>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {documents.length > 0 ? (
-                  documents.map(doc => (
-                    <div key={doc.id} className="border border-stone-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText size={20} className="text-stone-400" />
-                          <div>
-                            <p className="font-medium">{doc.document_type}</p>
-                            <p className="text-xs text-stone-500">
-                              {new Date(doc.uploaded_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        {doc.verified ? (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                            <Check size={12} />
-                            {lang === 'sw' ? 'Imethibitishwa' : 'Verified'}
-                          </span>
-                        ) : (
-                          <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                            <Clock size={12} />
-                            {lang === 'sw' ? 'Inasubiri' : 'Pending'}
-                          </span>
-                        )}
+              {/* Document Upload Form */}
+              <AnimatePresence>
+                {showDocumentUpload && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 space-y-4"
+                  >
+                    <h4 className="font-bold text-stone-800 flex items-center gap-2">
+                      <Upload size={18} className="text-emerald-600" />
+                      {lang === 'sw' ? 'Pakia Nyaraka Mpya' : 'Upload New Document'}
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Category Selection */}
+                      <div className="space-y-2">
+                        <label htmlFor="doc_category" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                          {lang === 'sw' ? 'Aina ya Nyaraka' : 'Document Category'}
+                        </label>
+                        <select
+                          id="doc_category"
+                          value={selectedDocCategory}
+                          onChange={(e) => {
+                            setSelectedDocCategory(e.target.value as 'id' | 'certificate' | 'support');
+                            setSelectedDocType('');
+                          }}
+                          className="w-full h-12 px-4 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        >
+                          {DOCUMENT_CATEGORIES.map(cat => (
+                            <option key={cat.value} value={cat.value}>
+                              {cat.label[lang === 'sw' ? 'sw' : 'en']}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Document Type Selection */}
+                      <div className="space-y-2">
+                        <label htmlFor="doc_type" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                          {lang === 'sw' ? 'Chagua Nyaraka' : 'Select Document'}
+                        </label>
+                        <select
+                          id="doc_type"
+                          value={selectedDocType}
+                          onChange={(e) => setSelectedDocType(e.target.value)}
+                          className="w-full h-12 px-4 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        >
+                          <option value="">{lang === 'sw' ? '-- Chagua --' : '-- Select --'}</option>
+                          {DOCUMENT_TYPES[selectedDocCategory].map(type => (
+                            <option key={type.value} value={type.value}>
+                              {type.label[lang === 'sw' ? 'sw' : 'en']}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-stone-500 col-span-2 text-center py-8">
-                    {lang === 'sw' ? 'Hakuna nyaraka zilizopakiwa' : 'No documents uploaded'}
-                  </p>
+
+                    {/* File Upload */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                        {lang === 'sw' ? 'Chagua Faili' : 'Select File'}
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <input
+                          ref={documentInputRef}
+                          type="file"
+                          onChange={handleDocumentUpload}
+                          accept={ALLOWED_DOCUMENT_TYPES.join(',')}
+                          disabled={!selectedDocType || documentUploading}
+                          className="flex-1 h-12 px-4 bg-white border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200 disabled:opacity-50"
+                        />
+                        {documentUploading && (
+                          <Loader2 size={24} className="animate-spin text-emerald-600" />
+                        )}
+                      </div>
+                      <p className="text-xs text-stone-500">
+                        {lang === 'sw' 
+                          ? 'Aina zinazokubalika: JPG, PNG, WEBP, PDF. Ukubwa wa juu: 10MB' 
+                          : 'Allowed types: JPG, PNG, WEBP, PDF. Max size: 10MB'}
+                      </p>
+                    </div>
+
+                    {/* Close Button */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setShowDocumentUpload(false);
+                          setSelectedDocType('');
+                        }}
+                        className="text-stone-500 hover:text-stone-700 text-sm font-medium"
+                      >
+                        {lang === 'sw' ? 'Funga' : 'Close'}
+                      </button>
+                    </div>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
+
+              {/* Document Categories */}
+              {DOCUMENT_CATEGORIES.map(category => {
+                const categoryDocs = documents.filter(doc => doc.document_category === category.value);
+                const CategoryIcon = category.value === 'id' ? IdCard : category.value === 'certificate' ? Award : FileText;
+                
+                return (
+                  <div key={category.value} className="space-y-3">
+                    <h4 className="font-semibold text-stone-700 flex items-center gap-2 border-b border-stone-100 pb-2">
+                      <CategoryIcon size={18} className="text-emerald-600" />
+                      {category.label[lang === 'sw' ? 'sw' : 'en']}
+                      <span className="text-xs text-stone-400 font-normal">
+                        ({categoryDocs.length} {lang === 'sw' ? 'nyaraka' : 'documents'})
+                      </span>
+                    </h4>
+                    
+                    {categoryDocs.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {categoryDocs.map(doc => (
+                          <motion.div
+                            key={doc.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white border border-stone-200 rounded-xl p-4 hover:shadow-md transition-all"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                {/* Document Icon/Preview */}
+                                <div className="flex-shrink-0">
+                                  {doc.file_type?.includes('pdf') ? (
+                                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                      <FileText size={24} className="text-red-600" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                      {doc.document_url ? (
+                                        <img 
+                                          src={doc.document_url} 
+                                          alt={doc.document_name}
+                                          className="w-full h-full object-cover rounded-lg"
+                                        />
+                                      ) : (
+                                        <FileImage size={24} className="text-blue-600" />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Document Info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-stone-800 truncate">
+                                    {getDocumentTypeLabel(doc.document_type, doc.document_category)}
+                                  </p>
+                                  <p className="text-xs text-stone-500">
+                                    {new Date(doc.uploaded_at).toLocaleDateString(lang === 'sw' ? 'sw-TZ' : 'en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })}
+                                  </p>
+                                  {/* Verification Status */}
+                                  <div className="mt-2">
+                                    {doc.verified ? (
+                                      <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                        <Check size={12} />
+                                        {lang === 'sw' ? 'Imethibitishwa' : 'Verified'}
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                                        <Clock size={12} />
+                                        {lang === 'sw' ? 'Inasubiri Uthibitisho' : 'Pending Verification'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Actions */}
+                              <div className="flex flex-col gap-1">
+                                {/* View/Download */}
+                                <a
+                                  href={doc.document_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download={`${doc.document_type}.${doc.file_type?.includes('pdf') ? 'pdf' : 'jpg'}`}
+                                  className="p-2 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                  title={lang === 'sw' ? 'Pakua' : 'Download'}
+                                >
+                                  <Download size={16} />
+                                </a>
+                                {/* Delete */}
+                                {!doc.verified && (
+                                  <button
+                                    onClick={() => handleDeleteDocument(doc.id)}
+                                    className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    title={lang === 'sw' ? 'Futa' : 'Delete'}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-stone-50 rounded-xl p-6 text-center">
+                        <CategoryIcon size={32} className="mx-auto text-stone-300 mb-2" />
+                        <p className="text-stone-500 text-sm">
+                          {lang === 'sw' 
+                            ? `Hakuna ${category.label.sw.toLowerCase()} zilizopakiwa` 
+                            : `No ${category.label.en.toLowerCase()} uploaded`}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </motion.div>
           )}
         </div>

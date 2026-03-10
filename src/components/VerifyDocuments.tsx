@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowLeft,
   QrCode,
@@ -26,7 +27,9 @@ import {
   Wallet,
   Building2,
   Users,
-  FileCheck
+  FileCheck,
+  Lock,
+  ShieldCheck
 } from "lucide-react";
 import { Language } from "@/src/lib/i18n";
 import { useTranslation } from "@/src/lib/i18n";
@@ -161,10 +164,11 @@ export function VerifyDocuments({
     }
 
     // Search Supabase - try multiple search patterns
-    const searchTerm = qrInput.trim().toUpperCase();
+    const searchTerm = qrInput.trim();
+    const searchTermUpper = searchTerm.toUpperCase();
     console.log('VerifyDocuments: Searching for application:', searchTerm);
     
-    // Try exact match first
+    // Try exact match first (case-sensitive)
     let { data, error } = await supabase
       .from('applications')
       .select(`
@@ -179,7 +183,28 @@ export function VerifyDocuments({
       .eq('application_number', searchTerm)
       .maybeSingle();
 
-    // If not found, try case-insensitive search
+    // If not found, try uppercase version
+    if (!data && !error) {
+      console.log('VerifyDocuments: Trying uppercase search...');
+      const result = await supabase
+        .from('applications')
+        .select(`
+          *,
+          users (
+            id, first_name, middle_name, last_name, nida_number, phone, email, region, district, ward, street
+          ),
+          services (
+            id, name, name_en, fee
+          )
+        `)
+        .eq('application_number', searchTermUpper)
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
+    }
+
+    // If still not found, try case-insensitive search with ilike
     if (!data && !error) {
       console.log('VerifyDocuments: Exact match not found, trying ilike search...');
       const result = await supabase
@@ -563,6 +588,47 @@ export function VerifyDocuments({
                 </div>
               </div>
 
+              {/* Security QR Code */}
+              <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-2xl p-6 text-white">
+                <div className="flex items-start gap-6">
+                  {/* QR Code */}
+                  <div className="bg-white p-3 rounded-xl shadow-lg">
+                    <QRCodeSVG 
+                      value={`https://e-serikali-mtaa.vercel.app/verify?doc=${verifiedDocument.verificationCode}&type=${verifiedDocument.documentType || 'application'}`}
+                      size={120}
+                      level="H"
+                      includeMargin={false}
+                      fgColor="#064e3b"
+                      bgColor="#ffffff"
+                    />
+                  </div>
+                  
+                  {/* Security Info */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                      <span className="font-bold text-emerald-400 uppercase tracking-wider text-sm">
+                        {lang === "sw" ? "QR ya Usalama" : "Security QR Code"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-stone-300 leading-relaxed">
+                      {lang === "sw" 
+                        ? "Skana QR hii kuthibitisha ukweli wa nyaraka hii. QR ina habari iliyofichwa kwa usalama."
+                        : "Scan this QR code to verify document authenticity. Contains encrypted verification data."}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-stone-400">
+                      <Lock className="h-3 w-3" />
+                      <span>{lang === "sw" ? "Data imehifadhiwa kwa usalama" : "Data secured with encryption"}</span>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-stone-700">
+                      <p className="text-xs text-stone-400 font-mono truncate">
+                        ID: {verifiedDocument.verificationCode}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Access Mode Indicator */}
               <div className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold",
@@ -756,22 +822,36 @@ export function VerifyDocuments({
                 <XCircle className="h-8 w-8 text-red-600 shrink-0" />
                 <div>
                   <p className="font-heading font-bold text-red-900 text-lg">
-                    {lang === "sw" ? "Nyaraka Sio Halali" : "Verification Failed"}
+                    {lang === "sw" ? "Ombi Halijapatikana" : "Application Not Found"}
                   </p>
                   <p className="text-sm text-red-700">
                     {lang === "sw"
                       ? "Namba hii haipo kwenye mfumo wetu"
-                      : "This code was not found in our records"}
+                      : "This number was not found in our system"}
                   </p>
                 </div>
               </div>
               
-              <div className="p-4 bg-stone-50 rounded-2xl">
-                <p className="text-sm text-stone-600 leading-relaxed">
-                  {lang === "sw" 
-                    ? "Tafadhali hakikisha umeingiza namba sahihi. Ikiwa unaamini hii ni hitilafu, wasiliana na ofisi ya serikali ya mtaa iliyotoa hati hii."
-                    : "Please ensure you entered the correct code. If you believe this is an error, contact the local government office that issued the document."}
+              {/* Searched Number */}
+              <div className="p-4 bg-stone-800 rounded-2xl">
+                <p className="text-xs text-stone-400 uppercase tracking-wider mb-2">
+                  {lang === "sw" ? "Namba Iliyoingizwa:" : "Number Entered:"}
                 </p>
+                <p className="font-mono text-lg font-bold text-white">{qrInput}</p>
+              </div>
+              
+              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                <p className="text-sm text-amber-800 leading-relaxed font-medium mb-3">
+                  {lang === "sw" 
+                    ? "Mambo ya kuangalia:"
+                    : "Things to check:"}
+                </p>
+                <ul className="text-sm text-amber-700 space-y-2 list-disc list-inside">
+                  <li>{lang === "sw" ? "Hakikisha umeingiza namba sahihi (mfano: TZ-20260309-1234)" : "Ensure number is correct (e.g., TZ-20260309-1234)"}</li>
+                  <li>{lang === "sw" ? "Ombi lazima liwe limewasilishwa na kulipwa" : "Application must be submitted and paid"}</li>
+                  <li>{lang === "sw" ? "Ingia kwenye akaunti yako kuona maombi yako" : "Log in to your account to view your applications"}</li>
+                  <li>{lang === "sw" ? "Wasiliana na ofisi ya serikali ya mtaa" : "Contact local government office"}</li>
+                </ul>
               </div>
 
               <button

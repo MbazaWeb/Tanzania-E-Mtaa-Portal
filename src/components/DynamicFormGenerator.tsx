@@ -9,7 +9,7 @@ import { supabase } from '@/src/lib/supabase';
 interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'date' | 'tel' | 'number' | 'file' | 'checkbox' | 'header' | 'time' | 'url' | 'datetime-local' | 'nida_lookup';
+  type: 'text' | 'textarea' | 'select' | 'date' | 'tel' | 'number' | 'file' | 'checkbox' | 'header' | 'time' | 'url' | 'datetime-local' | 'nida_lookup' | 'citizen_id_lookup';
   placeholder?: string;
   options?: { label: string; value: string }[];
   required?: boolean;
@@ -82,7 +82,15 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
   // NIDA lookup state for approval workflow
   const [nidaLookupResults, setNidaLookupResults] = useState<Record<string, {
     found: boolean;
-    user?: { id: string; full_name: string; phone: string; email: string };
+    user?: { id: string; full_name: string; phone: string; email: string; citizen_id?: string };
+    searching: boolean;
+    error?: string;
+  }>>({});
+
+  // Citizen ID lookup state for second party in agreements
+  const [citizenIdLookupResults, setCitizenIdLookupResults] = useState<Record<string, {
+    found: boolean;
+    user?: { id: string; full_name: string; phone: string; email: string; citizen_id: string };
     searching: boolean;
     error?: string;
   }>>({});
@@ -314,6 +322,87 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
     } catch (err) {
       console.error('NIDA lookup error:', err);
       setNidaLookupResults(prev => ({
+        ...prev,
+        [fieldName]: { 
+          found: false, 
+          searching: false, 
+          error: lang === 'sw' ? 'Tatizo la mtandao. Jaribu tena.' : 'Network error. Please try again.' 
+        }
+      }));
+    }
+  };
+
+  // Search for user by Citizen ID (e.g., CT2026A12345) for agreement second party
+  const handleCitizenIdLookup = async (fieldName: string, citizenId: string) => {
+    const cleanCitizenId = citizenId.trim().toUpperCase();
+    
+    // Validate format: CT + 4 digits year + 1 letter + 5 digits (e.g., CT2026A12345)
+    const citizenIdPattern = /^CT\d{4}[A-Z]\d{5}$/;
+    if (!cleanCitizenId || !citizenIdPattern.test(cleanCitizenId)) {
+      setCitizenIdLookupResults(prev => ({
+        ...prev,
+        [fieldName]: { 
+          found: false, 
+          searching: false, 
+          error: lang === 'sw' 
+            ? 'Namba ya raia lazima iwe kama CT2026A12345' 
+            : 'Citizen ID must be like CT2026A12345' 
+        }
+      }));
+      return;
+    }
+
+    setCitizenIdLookupResults(prev => ({
+      ...prev,
+      [fieldName]: { found: false, searching: true }
+    }));
+
+    try {
+      // Search for user in database by citizen_id
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, first_name, middle_name, last_name, phone, email, citizen_id')
+        .eq('citizen_id', cleanCitizenId)
+        .single();
+
+      if (error || !data) {
+        setCitizenIdLookupResults(prev => ({
+          ...prev,
+          [fieldName]: { 
+            found: false, 
+            searching: false, 
+            error: lang === 'sw' 
+              ? 'Mtumiaji mwenye namba hii hajapatikana. Hakikisha namba ni sahihi na mtumiaji amesajiliwa.' 
+              : 'User with this Citizen ID not found. Ensure ID is correct and user is registered.' 
+          }
+        }));
+        // Clear second party fields if not found
+        setValue('second_party_user_id', null);
+        setValue('second_party_citizen_id', null);
+      } else {
+        const fullName = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ');
+        setCitizenIdLookupResults(prev => ({
+          ...prev,
+          [fieldName]: {
+            found: true,
+            searching: false,
+            user: {
+              id: data.id,
+              full_name: fullName,
+              phone: data.phone || '',
+              email: data.email || '',
+              citizen_id: data.citizen_id
+            }
+          }
+        }));
+        // Set the second party details in the form
+        setValue('second_party_user_id', data.id);
+        setValue('second_party_citizen_id', data.citizen_id);
+        setValue('second_party_name', fullName);
+      }
+    } catch (err) {
+      console.error('Citizen ID lookup error:', err);
+      setCitizenIdLookupResults(prev => ({
         ...prev,
         [fieldName]: { 
           found: false, 
@@ -872,6 +961,103 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                             {lang === 'sw' 
                               ? 'Ingiza NIDA ya mtu unayetaka kumtumia idhini ya makubaliano. Mtumiaji huyu lazima awe amesajiliwa kwenye mfumo.'
                               : 'Enter NIDA of the person you want to send for approval. User must be registered in the system.'}
+                          </p>
+                        </div>
+                      );
+                    case 'citizen_id_lookup':
+                      const citizenLookupState = citizenIdLookupResults[field.name];
+                      return (
+                        <div className="space-y-3">
+                          {/* Info banner */}
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                            <p className="text-sm text-blue-700 font-medium">
+                              {lang === 'sw' 
+                                ? '🆔 Ingiza Namba ya Raia (Citizen ID) ya mtu unayetaka kuingia naye makubaliano. Namba hii inapatikana kwenye wasifu wa mtumiaji.'
+                                : '🆔 Enter the Citizen ID of the person you want to enter into agreement with. This number is found on the user\'s profile.'}
+                            </p>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              onChange={(e) => onChange(e.target.value.toUpperCase())}
+                              value={value || ''}
+                              placeholder="CT2026A12345"
+                              aria-label={field.label}
+                              className="flex-1 p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono uppercase tracking-wider"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleCitizenIdLookup(field.name, value)}
+                              disabled={citizenLookupState?.searching}
+                              aria-label={lang === 'sw' ? 'Tafuta mtumiaji' : 'Search user'}
+                              className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
+                            >
+                              {citizenLookupState?.searching ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <Search className="h-5 w-5" />
+                              )}
+                              <span className="hidden sm:inline">
+                                {lang === 'sw' ? 'Tafuta' : 'Search'}
+                              </span>
+                            </button>
+                          </div>
+                          
+                          {/* User found result */}
+                          {citizenLookupState?.found && citizenLookupState.user && (
+                            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                              <div className="flex items-center gap-2 mb-3">
+                                <CheckCircle className="h-6 w-6 text-emerald-600" />
+                                <span className="font-bold text-emerald-700 text-lg">
+                                  {lang === 'sw' ? 'Mtumiaji Amepatikana!' : 'User Found!'}
+                                </span>
+                              </div>
+                              <div className="bg-white rounded-lg p-3 space-y-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-stone-600 w-20">{lang === 'sw' ? 'Jina:' : 'Name:'}</span>
+                                  <span className="font-bold text-stone-900">{citizenLookupState.user.full_name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-stone-600 w-20">{lang === 'sw' ? 'Namba:' : 'ID:'}</span>
+                                  <span className="font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">{citizenLookupState.user.citizen_id}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-stone-600 w-20">{lang === 'sw' ? 'Simu:' : 'Phone:'}</span>
+                                  <span className="text-stone-700">{citizenLookupState.user.phone || 'N/A'}</span>
+                                </div>
+                              </div>
+                              <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                                <p className="text-xs text-amber-700 font-medium">
+                                  ⚠️ {lang === 'sw' 
+                                    ? 'Baada ya kutuma ombi, mtumiaji huyu atapokea arifa ya KUIDHINISHA makubaliano haya. Makubaliano hayatakamilika mpaka pande zote mbili zikubali.'
+                                    : 'After submission, this user will receive a notification to APPROVE this agreement. The agreement will not be finalized until both parties accept.'}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Error message */}
+                          {citizenLookupState?.error && (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-sm text-red-700 font-medium">{citizenLookupState.error}</span>
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {lang === 'sw' 
+                                      ? 'Hakikisha mtumiaji amesajiliwa kwenye E-Serikali Mtaa na umeingiza namba sahihi.'
+                                      : 'Ensure the user is registered on E-Serikali Mtaa and you entered the correct number.'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-stone-500">
+                            {lang === 'sw' 
+                              ? 'Namba ya Raia (Citizen ID) inapatikana kwenye wasifu wa mtumiaji. Mfano: CT2026A12345'
+                              : 'Citizen ID is found on the user\'s profile page. Example: CT2026A12345'}
                           </p>
                         </div>
                       );
