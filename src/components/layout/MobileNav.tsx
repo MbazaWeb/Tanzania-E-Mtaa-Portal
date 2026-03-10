@@ -14,7 +14,8 @@ import {
   UserCheck,
   Activity,
   X,
-  LogOut
+  LogOut,
+  Handshake
 } from 'lucide-react';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
@@ -115,6 +116,13 @@ export function MobileNav({ isOpen, onClose, currentView, setView }: MobileNavPr
       label: lang === 'sw' ? 'Hakiki Hati' : 'Verify Document',
       roles: ['citizen', 'staff', 'admin'],
       view: 'verify_documents'
+    },
+    {
+      id: 'verify_agreement',
+      icon: <Handshake size={20} />,
+      label: lang === 'sw' ? 'Thibitisha Makubaliano' : 'Verify Agreement',
+      roles: ['citizen', 'staff', 'admin'],
+      view: 'verify_agreement'
     },
     {
       id: 'profile',

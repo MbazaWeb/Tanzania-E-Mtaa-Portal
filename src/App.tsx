@@ -42,13 +42,16 @@ import { CustomerSupport } from './pages/staff/CustomerSupport';
 import { ManualVerification } from './pages/staff/ManualVerification';
 import { StaffCitizenManagement } from './pages/staff/CitizenManagement';
 
+// Agreement Verification
+import { VerifyAgreement } from './pages/VerifyAgreement';
+
 export default function App() {
   const { user, loading: authLoading } = useAuth();
   const { lang, t, currency } = useLanguage();
   const { showToast } = useToast();
   const { applications, fetchApplications } = useApplications(user);
 
-  const [view, setView] = useState<'dashboard' | 'services' | 'apply' | 'applications' | 'staff_management' | 'application_review' | 'verify_purchase' | 'application_details' | 'profile' | 'verify_documents' | 'admin_dashboard' | 'office_management' | 'location_management' | 'service_management' | 'staff_dashboard' | 'customer_support' | 'manual_verification' | 'admin_logs' | 'citizen_management'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'services' | 'apply' | 'applications' | 'staff_management' | 'application_review' | 'verify_purchase' | 'application_details' | 'profile' | 'verify_documents' | 'verify_agreement' | 'admin_dashboard' | 'office_management' | 'location_management' | 'service_management' | 'staff_dashboard' | 'customer_support' | 'manual_verification' | 'admin_logs' | 'citizen_management'>('dashboard');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [payingApplication, setPayingApplication] = useState<Application | null>(null);
@@ -373,6 +376,16 @@ export default function App() {
                 className="py-12"
               >
                 <VerifyDocuments lang={lang} onBack={() => setView('dashboard')} userRole={user?.role || 'citizen'} />
+              </motion.div>
+            )}
+
+            {view === 'verify_agreement' && (
+              <motion.div 
+                key="verify_agreement"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <VerifyAgreement lang={lang} onBack={() => setView('dashboard')} />
               </motion.div>
             )}
 

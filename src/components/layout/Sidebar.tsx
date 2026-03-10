@@ -13,7 +13,8 @@ import {
   Settings,
   HelpCircle,
   UserCheck,
-  Activity
+  Activity,
+  Handshake
 } from 'lucide-react';
 import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
@@ -178,6 +179,12 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
         label={lang === 'sw' ? 'Hakiki Hati' : 'Verify Document'} 
         active={currentView === 'verify_documents'} 
         onClick={() => setView('verify_documents')} 
+      />
+      <SidebarItem 
+        icon={<Handshake size={20} />} 
+        label={lang === 'sw' ? 'Thibitisha Makubaliano' : 'Verify Agreement'} 
+        active={currentView === 'verify_agreement'} 
+        onClick={() => setView('verify_agreement')} 
       />
       <SidebarItem 
         icon={<User size={20} />} 
