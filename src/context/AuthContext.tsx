@@ -50,25 +50,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Helper to clear invalid session
+    const clearInvalidSession = async () => {
+      console.warn('Clearing invalid session');
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Ignore signOut errors during cleanup
+      }
+      // Clear any stale auth data from localStorage
+      localStorage.removeItem('supabase.auth.token');
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+    };
+
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       // Handle invalid refresh token error
-      if (error && error.message?.includes('Refresh Token')) {
-        console.warn('Invalid refresh token, clearing session');
-        supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        return;
+      if (error) {
+        const errorMsg = error.message?.toLowerCase() || '';
+        if (errorMsg.includes('refresh token') || errorMsg.includes('invalid') || errorMsg.includes('expired')) {
+          console.warn('Invalid refresh token, clearing session:', error.message);
+          clearInvalidSession();
+          return;
+        }
       }
       setSession(session);
       if (session) fetchUserProfile(session.user.id);
       else setLoading(false);
+    }).catch((err) => {
+      // Catch any unhandled errors during session recovery
+      console.error('Session recovery failed:', err);
+      clearInvalidSession();
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Handle token refresh errors
+      // Handle token refresh errors or sign out
       if (event === 'TOKEN_REFRESHED' && !session) {
         console.warn('Token refresh failed, clearing session');
+        clearInvalidSession();
+        return;
+      }
+      
+      if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
         setLoading(false);

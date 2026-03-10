@@ -3,7 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    // Don't throw on refresh token errors - let the app handle them gracefully
+    flowType: 'pkce',
+  },
+});
+
+// Handle global auth errors (like invalid refresh token)
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'TOKEN_REFRESHED' && !session) {
+    // Token refresh failed, clear any stale data
+    console.warn('Global: Token refresh failed');
+  }
+});
 
 export type UserRole = 'citizen' | 'staff' | 'admin';
 
