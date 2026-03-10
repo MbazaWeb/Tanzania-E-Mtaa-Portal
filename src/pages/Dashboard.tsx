@@ -13,6 +13,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useLanguage } from '@/src/context/LanguageContext';
 import { StatCard } from '@/src/components/ui/StatCard';
 import { StatusBadge } from '@/src/components/ui/StatusBadge';
+import { PendingApprovals } from '@/src/components/PendingApprovals';
 import { Application } from '@/src/lib/supabase';
 
 interface DashboardProps {
@@ -112,6 +113,11 @@ export function Dashboard({ applications, setView, onRefresh }: DashboardProps) 
           </div>
           <Building2 className="absolute -right-5 -bottom-5 h-32 sm:h-48 w-32 sm:w-48 text-white/10 rotate-12" />
         </div>
+      )}
+
+      {/* Pending Approvals Section - Show only for citizens */}
+      {user?.role === 'citizen' && (
+        <PendingApprovals lang={lang} />
       )}
 
       <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">

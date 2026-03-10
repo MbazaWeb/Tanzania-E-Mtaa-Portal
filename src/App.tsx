@@ -175,7 +175,22 @@ export default function App() {
       application_number: applicationNumber
     });
 
-    const { error } = await supabase.from('applications').insert({
+    // Extract approval workflow data if present
+    const targetUserId = formData.target_user_id || null;
+    const targetUserNida = formData.target_user_nida || null;
+    const submitterRole = formData.submitter_role || null;
+    const sendForApproval = formData.send_for_approval === 'YES';
+    
+    // Determine target_user_role based on submitter_role
+    let targetUserRole = null;
+    if (sendForApproval && submitterRole) {
+      if (submitterRole === 'LANDLORD') targetUserRole = 'TENANT';
+      else if (submitterRole === 'TENANT') targetUserRole = 'LANDLORD';
+      else if (submitterRole === 'SELLER') targetUserRole = 'BUYER';
+      else if (submitterRole === 'BUYER') targetUserRole = 'SELLER';
+    }
+
+    const { error, data: insertedApp } = await supabase.from('applications').insert({
       user_id: user.id,
       service_id: selectedService.id,
       service_name: selectedService.name || selectedService.name_en,
@@ -185,13 +200,35 @@ export default function App() {
       region: user.region || null,
       district: user.district || null,
       ward: user.ward || null,
-      street: user.street || null
-    });
+      street: user.street || null,
+      // Approval workflow columns
+      target_user_id: sendForApproval ? targetUserId : null,
+      target_user_nida: sendForApproval ? targetUserNida : null,
+      target_user_role: sendForApproval ? targetUserRole : null,
+      agreement_status: sendForApproval && targetUserId ? 'pending' : null
+    }).select().single();
 
     if (error) {
       console.error('Application submission error:', error);
       showToast(lang === 'sw' ? `Hitilafu: ${error.message}` : `Error: ${error.message}`, 'error');
       return;
+    }
+
+    // Send notification to target user if approval workflow is enabled
+    if (sendForApproval && targetUserId && insertedApp) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          title: lang === 'sw' ? 'Makubaliano Mapya Yanasubiri Idhini Yako' : 'New Agreement Awaits Your Approval',
+          message: lang === 'sw' 
+            ? `Umepokea makubaliano (${applicationNumber}) kutoka kwa ${user.first_name || 'mtumiaji'}. Tafadhali ingia kwenye mfumo ili kuidhinisha au kukataa.`
+            : `You received an agreement (${applicationNumber}) from ${user.first_name || 'a user'}. Please log in to approve or reject.`,
+          type: 'info'
+        });
+      } catch (notifError) {
+        console.error('Failed to send notification:', notifError);
+        // Don't fail the whole submission if notification fails
+      }
     }
 
     showToast(lang === 'sw' ? 'Maombi yametumwa kikamilifu!' : 'Application submitted successfully!', 'success');

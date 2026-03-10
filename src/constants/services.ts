@@ -378,7 +378,20 @@ export const HARDCODED_SERVICES: Service[] = [
         {"label": "HAPANA - Mnunuzi ni mtu mwingine", "value": "OTHER"}
       ], "required": true},
       {"name": "buyer_nida", "label": "Namba ya NIDA ya Mnunuzi", "type": "text", "required": true},
-      {"name": "buyer_name", "label": "Jina Kamili la Mnunuzi", "type": "text", "required": true}
+      {"name": "buyer_name", "label": "Jina Kamili la Mnunuzi", "type": "text", "required": true},
+      
+      {"name": "section_approval", "label": "UTHIBITISHO WA PANDE ZOTE (APPROVAL WORKFLOW)", "type": "header"},
+      {"name": "submitter_role", "label": "Wewe ni nani katika makubaliano haya?", "type": "select", "options": [
+        {"label": "MIMI NI MUUZAJI (SELLER)", "value": "SELLER"},
+        {"label": "MIMI NI MNUNUZI (BUYER)", "value": "BUYER"}
+      ], "required": true},
+      {"name": "send_for_approval", "label": "Tuma kwa upande mwingine kuidhinisha?", "type": "select", "options": [
+        {"label": "NDIYO - Tuma kwa idhini", "value": "YES"},
+        {"label": "HAPANA - Usitume", "value": "NO"}
+      ], "required": true},
+      {"name": "target_user_nida", "label": "NIDA ya upande mwingine (Mnunuzi/Muuzaji)", "type": "nida_lookup", "showIf": {"field": "send_for_approval", "value": "YES"}, "required": false},
+      {"name": "approval_note", "label": "Ujumbe kwa anayethibitisha (optional)", "type": "textarea", "showIf": {"field": "send_for_approval", "value": "YES"}},
+      {"name": "agreement_accepted", "label": "Nimekubali makubaliano haya ya mauziano", "type": "checkbox", "required": true}
     ],
     diaspora_form_schema: null,
     document_template: {
@@ -478,6 +491,19 @@ export const HARDCODED_SERVICES: Service[] = [
       
       {"name": "section_agreement", "label": "MAKUBALIANO NA SERA", "type": "header"},
       {"name": "agreement_terms", "label": "Vigezo na Masharti", "type": "textarea", "required": true},
+      
+      {"name": "section_approval", "label": "UTHIBITISHO WA PANDE ZOTE (APPROVAL WORKFLOW)", "type": "header"},
+      {"name": "submitter_role", "label": "Wewe ni nani katika mkataba huu?", "type": "select", "options": [
+        {"label": "MIMI NI MWENYE NYUMBA / MSIMAMIZI (LANDLORD)", "value": "LANDLORD"},
+        {"label": "MIMI NI MPANGAJI (TENANT)", "value": "TENANT"}
+      ], "required": true},
+      {"name": "send_for_approval", "label": "Tuma kwa upande mwingine kuidhinisha?", "type": "select", "options": [
+        {"label": "NDIYO - Tuma kwa idhini", "value": "YES"},
+        {"label": "HAPANA - Usitume", "value": "NO"}
+      ], "required": true},
+      {"name": "target_user_nida", "label": "NIDA ya upande mwingine (Mnunuzi/Muuzaji/Mpangaji/Mwenye Nyumba)", "type": "nida_lookup", "showIf": {"field": "send_for_approval", "value": "YES"}, "required": false},
+      {"name": "approval_note", "label": "Ujumbe kwa anayethibitisha (optional)", "type": "textarea", "showIf": {"field": "send_for_approval", "value": "YES"}},
+      
       {"name": "agreement_accepted", "label": "Nimekubali vigezo na masharti ya pango", "type": "checkbox", "required": true}
     ],
     document_template: {

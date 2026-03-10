@@ -3,12 +3,13 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { cn } from '@/src/lib/utils';
-import { Upload, X, FileText, Loader2, ArrowRight, User, Users, UserPlus, RefreshCw } from 'lucide-react';
+import { Upload, X, FileText, Loader2, ArrowRight, User, Users, UserPlus, RefreshCw, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase } from '@/src/lib/supabase';
 
 interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'date' | 'tel' | 'number' | 'file' | 'checkbox' | 'header' | 'time' | 'url' | 'datetime-local';
+  type: 'text' | 'textarea' | 'select' | 'date' | 'tel' | 'number' | 'file' | 'checkbox' | 'header' | 'time' | 'url' | 'datetime-local' | 'nida_lookup';
   placeholder?: string;
   options?: { label: string; value: string }[];
   required?: boolean;
@@ -77,6 +78,14 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
   // File upload state for specific fields
   const [fieldFiles, setFieldFiles] = useState<Record<string, File[]>>({});
   const fieldFileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // NIDA lookup state for approval workflow
+  const [nidaLookupResults, setNidaLookupResults] = useState<Record<string, {
+    found: boolean;
+    user?: { id: string; full_name: string; phone: string; email: string };
+    searching: boolean;
+    error?: string;
+  }>>({});
 
   // Generate Zod schema dynamically
   const shape: any = {};
@@ -243,6 +252,73 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
 
   const removeAttachment = (name: string) => {
     setAttachments((prev) => prev.filter((a) => a !== name));
+  };
+
+  // Search for user by NIDA number for approval workflow
+  const handleNidaLookup = async (fieldName: string, nidaNumber: string) => {
+    if (!nidaNumber || nidaNumber.length < 10) {
+      setNidaLookupResults(prev => ({
+        ...prev,
+        [fieldName]: { found: false, searching: false, error: lang === 'sw' ? 'NIDA lazima iwe na angalau tarakimu 10' : 'NIDA must have at least 10 digits' }
+      }));
+      return;
+    }
+
+    setNidaLookupResults(prev => ({
+      ...prev,
+      [fieldName]: { found: false, searching: true }
+    }));
+
+    try {
+      // Search for user in database by NIDA
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, first_name, middle_name, last_name, phone, email')
+        .eq('nida_number', nidaNumber.trim())
+        .single();
+
+      if (error || !data) {
+        setNidaLookupResults(prev => ({
+          ...prev,
+          [fieldName]: { 
+            found: false, 
+            searching: false, 
+            error: lang === 'sw' 
+              ? 'Mtumiaji mwenye NIDA hii hajapatikana. Hakikisha NIDA ni sahihi au mtumiaji amesajiliwa kwenye mfumo.' 
+              : 'User with this NIDA not found. Ensure NIDA is correct or user is registered.' 
+          }
+        }));
+        // Clear target_user_id if not found
+        setValue('target_user_id', null);
+      } else {
+        const fullName = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ');
+        setNidaLookupResults(prev => ({
+          ...prev,
+          [fieldName]: {
+            found: true,
+            searching: false,
+            user: {
+              id: data.id,
+              full_name: fullName,
+              phone: data.phone || '',
+              email: data.email || ''
+            }
+          }
+        }));
+        // Set the target_user_id in the form
+        setValue('target_user_id', data.id);
+      }
+    } catch (err) {
+      console.error('NIDA lookup error:', err);
+      setNidaLookupResults(prev => ({
+        ...prev,
+        [fieldName]: { 
+          found: false, 
+          searching: false, 
+          error: lang === 'sw' ? 'Tatizo la mtandao. Jaribu tena.' : 'Network error. Please try again.' 
+        }
+      }));
+    }
   };
 
   const onFormSubmit = (data: any) => {
@@ -723,6 +799,76 @@ export const DynamicFormGenerator: React.FC<DynamicFormProps> = ({
                           )}
                           <p className="text-xs text-stone-400">
                             {lang === 'sw' ? 'PDF, JPG, PNG, DOC zinakubaliwa' : 'PDF, JPG, PNG, DOC accepted'}
+                          </p>
+                        </div>
+                      );
+                    case 'nida_lookup':
+                      const lookupState = nidaLookupResults[field.name];
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              onChange={onChange}
+                              value={value || ''}
+                              placeholder={lang === 'sw' ? 'Ingiza NIDA ya upande mwingine' : 'Enter other party NIDA'}
+                              aria-label={field.label}
+                              className="flex-1 p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleNidaLookup(field.name, value)}
+                              disabled={lookupState?.searching}
+                              aria-label={lang === 'sw' ? 'Tafuta mtumiaji' : 'Search user'}
+                              className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-semibold flex items-center gap-2 transition-all"
+                            >
+                              {lookupState?.searching ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <Search className="h-5 w-5" />
+                              )}
+                              <span className="hidden sm:inline">
+                                {lang === 'sw' ? 'Tafuta' : 'Search'}
+                              </span>
+                            </button>
+                          </div>
+                          
+                          {/* User found result */}
+                          {lookupState?.found && lookupState.user && (
+                            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                                <span className="font-bold text-emerald-700">
+                                  {lang === 'sw' ? 'Mtumiaji amepatikana!' : 'User found!'}
+                                </span>
+                              </div>
+                              <div className="space-y-1 text-sm text-emerald-800">
+                                <p><span className="font-semibold">{lang === 'sw' ? 'Jina:' : 'Name:'}</span> {lookupState.user.full_name}</p>
+                                <p><span className="font-semibold">{lang === 'sw' ? 'Simu:' : 'Phone:'}</span> {lookupState.user.phone || 'N/A'}</p>
+                                <p><span className="font-semibold">{lang === 'sw' ? 'Email:' : 'Email:'}</span> {lookupState.user.email || 'N/A'}</p>
+                              </div>
+                              <p className="text-xs text-emerald-600 mt-2">
+                                {lang === 'sw' 
+                                  ? 'Baada ya kutuma, mtumiaji huyu atapokea arifa ya kuidhinisha makubaliano.' 
+                                  : 'After submission, this user will receive approval notification.'}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Error message */}
+                          {lookupState?.error && (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-red-600" />
+                                <span className="text-sm text-red-700">{lookupState.error}</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-stone-500">
+                            {lang === 'sw' 
+                              ? 'Ingiza NIDA ya mtu unayetaka kumtumia idhini ya makubaliano. Mtumiaji huyu lazima awe amesajiliwa kwenye mfumo.'
+                              : 'Enter NIDA of the person you want to send for approval. User must be registered in the system.'}
                           </p>
                         </div>
                       );
