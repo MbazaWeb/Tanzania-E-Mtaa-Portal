@@ -66,6 +66,8 @@ interface UserProfile {
   gender: 'Me' | 'Ke' | 'Other';
   date_of_birth?: string;
   place_of_birth?: string;
+  birth_region?: string;
+  birth_district?: string;
   marital_status?: 'single' | 'married' | 'divorced' | 'widowed';
   occupation?: string;
   education_level?: 'none' | 'primary' | 'secondary' | 'diploma' | 'degree' | 'masters' | 'phd';
@@ -93,6 +95,11 @@ interface UserProfile {
   house_number?: string;
   postal_code?: string;
   landmark?: string;
+  
+  // Local Government Officials
+  mtaa_executive_officer?: string;
+  ward_councillor?: string;
+  ward_chairperson?: string;
   
   // Diaspora Information
   is_diaspora: boolean;
@@ -159,6 +166,8 @@ interface FormData {
   gender: string;
   date_of_birth: string;
   place_of_birth: string;
+  birth_region: string;
+  birth_district: string;
   marital_status: string;
   occupation: string;
   education_level: string;
@@ -185,6 +194,11 @@ interface FormData {
   house_number: string;
   postal_code: string;
   landmark: string;
+  
+  // Street/Local Government Officials
+  mtaa_executive_officer: string;
+  ward_councillor: string;
+  ward_chairperson: string;
   
   // Diaspora Information
   is_diaspora: boolean;
@@ -224,6 +238,8 @@ const FIELD_LABELS: Record<string, { en: string; sw: string }> = {
   gender: { en: 'Gender', sw: 'Jinsia' },
   date_of_birth: { en: 'Date of Birth', sw: 'Tarehe ya Kuzaliwa' },
   place_of_birth: { en: 'Place of Birth', sw: 'Mahali pa Kuzaliwa' },
+  birth_region: { en: 'Birth Region', sw: 'Mkoa wa Kuzaliwa' },
+  birth_district: { en: 'Birth District', sw: 'Wilaya ya Kuzaliwa' },
   marital_status: { en: 'Marital Status', sw: 'Hali ya Ndoa' },
   occupation: { en: 'Occupation', sw: 'Kazi' },
   education_level: { en: 'Education Level', sw: 'Kiwango cha Elimu' },
@@ -246,10 +262,15 @@ const FIELD_LABELS: Record<string, { en: string; sw: string }> = {
   region: { en: 'Region', sw: 'Mkoa' },
   district: { en: 'District', sw: 'Wilaya' },
   ward: { en: 'Ward', sw: 'Kata' },
-  street: { en: 'Street', sw: 'Mtaa' },
+  street: { en: 'Street/Village', sw: 'Mtaa/Kijiji' },
   house_number: { en: 'House Number', sw: 'Namba ya Nyumba' },
   postal_code: { en: 'Postal Code', sw: 'Namba ya Posta' },
   landmark: { en: 'Landmark', sw: 'Alama ya Eneo' },
+  
+  // Local Government Officials
+  mtaa_executive_officer: { en: 'Village/Street Executive Officer (VEO/MEO)', sw: 'Mtendaji wa Kijiji/Mtaa (VEO/MEO)' },
+  ward_councillor: { en: 'Ward Councillor', sw: 'Diwani wa Kata' },
+  ward_chairperson: { en: 'Ward Chairperson (Optional)', sw: 'Mwenyekiti wa Kata (Si Lazima)' },
   
   // Diaspora
   country_of_residence: { en: 'Country of Residence', sw: 'Nchi Unayoishi' },
@@ -327,6 +348,8 @@ export function Profile() {
     gender: '',
     date_of_birth: '',
     place_of_birth: '',
+    birth_region: '',
+    birth_district: '',
     marital_status: '',
     occupation: '',
     education_level: '',
@@ -353,6 +376,11 @@ export function Profile() {
     house_number: '',
     postal_code: '',
     landmark: '',
+    
+    // Street/Local Government Officials
+    mtaa_executive_officer: '',
+    ward_councillor: '',
+    ward_chairperson: '',
     
     // Diaspora Information
     is_diaspora: false,
@@ -403,6 +431,8 @@ export function Profile() {
           gender: data.gender || '',
           date_of_birth: data.date_of_birth || '',
           place_of_birth: data.place_of_birth || '',
+          birth_region: data.birth_region || '',
+          birth_district: data.birth_district || '',
           marital_status: data.marital_status || '',
           occupation: data.occupation || '',
           education_level: data.education_level || '',
@@ -429,6 +459,11 @@ export function Profile() {
           house_number: data.house_number || '',
           postal_code: data.postal_code || '',
           landmark: data.landmark || '',
+          
+          // Street/Local Government Officials
+          mtaa_executive_officer: data.mtaa_executive_officer || '',
+          ward_councillor: data.ward_councillor || '',
+          ward_chairperson: data.ward_chairperson || '',
           
           // Diaspora Information
           is_diaspora: data.is_diaspora || false,
@@ -1100,6 +1135,41 @@ export function Profile() {
                   </div>
 
                   <div className="space-y-2">
+                    <label htmlFor="birth_region" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                      {getFieldLabel('birth_region')}
+                    </label>
+                    <select
+                      id="birth_region"
+                      value={formData.birth_region}
+                      onChange={(e) => setFormData({...formData, birth_region: e.target.value, birth_district: ''})}
+                      className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                    >
+                      <option value="">{lang === 'sw' ? 'Chagua Mkoa' : 'Select Region'}</option>
+                      {regions.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="birth_district" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                      {getFieldLabel('birth_district')}
+                    </label>
+                    <select
+                      id="birth_district"
+                      value={formData.birth_district}
+                      onChange={(e) => setFormData({...formData, birth_district: e.target.value})}
+                      disabled={!formData.birth_region}
+                      className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all disabled:opacity-50"
+                    >
+                      <option value="">{lang === 'sw' ? 'Chagua Wilaya' : 'Select District'}</option>
+                      {formData.birth_region && 
+                        TANZANIA_ADDRESS_DATA.find(r => r.name === formData.birth_region)?.districts.map(d => (
+                          <option key={d.name} value={d.name}>{d.name}</option>
+                        ))
+                      }
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
                     <label htmlFor="place_of_birth" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
                       {getFieldLabel('place_of_birth')}
                     </label>
@@ -1109,7 +1179,7 @@ export function Profile() {
                       value={formData.place_of_birth}
                       onChange={(e) => setFormData({...formData, place_of_birth: e.target.value})}
                       className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder={lang === 'sw' ? 'Mkoa/Wilaya' : 'Region/District'}
+                      placeholder={lang === 'sw' ? 'Kituo cha Afya/Hospitali' : 'Hospital/Health Center'}
                     />
                   </div>
 
@@ -1195,6 +1265,16 @@ export function Profile() {
                     icon={<Calendar size={16} />}
                     label={getFieldLabel('date_of_birth')} 
                     value={formData.date_of_birth ? new Date(formData.date_of_birth).toLocaleDateString() : '-'} 
+                  />
+                  <InfoItem 
+                    icon={<Map size={16} />}
+                    label={getFieldLabel('birth_region')} 
+                    value={formData.birth_region || '-'} 
+                  />
+                  <InfoItem 
+                    icon={<Map size={16} />}
+                    label={getFieldLabel('birth_district')} 
+                    value={formData.birth_district || '-'} 
                   />
                   <InfoItem 
                     icon={<MapPin size={16} />}
@@ -1624,6 +1704,57 @@ export function Profile() {
                     />
                   </div>
                 </div>
+
+                {/* Local Government Officials Section */}
+                <div className="mt-6 pt-6 border-t border-stone-200">
+                  <h4 className="text-md font-bold text-stone-700 mb-4 flex items-center gap-2">
+                    <Users size={18} className="text-emerald-600" />
+                    {lang === 'sw' ? 'Viongozi wa Mtaa/Kijiji' : 'Local Government Officials'}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label htmlFor="mtaa_executive_officer" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                        {getFieldLabel('mtaa_executive_officer')}
+                      </label>
+                      <input
+                        id="mtaa_executive_officer"
+                        type="text"
+                        value={formData.mtaa_executive_officer}
+                        onChange={(e) => setFormData({...formData, mtaa_executive_officer: e.target.value})}
+                        className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        placeholder={lang === 'sw' ? 'Jina la Mtendaji' : 'VEO/MEO Name'}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="ward_councillor" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                        {getFieldLabel('ward_councillor')}
+                      </label>
+                      <input
+                        id="ward_councillor"
+                        type="text"
+                        value={formData.ward_councillor}
+                        onChange={(e) => setFormData({...formData, ward_councillor: e.target.value})}
+                        className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        placeholder={lang === 'sw' ? 'Jina la Diwani' : 'Councillor Name'}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="ward_chairperson" className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                        {getFieldLabel('ward_chairperson')}
+                      </label>
+                      <input
+                        id="ward_chairperson"
+                        type="text"
+                        value={formData.ward_chairperson}
+                        onChange={(e) => setFormData({...formData, ward_chairperson: e.target.value})}
+                        className="w-full h-12 px-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all"
+                        placeholder={lang === 'sw' ? 'Jina la Mwenyekiti (Si Lazima)' : 'Chairperson Name (Optional)'}
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   <InfoItem 
@@ -1660,6 +1791,21 @@ export function Profile() {
                     icon={<MapPin size={16} />}
                     label={getFieldLabel('landmark')} 
                     value={formData.landmark || '-'} 
+                  />
+                  <InfoItem 
+                    icon={<Users size={16} />}
+                    label={getFieldLabel('mtaa_executive_officer')} 
+                    value={formData.mtaa_executive_officer || '-'} 
+                  />
+                  <InfoItem 
+                    icon={<Users size={16} />}
+                    label={getFieldLabel('ward_councillor')} 
+                    value={formData.ward_councillor || '-'} 
+                  />
+                  <InfoItem 
+                    icon={<Users size={16} />}
+                    label={getFieldLabel('ward_chairperson')} 
+                    value={formData.ward_chairperson || '-'} 
                   />
                 </div>
               )}
