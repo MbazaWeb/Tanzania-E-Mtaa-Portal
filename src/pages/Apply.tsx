@@ -7,6 +7,7 @@ import { TANZANIA_LOGO_URL } from '@/src/constants/services';
 import { Service } from '@/src/lib/supabase';
 import { formatCurrency } from '@/src/lib/currency';
 import { DynamicFormGenerator } from '@/src/components/DynamicFormGenerator';
+import { SERVICE_FORMS, hasServiceForm } from '@/src/components/forms';
 
 interface ApplyProps {
   selectedService: Service;
@@ -67,12 +68,27 @@ export function Apply({ selectedService, onBack, onSubmit }: ApplyProps) {
           <h3 className="text-lg font-bold text-stone-800">{lang === 'sw' ? 'Taarifa za Maombi' : 'Application Details'}</h3>
           <p className="text-sm text-stone-500 mt-1">{lang === 'sw' ? 'Tafadhali jaza maelezo yote yanayohitajika kwa usahihi.' : 'Please fill in all required details accurately.'}</p>
         </div>
-        <DynamicFormGenerator 
-          schema={user?.is_diaspora ? (selectedService as any).diaspora_form_schema || selectedService.form_schema : selectedService.form_schema} 
-          onSubmit={onSubmit} 
-          lang={lang}
-          userProfile={user}
-        />
+        
+        {/* Use dedicated service form if available, otherwise fall back to dynamic form */}
+        {hasServiceForm(selectedService.name) ? (
+          (() => {
+            const FormComponent = SERVICE_FORMS[selectedService.name];
+            return (
+              <FormComponent
+                onSubmit={onSubmit}
+                lang={lang}
+                userProfile={user}
+              />
+            );
+          })()
+        ) : (
+          <DynamicFormGenerator 
+            schema={user?.is_diaspora ? (selectedService as any).diaspora_form_schema || selectedService.form_schema : selectedService.form_schema} 
+            onSubmit={onSubmit} 
+            lang={lang}
+            userProfile={user}
+          />
+        )}
       </div>
     </motion.div>
   );

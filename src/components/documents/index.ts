@@ -32,6 +32,7 @@ import React from 'react';
 
 /**
  * Mapping of service names to their PDF document components
+ * IMPORTANT: These names must match exactly with HARDCODED_SERVICES in services.ts
  * 
  * Usage:
  * const PDFComponent = SERVICE_DOCUMENTS[application.service_name];
@@ -40,26 +41,22 @@ import React from 'react';
  * }
  */
 export const SERVICE_DOCUMENTS: Record<string, React.FC<DocumentPDFProps>> = {
-  // Residency Certificate / Barua ya Utambulisho wa Mkazi
-  'Utambulisho wa Mkazi': UtambulishoMkaziPDF,
+  // Hati ya Mkazi - Residency Certificate
+  'Hati ya Mkazi': UtambulishoMkaziPDF,
   
-  // Funeral Permit / Kibali cha Mazishi
-  'Kibari cha Mazishi': KibariMazishiPDF,
+  // Kibali cha Mazishi - Burial Permit
+  'Kibali cha Mazishi': KibariMazishiPDF,
   
-  // Sales Agreement / Makubaliano ya Mauzo
+  // Makubaliano ya Mauziano - Sales Agreement
   'Makubaliano ya Mauziano': MakubalianoMauzianoPDF,
   
-  // Building Permit / Kibali cha Ujenzi
-  'Kibali cha Ujenzi (Maboresho)': KibaliUjenziPDF,
+  // Kibali cha Tukio - Event Permit
+  'Kibali cha Tukio': KibariSherehePDF,
   
-  // Petty Trader License / Leseni ya Biashara Ndogondogo
-  'Leseni ya Biashara Ndogondogo': LeseniaBiasharaPDF,
-  
-  // Dispute Letter / Barua ya Kufungua Shauri
-  'Barua ya Kufungua Shauri': BaruaShouriPDF,
-  
-  // Event Permit / Kibali cha Sherehe
-  'Kibari cha Matukio / Sherehe': KibariSherehePDF,
+  // TODO: Add these when services are added to HARDCODED_SERVICES
+  // 'Kibali cha Ujenzi (Maboresho)': KibaliUjenziPDF,
+  // 'Leseni ya Biashara Ndogondogo': LeseniaBiasharaPDF,
+  // 'Barua ya Kufungua Shauri': BaruaShouriPDF,
 };
 
 /**

@@ -40,6 +40,17 @@ const getServiceById = (serviceId: string) => {
 };
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { DocumentPDF } from './DocumentPDF';
+import { SERVICE_DOCUMENTS, hasServiceDocument } from './documents';
+
+// Helper to get the correct PDF component for an application
+const getDocumentPDF = (application: any, lang: 'sw' | 'en') => {
+  const serviceName = application.service_name;
+  if (hasServiceDocument(serviceName)) {
+    const PDFComponent = SERVICE_DOCUMENTS[serviceName];
+    return <PDFComponent application={application} lang={lang} />;
+  }
+  return <DocumentPDF application={application} lang={lang} />;
+};
 
 interface ApplicationReviewProps {
   lang: 'sw' | 'en';

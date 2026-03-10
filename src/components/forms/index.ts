@@ -31,15 +31,27 @@ import React from 'react';
 import { FormProps } from './types';
 
 // Map service names to their form components
+// IMPORTANT: These names must match exactly with HARDCODED_SERVICES in services.ts
 export const SERVICE_FORMS: Record<string, React.FC<FormProps>> = {
-  'Utambulisho wa Mkazi': UtambulishoMkaziForm,
+  // Hati ya Mkazi - Residency Certificate
+  'Hati ya Mkazi': UtambulishoMkaziForm,
+  
+  // Barua ya Utambulisho - Introduction Letter
   'Barua ya Utambulisho': BaruaUtambulishoForm,
-  'Kibari cha Mazishi': KibariMazishiForm,
+  
+  // Kibali cha Mazishi - Burial Permit
+  'Kibali cha Mazishi': KibariMazishiForm,
+  
+  // Makubaliano ya Mauziano - Sales Agreement
   'Makubaliano ya Mauziano': MakubalianoMauzianoForm,
-  'Kibali cha Ujenzi (Maboresho)': KibaliUjenziForm,
-  'Leseni ya Biashara Ndogondogo': LeseniaBiasharaForm,
-  'Barua ya Kufungua Shauri': BaruaShauriForm,
-  'Kibari cha Matukio / Sherehe': KibariShereheForm,
+  
+  // Kibali cha Tukio - Event Permit
+  'Kibali cha Tukio': KibariShereheForm,
+  
+  // TODO: Add these when services are added to HARDCODED_SERVICES
+  // 'Kibali cha Ujenzi (Maboresho)': KibaliUjenziForm,
+  // 'Leseni ya Biashara Ndogondogo': LeseniaBiasharaForm,
+  // 'Barua ya Kufungua Shauri': BaruaShauriForm,
 };
 
 // Helper function to get form component by service name
