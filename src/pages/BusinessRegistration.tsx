@@ -567,6 +567,7 @@ export const BusinessRegistration: React.FC = () => {
                     setSelectedType(null);
                   }}
                   className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  aria-label={lang === 'sw' ? 'Funga fomu' : 'Close form'}
                 >
                   <X className="w-6 h-6 text-white" />
                 </button>
@@ -598,10 +599,11 @@ export const BusinessRegistration: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Utaalamu' : 'Specialization'} *
                     </label>
                     <select
+                      id="specialization"
                       value={formData.specialization}
                       onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -617,16 +619,18 @@ export const BusinessRegistration: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="experience_years" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Miaka ya Uzoefu' : 'Years of Experience'}
                     </label>
                     <input
+                      id="experience_years"
                       type="number"
                       min="0"
                       max="50"
                       value={formData.experience_years}
                       onChange={(e) => setFormData({ ...formData, experience_years: parseInt(e.target.value) || 0 })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -656,10 +660,11 @@ export const BusinessRegistration: React.FC = () => {
                 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Mkoa' : 'Region'} *
                     </label>
                     <select
+                      id="region"
                       value={formData.region}
                       onChange={(e) => setFormData({ 
                         ...formData, 
@@ -680,10 +685,11 @@ export const BusinessRegistration: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="district" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Wilaya' : 'District'} *
                     </label>
                     <select
+                      id="district"
                       value={formData.district}
                       onChange={(e) => setFormData({ 
                         ...formData, 
@@ -704,10 +710,11 @@ export const BusinessRegistration: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="ward" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Kata' : 'Ward'} *
                     </label>
                     <select
+                      id="ward"
                       value={formData.ward}
                       onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -724,14 +731,16 @@ export const BusinessRegistration: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Mtaa' : 'Street'}
                     </label>
                     <input
+                      id="street"
                       type="text"
                       value={formData.street}
                       onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder={lang === 'sw' ? 'Jina la mtaa' : 'Street name'}
                     />
                   </div>
                 </div>
@@ -760,26 +769,30 @@ export const BusinessRegistration: React.FC = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="alt_phone" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Simu Mbadala' : 'Alternative Phone'}
                     </label>
                     <input
+                      id="alt_phone"
                       type="tel"
                       value={formData.alt_phone}
                       onChange={(e) => setFormData({ ...formData, alt_phone: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="0712345678"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                       {lang === 'sw' ? 'Barua pepe' : 'Email'} *
                     </label>
                     <input
+                      id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="example@email.com"
                       required
                     />
                   </div>
@@ -801,10 +814,12 @@ export const BusinessRegistration: React.FC = () => {
                     </label>
                     <input
                       ref={idDocRef}
+                      id="id_document"
                       type="file"
                       accept="image/*,.pdf"
                       onChange={(e) => setIdDocument(e.target.files?.[0] || null)}
                       className="hidden"
+                      aria-label={lang === 'sw' ? 'Pakia Kitambulisho' : 'Upload ID Document'}
                     />
                     <button
                       type="button"
@@ -836,10 +851,12 @@ export const BusinessRegistration: React.FC = () => {
                     </label>
                     <input
                       ref={proofDocRef}
+                      id="proof_document"
                       type="file"
                       accept="image/*,.pdf"
                       onChange={(e) => setProofDocument(e.target.files?.[0] || null)}
                       className="hidden"
+                      aria-label={lang === 'sw' ? 'Pakia Leseni ya Biashara' : 'Upload Business License'}
                     />
                     <button
                       type="button"
@@ -871,10 +888,12 @@ export const BusinessRegistration: React.FC = () => {
                     </label>
                     <input
                       ref={photoRef}
+                      id="photo"
                       type="file"
                       accept="image/*"
                       onChange={(e) => setPhoto(e.target.files?.[0] || null)}
                       className="hidden"
+                      aria-label={lang === 'sw' ? 'Pakia Picha ya Uso' : 'Upload Profile Photo'}
                     />
                     <button
                       type="button"
@@ -977,6 +996,7 @@ export const BusinessRegistration: React.FC = () => {
                           <button
                             onClick={() => setViewingRegistration(null)}
                             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                            aria-label={lang === 'sw' ? 'Funga' : 'Close'}
                           >
                             <X className="w-6 h-6 text-white" />
                           </button>
