@@ -67,7 +67,7 @@ export function CustomerSupport() {
 
       const { data, error } = await supabase
         .from('applications')
-        .select('*, services(*), users(*)')
+        .select('*, services(*), users:user_id(*)')
         .eq('application_number', searchTerm.trim().toUpperCase())
         .single();
 
