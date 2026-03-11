@@ -183,7 +183,7 @@ export function VerifyDocuments({
       .from('applications')
       .select(`
         *,
-        users (
+        users:user_id (
           id, first_name, middle_name, last_name, nida_number, phone, email, region, district, ward, street
         ),
         services (
@@ -200,7 +200,7 @@ export function VerifyDocuments({
         .from('applications')
         .select(`
           *,
-          users (
+          users:user_id (
             id, first_name, middle_name, last_name, nida_number, phone, email, region, district, ward, street
           ),
           services (
@@ -221,7 +221,7 @@ export function VerifyDocuments({
         .from('applications')
         .select(`
           *,
-          users (
+          users:user_id (
             id, first_name, middle_name, last_name, nida_number, phone, email, region, district, ward, street
           ),
           services (
