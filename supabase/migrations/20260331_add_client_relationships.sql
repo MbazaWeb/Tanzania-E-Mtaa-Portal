@@ -129,12 +129,7 @@ CREATE POLICY "Owners can delete own relationships"
 -- Staff and admin can view all relationships
 CREATE POLICY "Staff can view all relationships"
     ON client_relationships FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM users
-            WHERE id = auth.uid() AND role IN ('staff', 'admin')
-        )
-    );
+    USING (public.get_user_role_safe() IN ('staff', 'admin'));
 
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON client_relationships TO authenticated;
