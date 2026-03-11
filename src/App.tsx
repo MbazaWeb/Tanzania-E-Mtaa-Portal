@@ -46,6 +46,9 @@ import { BusinessApproval } from './pages/staff/BusinessApproval';
 // Business Registration
 import { BusinessRegistration } from './pages/BusinessRegistration';
 
+// My Clients (Tenants/Customers)
+import { MyClients } from './pages/MyClients';
+
 // Agreement Verification
 import { VerifyAgreement } from './pages/VerifyAgreement';
 
@@ -55,7 +58,7 @@ export default function App() {
   const { showToast } = useToast();
   const { applications, fetchApplications } = useApplications(user);
 
-  const [view, setView] = useState<'dashboard' | 'services' | 'apply' | 'applications' | 'staff_management' | 'application_review' | 'verify_purchase' | 'application_details' | 'profile' | 'verify_documents' | 'verify_agreement' | 'admin_dashboard' | 'office_management' | 'location_management' | 'service_management' | 'staff_dashboard' | 'customer_support' | 'manual_verification' | 'admin_logs' | 'citizen_management' | 'business_registration' | 'business_approval'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'services' | 'apply' | 'applications' | 'staff_management' | 'application_review' | 'verify_purchase' | 'application_details' | 'profile' | 'verify_documents' | 'verify_agreement' | 'admin_dashboard' | 'office_management' | 'location_management' | 'service_management' | 'staff_dashboard' | 'customer_support' | 'manual_verification' | 'admin_logs' | 'citizen_management' | 'business_registration' | 'business_approval' | 'my_clients'>('dashboard');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [payingApplication, setPayingApplication] = useState<Application | null>(null);
@@ -440,6 +443,10 @@ export default function App() {
 
             {view === 'business_approval' && (user?.role === 'staff' || user?.role === 'admin') && (
               <BusinessApproval />
+            )}
+
+            {view === 'my_clients' && user?.role === 'citizen' && (
+              <MyClients />
             )}
 
             {view === 'services' && (

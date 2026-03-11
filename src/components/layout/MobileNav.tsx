@@ -7,6 +7,7 @@ import {
   Search, 
   Shield, 
   User,
+  Users,
   Building2,
   MapPin,
   Settings,
@@ -116,6 +117,13 @@ export function MobileNav({ isOpen, onClose, currentView, setView }: MobileNavPr
       label: lang === 'sw' ? 'Usajili wa Biashara' : 'Business Registration',
       roles: ['citizen'],
       view: 'business_registration'
+    },
+    {
+      id: 'my_clients',
+      icon: <Users size={20} />,
+      label: lang === 'sw' ? 'Wapangaji / Wateja' : 'My Tenants / Clients',
+      roles: ['citizen'],
+      view: 'my_clients'
     },
     {
       id: 'business_approval',

@@ -107,6 +107,12 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
             active={currentView === 'business_registration'} 
             onClick={() => setView('business_registration')} 
           />
+          <SidebarItem 
+            icon={<Users size={20} />} 
+            label={lang === 'sw' ? 'Wapangaji / Wateja' : 'My Tenants / Clients'} 
+            active={currentView === 'my_clients'} 
+            onClick={() => setView('my_clients')} 
+          />
         </>
       )}
 
