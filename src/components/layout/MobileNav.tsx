@@ -111,6 +111,20 @@ export function MobileNav({ isOpen, onClose, currentView, setView }: MobileNavPr
       view: 'manual_verification'
     },
     {
+      id: 'business_registration',
+      icon: <Building2 size={20} />,
+      label: lang === 'sw' ? 'Usajili wa Biashara' : 'Business Registration',
+      roles: ['citizen'],
+      view: 'business_registration'
+    },
+    {
+      id: 'business_approval',
+      icon: <Building2 size={20} />,
+      label: lang === 'sw' ? 'Idhini ya Biashara' : 'Business Approval',
+      roles: ['staff', 'admin'],
+      view: 'business_approval'
+    },
+    {
       id: 'verify_documents',
       icon: <Search size={20} />,
       label: lang === 'sw' ? 'Hakiki Hati' : 'Verify Document',

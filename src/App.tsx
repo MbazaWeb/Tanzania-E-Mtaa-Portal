@@ -41,6 +41,10 @@ import { StaffDashboard } from './pages/staff/StaffDashboard';
 import { CustomerSupport } from './pages/staff/CustomerSupport';
 import { ManualVerification } from './pages/staff/ManualVerification';
 import { StaffCitizenManagement } from './pages/staff/CitizenManagement';
+import { BusinessApproval } from './pages/staff/BusinessApproval';
+
+// Business Registration
+import { BusinessRegistration } from './pages/BusinessRegistration';
 
 // Agreement Verification
 import { VerifyAgreement } from './pages/VerifyAgreement';
@@ -51,7 +55,7 @@ export default function App() {
   const { showToast } = useToast();
   const { applications, fetchApplications } = useApplications(user);
 
-  const [view, setView] = useState<'dashboard' | 'services' | 'apply' | 'applications' | 'staff_management' | 'application_review' | 'verify_purchase' | 'application_details' | 'profile' | 'verify_documents' | 'verify_agreement' | 'admin_dashboard' | 'office_management' | 'location_management' | 'service_management' | 'staff_dashboard' | 'customer_support' | 'manual_verification' | 'admin_logs' | 'citizen_management'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'services' | 'apply' | 'applications' | 'staff_management' | 'application_review' | 'verify_purchase' | 'application_details' | 'profile' | 'verify_documents' | 'verify_agreement' | 'admin_dashboard' | 'office_management' | 'location_management' | 'service_management' | 'staff_dashboard' | 'customer_support' | 'manual_verification' | 'admin_logs' | 'citizen_management' | 'business_registration' | 'business_approval'>('dashboard');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [payingApplication, setPayingApplication] = useState<Application | null>(null);
@@ -428,6 +432,14 @@ export default function App() {
             {view === 'citizen_management' && (
               user?.role === 'admin' ? <CitizenManagement /> : 
               user?.role === 'staff' ? <StaffCitizenManagement /> : null
+            )}
+
+            {view === 'business_registration' && user?.role === 'citizen' && (
+              <BusinessRegistration />
+            )}
+
+            {view === 'business_approval' && (user?.role === 'staff' || user?.role === 'admin') && (
+              <BusinessApproval />
             )}
 
             {view === 'services' && (

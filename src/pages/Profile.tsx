@@ -38,6 +38,7 @@ import {
   IdCard,
   Map,
   Navigation,
+  Store,
   Church,
   Info,
   Check,
@@ -392,6 +393,11 @@ export function Profile() {
   // Citizen ID (auto-generated, read-only)
   const [citizenId, setCitizenId] = useState<string>('');
   
+  // Business IDs (for registered sellers, landlords, brokers)
+  const [sellerId, setSellerId] = useState<string>('');
+  const [landlordId, setLandlordId] = useState<string>('');
+  const [brokerId, setBrokerId] = useState<string>('');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   
@@ -481,6 +487,11 @@ export function Profile() {
       if (data) {
         // Set citizen_id (read-only, auto-generated)
         setCitizenId(data.citizen_id || '');
+        
+        // Set business IDs if registered
+        setSellerId(data.seller_id || '');
+        setLandlordId(data.landlord_id || '');
+        setBrokerId(data.broker_id || '');
         
         setFormData({
           // Personal Information
@@ -1525,6 +1536,66 @@ export function Profile() {
                         ? '💡 Mpe mtu unayeomba huduma pamoja naye namba hii ili aweze kukuingiza kwenye makubaliano.'
                         : '💡 Share this number with someone you want to enter into an agreement with.'}
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Business Registration IDs */}
+              {(sellerId || landlordId || brokerId) && (
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-stone-700 flex items-center gap-2">
+                    <Award size={18} className="text-purple-600" />
+                    {lang === 'sw' ? 'Vitambulisho vya Biashara' : 'Business IDs'}
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Seller ID */}
+                    {sellerId && (
+                      <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl p-4 text-white shadow-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Store size={20} />
+                          <span className="text-blue-100 text-sm font-medium">
+                            {lang === 'sw' ? 'Namba ya Muuzaji' : 'Seller ID'}
+                          </span>
+                        </div>
+                        <p className="text-xl font-mono font-bold tracking-wider">{sellerId}</p>
+                        <p className="text-blue-100 text-xs mt-2">
+                          {lang === 'sw' ? '✓ Umesajiliwa kama Muuzaji' : '✓ Registered as Seller'}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Landlord ID */}
+                    {landlordId && (
+                      <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Home size={20} />
+                          <span className="text-amber-100 text-sm font-medium">
+                            {lang === 'sw' ? 'Namba ya Mpangishaji' : 'Landlord ID'}
+                          </span>
+                        </div>
+                        <p className="text-xl font-mono font-bold tracking-wider">{landlordId}</p>
+                        <p className="text-amber-100 text-xs mt-2">
+                          {lang === 'sw' ? '✓ Umesajiliwa kama Mpangishaji' : '✓ Registered as Landlord'}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Broker ID */}
+                    {brokerId && (
+                      <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl p-4 text-white shadow-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users size={20} />
+                          <span className="text-purple-100 text-sm font-medium">
+                            {lang === 'sw' ? 'Namba ya Dalali' : 'Broker ID'}
+                          </span>
+                        </div>
+                        <p className="text-xl font-mono font-bold tracking-wider">{brokerId}</p>
+                        <p className="text-purple-100 text-xs mt-2">
+                          {lang === 'sw' ? '✓ Umesajiliwa kama Dalali' : '✓ Registered as Broker'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

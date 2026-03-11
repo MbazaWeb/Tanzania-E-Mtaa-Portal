@@ -101,6 +101,12 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
             active={currentView === 'applications'} 
             onClick={() => setView('applications')} 
           />
+          <SidebarItem 
+            icon={<Building2 size={20} />} 
+            label={lang === 'sw' ? 'Usajili wa Biashara' : 'Business Registration'} 
+            active={currentView === 'business_registration'} 
+            onClick={() => setView('business_registration')} 
+          />
         </>
       )}
 
@@ -117,6 +123,12 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
             label={lang === 'sw' ? 'Usimamizi wa Wananchi' : 'Citizen Management'} 
             active={currentView === 'citizen_management'} 
             onClick={() => setView('citizen_management')} 
+          />
+          <SidebarItem 
+            icon={<Building2 size={20} />} 
+            label={lang === 'sw' ? 'Idhini ya Biashara' : 'Business Approval'} 
+            active={currentView === 'business_approval'} 
+            onClick={() => setView('business_approval')} 
           />
           <SidebarItem 
             icon={<Building2 size={20} />} 
@@ -158,6 +170,12 @@ export function Sidebar({ currentView, setView }: SidebarProps) {
             label={lang === 'sw' ? 'Uhakiki wa Maombi' : 'Application Review'} 
             active={currentView === 'application_review'} 
             onClick={() => setView('application_review')} 
+          />
+          <SidebarItem 
+            icon={<Building2 size={20} />} 
+            label={lang === 'sw' ? 'Idhini ya Biashara' : 'Business Approval'} 
+            active={currentView === 'business_approval'} 
+            onClick={() => setView('business_approval')} 
           />
           <SidebarItem 
             icon={<HelpCircle size={20} />} 
