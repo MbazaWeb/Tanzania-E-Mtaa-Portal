@@ -189,14 +189,14 @@ export const BusinessRegistration: React.FC = () => {
   // Get districts for selected region
   const getDistricts = () => {
     if (!formData.region) return [];
-    const regionData = TANZANIA_ADDRESS_DATA.find(r => r.region === formData.region);
+    const regionData = TANZANIA_ADDRESS_DATA.find(r => r.name === formData.region);
     return regionData?.districts.map(d => d.name) || [];
   };
 
   // Get wards for selected district
   const getWards = () => {
     if (!formData.region || !formData.district) return [];
-    const regionData = TANZANIA_ADDRESS_DATA.find(r => r.region === formData.region);
+    const regionData = TANZANIA_ADDRESS_DATA.find(r => r.name === formData.region);
     const districtData = regionData?.districts.find(d => d.name === formData.district);
     return districtData?.wards || [];
   };
@@ -672,8 +672,8 @@ export const BusinessRegistration: React.FC = () => {
                     >
                       <option value="">{lang === 'sw' ? '-- Chagua --' : '-- Select --'}</option>
                       {TANZANIA_ADDRESS_DATA.map((region) => (
-                        <option key={region.region} value={region.region}>
-                          {region.region}
+                        <option key={region.name} value={region.name}>
+                          {region.name}
                         </option>
                       ))}
                     </select>
