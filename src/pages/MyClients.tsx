@@ -77,21 +77,26 @@ export function MyClients() {
           status,
           agreement_status,
           created_at,
-          services!inner (
+          services (
             id,
             name,
             name_en
           )
         `)
         .eq('user_id', user.id)
-        .or('services.name.ilike.%PANGISHA%,services.name.ilike.%Mauziano%')
         .in('status', ['submitted', 'approved', 'pending_payment', 'paid', 'issued'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Filter for PANGISHA/Mauziano services client-side
+      const filteredApps = (applications || []).filter((app: any) => {
+        const serviceName = app.services?.name || '';
+        return serviceName.includes('PANGISHA') || serviceName.includes('Mauziano');
+      });
+
       // Transform applications to clients
-      const clientsList: Client[] = (applications || []).map((app: any) => {
+      const clientsList: Client[] = filteredApps.map((app: any) => {
         const isRent = app.services?.name?.includes('PANGISHA');
         const isSale = app.services?.name?.includes('Mauziano');
         const formData = app.form_data || {};
